@@ -130,8 +130,7 @@ def test(
     if use_wandb:
         wandb_logger.log(
             {
-                "test/accuracy": results["accuracy"],
-                "test/loss": results["loss"],
+                "test/accuracy": results["overall_accuracy"],
             }
         )
         # Log per-class accuracy
