@@ -72,6 +72,7 @@ class TrainingVisualizer:
         self.ax1.set_title("Training and Validation Loss")
         self.ax1.legend()
         self.ax1.grid(True, alpha=0.3)
+        self.ax1.set_ylim(top=0.6)
 
         # Plot accuracy
         self.ax2.plot(self.epochs, self.train_accs, "b-", label="Train Acc")
@@ -81,6 +82,7 @@ class TrainingVisualizer:
         self.ax2.set_title("Training and Validation Accuracy")
         self.ax2.legend()
         self.ax2.grid(True, alpha=0.3)
+        self.ax2.set_ylim(bottom=0.8)
 
         # Refresh the plot
         plt.tight_layout()
