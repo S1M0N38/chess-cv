@@ -54,7 +54,9 @@ def split_data(
     total_val = 0
     total_test = 0
 
-    print(f"\nSplitting data (train/val/test = {train_ratio}/{val_ratio}/{test_ratio}):")
+    print(
+        f"\nSplitting data (train/val/test = {train_ratio}/{val_ratio}/{test_ratio}):"
+    )
 
     for class_dir in class_dirs:
         # Get all image files
@@ -98,7 +100,7 @@ def split_data(
             f"{len(val_indices):4d} val, {len(test_indices):4d} test"
         )
 
-    print(f"\nTotal:")
+    print("\nTotal:")
     print(f"  Train:      {total_train:5d} images")
     print(f"  Validation: {total_val:5d} images")
     print(f"  Test:       {total_test:5d} images")

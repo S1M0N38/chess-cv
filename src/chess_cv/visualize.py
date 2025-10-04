@@ -5,8 +5,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .data import CLASS_NAMES
-
 
 class TrainingVisualizer:
     """Real-time training visualization."""
@@ -100,6 +98,7 @@ class TrainingVisualizer:
 
 def plot_confusion_matrix(
     confusion_matrix: np.ndarray,
+    class_names: list[str],
     output_dir: Path | str = "outputs",
     filename: str = "confusion_matrix.png",
 ) -> None:
@@ -123,21 +122,23 @@ def plot_confusion_matrix(
     cbar.set_label("Count", rotation=270, labelpad=20)
 
     # Set ticks and labels
-    ax.set_xticks(np.arange(len(CLASS_NAMES)))
-    ax.set_yticks(np.arange(len(CLASS_NAMES)))
-    ax.set_xticklabels(CLASS_NAMES, rotation=45, ha="right")
-    ax.set_yticklabels(CLASS_NAMES)
+    ax.set_xticks(np.arange(len(class_names)))
+    ax.set_yticks(np.arange(len(class_names)))
+    ax.set_xticklabels(class_names, rotation=45, ha="right")
+    ax.set_yticklabels(class_names)
 
     # Add text annotations
-    for i in range(len(CLASS_NAMES)):
-        for j in range(len(CLASS_NAMES)):
+    for i in range(len(class_names)):
+        for j in range(len(class_names)):
             text = ax.text(
                 j,
                 i,
                 str(confusion_matrix[i, j]),
                 ha="center",
                 va="center",
-                color="white" if confusion_matrix[i, j] > confusion_matrix.max() / 2 else "black",
+                color="white"
+                if confusion_matrix[i, j] > confusion_matrix.max() / 2
+                else "black",
             )
 
     # Labels and title

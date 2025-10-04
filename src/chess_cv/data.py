@@ -1,12 +1,5 @@
 """Data loading utilities for chess piece images."""
 
-from pathlib import Path
-
-import mlx.core as mx
-import numpy as np
-from PIL import Image
-
-
 # Class names in alphabetical order
 CLASS_NAMES = [
     "black_bishop",
@@ -25,158 +18,107 @@ CLASS_NAMES = [
 ]
 
 
-def load_image(image_path: Path) -> np.ndarray:
-    """Load and preprocess a single image.
+import glob
+import os
+from typing import Callable, List, Optional
 
-    Args:
-        image_path: Path to image file
-
-    Returns:
-        Preprocessed image as numpy array (H, W, C) with values in [0, 1]
-    """
-    # Load image with PIL
-    img = Image.open(image_path)
-
-    # Convert RGBA to RGB
-    if img.mode == "RGBA":
-        # Create white background
-        background = Image.new("RGB", img.size, (255, 255, 255))
-        background.paste(img, mask=img.split()[3])  # Use alpha channel as mask
-        img = background
-    elif img.mode != "RGB":
-        img = img.convert("RGB")
-
-    # Convert to numpy array and normalize to [0, 1]
-    img_array = np.array(img, dtype=np.float32) / 255.0
-
-    return img_array
+import mlx.core as mx
+import numpy as np
+from PIL import Image
+from torch.utils.data import Dataset
 
 
-def load_dataset(data_dir: Path) -> tuple[mx.array, mx.array, list[str]]:
-    """Load all images from a directory.
+# Custom transform for Gaussian Noise
+class AddGaussianNoise:
+    """Adds Gaussian noise to a PIL image."""
 
-    Args:
-        data_dir: Directory containing class subdirectories
+    def __init__(self, mean: float = 0.0, std: float = 0.1):
+        self.std = std
+        self.mean = mean
 
-    Returns:
-        Tuple of (images, labels, file_paths)
-        - images: mx.array of shape (N, H, W, C)
-        - labels: mx.array of shape (N,) with class indices
-        - file_paths: List of file paths for debugging
-    """
-    images = []
-    labels = []
-    file_paths = []
+    def __call__(self, img: Image.Image) -> Image.Image:
+        """
+        Args:
+            img (PIL Image): Image to be augmented.
 
-    # Create class to index mapping
-    class_to_idx = {class_name: idx for idx, class_name in enumerate(CLASS_NAMES)}
+        Returns:
+            PIL Image: Augmented image.
+        """
+        np_img = np.array(img).astype(np.float32)
+        noise = np.random.normal(self.mean, self.std * 255, np_img.shape)
+        np_img = np_img + noise
+        np_img = np.clip(np_img, 0, 255).astype(np.uint8)
+        return Image.fromarray(np_img)
 
-    # Iterate through class directories
-    for class_name in CLASS_NAMES:
-        class_dir = data_dir / class_name
-        if not class_dir.exists():
-            continue
-
-        # Load all images in this class
-        for img_path in sorted(class_dir.glob("*.png")):
-            img = load_image(img_path)
-            images.append(img)
-            labels.append(class_to_idx[class_name])
-            file_paths.append(str(img_path))
-
-    # Convert to MLX arrays
-    images_array = mx.array(np.array(images))
-    labels_array = mx.array(np.array(labels, dtype=np.int32))
-
-    return images_array, labels_array, file_paths
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(mean={self.mean}, std={self.std})"
 
 
-def batch_iterate(
-    images: mx.array,
-    labels: mx.array,
-    batch_size: int,
-    shuffle: bool = True,
-    seed: int | None = None,
-) -> tuple[mx.array, mx.array]:
-    """Iterate over dataset in batches.
-
-    Args:
-        images: Images array of shape (N, H, W, C)
-        labels: Labels array of shape (N,)
-        batch_size: Batch size
-        shuffle: Whether to shuffle data (default: True)
-        seed: Random seed for shuffling (default: None)
-
-    Yields:
-        Tuples of (batch_images, batch_labels)
-    """
-    n_samples = images.shape[0]
-
-    # Create indices
-    if shuffle:
-        if seed is not None:
-            rng = np.random.default_rng(seed)
-            perm = rng.permutation(n_samples)
-        else:
-            perm = np.random.permutation(n_samples)
-        indices = mx.array(perm)
-    else:
-        indices = mx.arange(n_samples)
-
-    # Iterate in batches
-    for start_idx in range(0, n_samples, batch_size):
-        end_idx = min(start_idx + batch_size, n_samples)
-        batch_indices = indices[start_idx:end_idx]
-
-        batch_images = images[batch_indices]
-        batch_labels = labels[batch_indices]
-
-        yield batch_images, batch_labels
+def get_image_files(data_dir: str) -> List[str]:
+    """Get all image files from a directory."""
+    return glob.glob(os.path.join(data_dir, "**", "*.png"), recursive=True)
 
 
-class DataLoader:
-    """Data loader for chess piece images."""
+def get_label_from_path(image_path: str) -> str:
+    """Get the label from the image path."""
+    return image_path.split(os.sep)[-2]
+
+
+def get_all_labels(image_files: List[str]) -> List[str]:
+    """Get all labels from a list of image files."""
+    return [get_label_from_path(image_file) for image_file in image_files]
+
+
+def get_label_map(labels: List[str]) -> dict:
+    """Get a map from labels to integers."""
+    unique_labels = sorted(list(set(labels)))
+    return {label: i for i, label in enumerate(unique_labels)}
+
+
+class ChessPiecesDataset(Dataset):
+    """A PyTorch Dataset for loading chess piece images."""
 
     def __init__(
         self,
-        data_dir: Path | str,
-        batch_size: int = 32,
-        shuffle: bool = True,
-        seed: int | None = None,
+        image_files: List[str],
+        label_map: dict,
+        transform: Optional[Callable] = None,
     ):
-        """Initialize data loader.
-
-        Args:
-            data_dir: Directory containing class subdirectories
-            batch_size: Batch size (default: 32)
-            shuffle: Whether to shuffle data (default: True)
-            seed: Random seed for shuffling (default: None)
-        """
-        self.data_dir = Path(data_dir)
-        self.batch_size = batch_size
-        self.shuffle = shuffle
-        self.seed = seed
-
-        # Load dataset
-        print(f"Loading data from {self.data_dir}...")
-        self.images, self.labels, self.file_paths = load_dataset(self.data_dir)
-        print(f"Loaded {len(self.images)} images")
-
-    def __iter__(self):
-        """Return iterator over batches."""
-        return batch_iterate(
-            self.images,
-            self.labels,
-            self.batch_size,
-            shuffle=self.shuffle,
-            seed=self.seed,
-        )
+        self.image_files = image_files
+        self.label_map = label_map
+        self.transform = transform
 
     def __len__(self) -> int:
-        """Return number of batches."""
-        return (len(self.images) + self.batch_size - 1) // self.batch_size
+        return len(self.image_files)
 
-    @property
-    def num_samples(self) -> int:
-        """Return total number of samples."""
-        return len(self.images)
+    def __getitem__(self, idx: int) -> tuple:
+        image_path = self.image_files[idx]
+
+        try:
+            img = Image.open(image_path).convert("RGB")
+        except Exception as e:
+            print(f"Error loading image {image_path}: {e}")
+            # On error, return the next item
+            return self.__getitem__((idx + 1) % len(self))
+
+        if self.transform:
+            img = self.transform(img)
+
+        # Normalize to [0, 1]
+        img_array = np.array(img, dtype=np.float32) / 255.0
+
+        label_name = get_label_from_path(image_path)
+        label = self.label_map[label_name]
+
+        return img_array, label
+
+
+def collate_fn(batch: list) -> tuple[mx.array, mx.array]:
+    """
+    Custom collate function to convert a batch of numpy arrays from the dataset
+    into a single MLX array for images and an MLX array for labels.
+    """
+    images, labels = zip(*batch)
+    images = np.stack(images)
+    labels = np.array(labels)
+    return mx.array(images), mx.array(labels)

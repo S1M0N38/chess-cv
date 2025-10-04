@@ -3,13 +3,12 @@
 import mlx.core as mx
 import mlx.nn as nn
 import numpy as np
+from torch.utils.data import DataLoader
 
-from .data import CLASS_NAMES, DataLoader
+from .data import CLASS_NAMES
 
 
-def compute_accuracy(
-    model: nn.Module, images: mx.array, labels: mx.array
-) -> float:
+def compute_accuracy(model: nn.Module, images: mx.array, labels: mx.array) -> float:
     """Compute accuracy on a dataset.
 
     Args:
