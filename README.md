@@ -47,7 +47,7 @@ git clone https://github.com/S1M0N38/chess-cv.git
 cd chess-cv
 
 # Install dependencies
-uv sync --all-extras
+uv sync
 ```
 
 ## Usage
