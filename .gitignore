@@ -174,3 +174,6 @@ cython_debug/
 .pypirc
 .envrc
 data
+outputs
+checkpoints
+.DS_Store
