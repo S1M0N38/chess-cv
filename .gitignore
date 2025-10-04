@@ -173,7 +173,9 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .envrc
-data
+data/train
+data/validate
+data/test
 outputs
 checkpoints
 .DS_Store
