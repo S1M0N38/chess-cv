@@ -97,7 +97,11 @@ class WandbLogger:
         if not self.enabled or self.run is None:
             return
 
-        log_dict = {key: self.wandb.Image(str(image) if isinstance(image, (Path, str)) else image, caption=caption)}
+        log_dict = {
+            key: self.wandb.Image(
+                str(image) if isinstance(image, (Path, str)) else image, caption=caption
+            )
+        }
 
         if step is not None:
             self.wandb.log(log_dict, step=step, commit=commit)
@@ -152,13 +156,11 @@ class WandbLogger:
             return
 
         # Create a wandb Table for bar chart
-        table = self.wandb.Table(data=[[k, v] for k, v in data.items()], columns=[x_label, y_label])
+        table = self.wandb.Table(
+            data=[[k, v] for k, v in data.items()], columns=[x_label, y_label]
+        )
         self.wandb.log(
-            {
-                title: self.wandb.plot.bar(
-                    table, x_label, y_label, title=title
-                )
-            }
+            {title: self.wandb.plot.bar(table, x_label, y_label, title=title)}
         )
 
     def log_model(

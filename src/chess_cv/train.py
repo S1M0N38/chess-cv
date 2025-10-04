@@ -236,9 +236,9 @@ def train(
 
                 # Log original
                 wandb_logger.log_image(
-                    f"augmentation/original_{i+1}",
+                    f"augmentation/original_{i + 1}",
                     np.array(resized_original),
-                    caption=f"Original {i+1}",
+                    caption=f"Original {i + 1}",
                     step=0,
                     commit=False,
                 )
@@ -246,13 +246,15 @@ def train(
                 # Log augmented version
                 is_last = i == num_examples - 1
                 wandb_logger.log_image(
-                    f"augmentation/augmented_{i+1}",
+                    f"augmentation/augmented_{i + 1}",
                     np.array(augmented_image),
-                    caption=f"Augmented {i+1}",
+                    caption=f"Augmented {i + 1}",
                     step=0,
                     commit=is_last,
                 )
-            print(f"\nLogged augmentation examples to wandb ({num_examples} original + {num_examples} augmented)")
+            print(
+                f"\nLogged augmentation examples to wandb ({num_examples} original + {num_examples} augmented)"
+            )
         else:
             # Save to file when not using wandb
             # Create 8x2 grid: 8 rows, each with original and augmented
@@ -265,12 +267,12 @@ def train(
 
                 # Show original
                 axes[i, 0].imshow(resized_original)
-                axes[i, 0].set_title(f"Original {i+1}", fontsize=10)
+                axes[i, 0].set_title(f"Original {i + 1}", fontsize=10)
                 axes[i, 0].axis("off")
 
                 # Show augmented
                 axes[i, 1].imshow(augmented_image)
-                axes[i, 1].set_title(f"Augmented {i+1}", fontsize=10)
+                axes[i, 1].set_title(f"Augmented {i + 1}", fontsize=10)
                 axes[i, 1].axis("off")
 
             plt.tight_layout()
@@ -279,8 +281,10 @@ def train(
             from .constants import AUGMENTATION_EXAMPLE_FILENAME
 
             output_path = os.path.join(output_dir, AUGMENTATION_EXAMPLE_FILENAME)
-            plt.savefig(output_path, dpi=150, bbox_inches='tight')
-            print(f"\nSaved augmentation examples to {output_path} ({num_examples} pairs)")
+            plt.savefig(output_path, dpi=150, bbox_inches="tight")
+            print(
+                f"\nSaved augmentation examples to {output_path} ({num_examples} pairs)"
+            )
             plt.close(fig)
 
     # Create model
@@ -367,7 +371,7 @@ def train(
         model_path = checkpoint_dir / BEST_MODEL_FILENAME
         if model_path.exists():
             wandb_logger.log_model(model_path, name="chess-cv-model", aliases=["best"])
-            print(f"\nLogged best model to wandb")
+            print("\nLogged best model to wandb")
     else:
         visualizer.save()
         visualizer.close()

@@ -28,7 +28,21 @@ BOARDS_DIR = DEFAULT_DATA_DIR / "boards"
 PIECES_DIR = DEFAULT_DATA_DIR / "pieces"
 
 # All piece classes (12 pieces + empty square)
-PIECE_CLASSES = ["bB", "bK", "bN", "bP", "bQ", "bR", "wB", "wK", "wN", "wP", "wQ", "wR", "xx"]
+PIECE_CLASSES = [
+    "bB",
+    "bK",
+    "bN",
+    "bP",
+    "bQ",
+    "bR",
+    "wB",
+    "wK",
+    "wN",
+    "wP",
+    "wQ",
+    "wR",
+    "xx",
+]
 
 # Square coordinates for rendering on dark (a1) and light (a2) squares
 DARK_SQUARE = {"file": 0, "rank": 7, "name": "dark"}
