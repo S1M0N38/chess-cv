@@ -179,3 +179,4 @@ data/test
 outputs
 checkpoints
 .DS_Store
+wandb
