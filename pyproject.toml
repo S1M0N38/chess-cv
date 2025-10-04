@@ -11,6 +11,8 @@ dependencies = [
   "matplotlib>=3.10.0",
   "tqdm>=4.67.1",
   "pillow>=11.3.0",
+  "torch>=2.8.0",
+  "torchvision>=0.23.0",
 ]
 classifiers = [
   "License :: OSI Approved :: MIT License",
