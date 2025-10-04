@@ -42,6 +42,7 @@ from .evaluate import (
 )
 from .model import create_model
 from .visualize import plot_confusion_matrix, plot_per_class_accuracy
+from .wandb_utils import WandbLogger
 
 
 def test(
@@ -52,11 +53,26 @@ def test(
     image_size: int = DEFAULT_IMAGE_SIZE,
     num_workers: int = DEFAULT_NUM_WORKERS,
     output_dir: Path | str = DEFAULT_OUTPUT_DIR,
+    use_wandb: bool = False,
 ) -> None:
     """Test the trained model."""
     checkpoint_path = Path(checkpoint_path)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Initialize wandb logger
+    wandb_logger = WandbLogger(enabled=use_wandb)
+    if use_wandb:
+        wandb_logger.init(
+            project="chess-cv-evaluation",
+            config={
+                "test_dir": str(test_dir),
+                "checkpoint_path": str(checkpoint_path),
+                "batch_size": batch_size,
+                "image_size": image_size,
+                "num_workers": num_workers,
+            },
+        )
 
     if not checkpoint_path.exists():
         print(f"Error: Checkpoint not found at {checkpoint_path}")
@@ -110,6 +126,20 @@ def test(
     results = evaluate_model(model, test_loader, batch_size=batch_size)
     print_evaluation_results(results)
 
+    # Log test results to wandb
+    if use_wandb:
+        wandb_logger.log(
+            {
+                "test/accuracy": results["accuracy"],
+                "test/loss": results["loss"],
+            }
+        )
+        # Log per-class accuracy
+        per_class_acc = results["per_class_accuracy"]
+        if isinstance(per_class_acc, dict):
+            for class_name, acc in per_class_acc.items():
+                wandb_logger.log({f"test/class_accuracy/{class_name}": acc})
+
     # Gather all data for confusion matrix
     print("\nGathering all test data for confusion matrix...")
     all_images = []
@@ -155,24 +185,70 @@ def test(
     print("SAVING VISUALIZATIONS")
     print("=" * 60)
 
-    plot_confusion_matrix(
-        confusion_matrix,
-        class_names=CLASS_NAMES,
-        output_dir=output_dir,
-        filename=TEST_CONFUSION_MATRIX_FILENAME,
-    )
-    per_class_acc = results["per_class_accuracy"]
-    assert isinstance(per_class_acc, dict)
-    plot_per_class_accuracy(
-        per_class_acc,
-        output_dir=output_dir,
-        filename=TEST_PER_CLASS_ACCURACY_FILENAME,
-    )
+    if use_wandb:
+        # Log confusion matrix to wandb
+        y_true = labels_array.tolist()
+        y_pred = predictions.tolist()
+        wandb_logger.log_confusion_matrix(
+            y_true=np.array(y_true),
+            y_pred=np.array(y_pred),
+            class_names=CLASS_NAMES,
+            title="Test Confusion Matrix",
+        )
+
+        # Log per-class accuracy as bar chart
+        per_class_acc = results["per_class_accuracy"]
+        assert isinstance(per_class_acc, dict)
+        wandb_logger.log_bar_chart(
+            data=per_class_acc,
+            title="Per-Class Accuracy",
+            x_label="Class",
+            y_label="Accuracy",
+        )
+
+        # Log sample misclassified images to wandb
+        print("Logging sample misclassified images to wandb...")
+        max_samples = min(20, len(misclassified_indices))  # Log up to 20 samples
+        for i, idx in enumerate(misclassified_indices[:max_samples].tolist()):
+            image_path = Path(test_dataset.image_files[idx])
+            true_label_idx = int(labels_array[idx].item())  # type: ignore[union-attr]
+            pred_label_idx = int(predictions[idx].item())  # type: ignore[union-attr]
+            true_label = CLASS_NAMES[true_label_idx]
+            predicted_label = CLASS_NAMES[pred_label_idx]
+
+            wandb_logger.log_image(
+                f"misclassified/{i}",
+                image_path,
+                caption=f"True: {true_label}, Predicted: {predicted_label}",
+            )
+
+        print(f"Logged {max_samples} misclassified images to wandb")
+    else:
+        # Save matplotlib plots to files
+        plot_confusion_matrix(
+            confusion_matrix,
+            class_names=CLASS_NAMES,
+            output_dir=output_dir,
+            filename=TEST_CONFUSION_MATRIX_FILENAME,
+        )
+        per_class_acc = results["per_class_accuracy"]
+        assert isinstance(per_class_acc, dict)
+        plot_per_class_accuracy(
+            per_class_acc,
+            output_dir=output_dir,
+            filename=TEST_PER_CLASS_ACCURACY_FILENAME,
+        )
 
     print("\n" + "=" * 60)
     print("TESTING COMPLETE")
     print("=" * 60)
-    print(f"Results saved to: {output_dir}")
+    if use_wandb:
+        print("Results logged to wandb")
+    else:
+        print(f"Results saved to: {output_dir}")
+
+    # Finish wandb run
+    wandb_logger.finish()
 
 
 def main() -> None:
@@ -222,6 +298,11 @@ def main() -> None:
         default=DEFAULT_OUTPUT_DIR,
         help=f"Output directory for results (default: {DEFAULT_OUTPUT_DIR})",
     )
+    parser.add_argument(
+        "--wandb",
+        action="store_true",
+        help="Enable Weights & Biases logging (disables matplotlib visualization)",
+    )
 
     args = parser.parse_args()
 
@@ -233,6 +314,7 @@ def main() -> None:
         image_size=args.image_size,
         num_workers=args.num_workers,
         output_dir=args.output_dir,
+        use_wandb=args.wandb,
     )
 
 

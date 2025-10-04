@@ -49,6 +49,7 @@ from .data import (
 )
 from .model import create_model
 from .visualize import TrainingVisualizer
+from .wandb_utils import WandbLogger
 
 
 def loss_fn(model: nn.Module, images: mx.array, labels: mx.array) -> mx.array:
@@ -133,10 +134,29 @@ def train(
     patience: int = DEFAULT_PATIENCE,
     image_size: int = DEFAULT_IMAGE_SIZE,
     num_workers: int = DEFAULT_NUM_WORKERS,
+    use_wandb: bool = False,
 ) -> None:
     """Train the model."""
     checkpoint_dir = Path(checkpoint_dir)
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+    # Initialize wandb logger
+    wandb_logger = WandbLogger(enabled=use_wandb)
+    if use_wandb:
+        wandb_logger.init(
+            project="chess-cv-training",
+            config={
+                "batch_size": batch_size,
+                "learning_rate": learning_rate,
+                "weight_decay": weight_decay,
+                "num_epochs": num_epochs,
+                "patience": patience,
+                "image_size": image_size,
+                "num_workers": num_workers,
+                "train_dir": str(train_dir),
+                "val_dir": str(val_dir),
+            },
+        )
 
     print("=" * 60)
     print("LOADING DATA")
@@ -203,28 +223,65 @@ def train(
     print(f"Validation batches: {len(val_loader)}")
 
     # Visualization of augmentation
-    if train_files:
-        original_image = Image.open(train_files[0]).convert("RGB")
-        resized_original = val_transforms(original_image)
-        augmented_image = train_transforms(original_image)
+    if train_files and len(train_files) >= 8:
+        num_examples = 8
+        import numpy as np
 
-        fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-        ax[0].imshow(resized_original)
-        ax[0].set_title("Original (Resized)")
-        ax[0].axis("off")
-        ax[1].imshow(augmented_image)
-        ax[1].set_title("Augmented")
-        ax[1].axis("off")
+        if use_wandb:
+            # Log augmentation examples to wandb
+            for i in range(num_examples):
+                original_image = Image.open(train_files[i]).convert("RGB")
+                resized_original = val_transforms(original_image)
+                augmented_image = train_transforms(original_image)
 
-        plt.tight_layout()
-        output_dir = DEFAULT_OUTPUT_DIR
-        os.makedirs(output_dir, exist_ok=True)
-        from .constants import AUGMENTATION_EXAMPLE_FILENAME
+                # Log original
+                wandb_logger.log_image(
+                    f"augmentation/original_{i+1}",
+                    np.array(resized_original),
+                    caption=f"Original {i+1}",
+                    step=0,
+                    commit=False,
+                )
 
-        output_path = os.path.join(output_dir, AUGMENTATION_EXAMPLE_FILENAME)
-        plt.savefig(output_path)
-        print(f"\nSaved augmentation example to {output_path}")
-        plt.close(fig)
+                # Log augmented version
+                is_last = i == num_examples - 1
+                wandb_logger.log_image(
+                    f"augmentation/augmented_{i+1}",
+                    np.array(augmented_image),
+                    caption=f"Augmented {i+1}",
+                    step=0,
+                    commit=is_last,
+                )
+            print(f"\nLogged augmentation examples to wandb ({num_examples} original + {num_examples} augmented)")
+        else:
+            # Save to file when not using wandb
+            # Create 8x2 grid: 8 rows, each with original and augmented
+            fig, axes = plt.subplots(8, 2, figsize=(8, 24))
+
+            for i in range(num_examples):
+                original_image = Image.open(train_files[i]).convert("RGB")
+                resized_original = val_transforms(original_image)
+                augmented_image = train_transforms(original_image)
+
+                # Show original
+                axes[i, 0].imshow(resized_original)
+                axes[i, 0].set_title(f"Original {i+1}", fontsize=10)
+                axes[i, 0].axis("off")
+
+                # Show augmented
+                axes[i, 1].imshow(augmented_image)
+                axes[i, 1].set_title(f"Augmented {i+1}", fontsize=10)
+                axes[i, 1].axis("off")
+
+            plt.tight_layout()
+            output_dir = DEFAULT_OUTPUT_DIR
+            os.makedirs(output_dir, exist_ok=True)
+            from .constants import AUGMENTATION_EXAMPLE_FILENAME
+
+            output_path = os.path.join(output_dir, AUGMENTATION_EXAMPLE_FILENAME)
+            plt.savefig(output_path, dpi=150, bbox_inches='tight')
+            print(f"\nSaved augmentation examples to {output_path} ({num_examples} pairs)")
+            plt.close(fig)
 
     # Create model
     print("\n" + "=" * 60)
@@ -247,7 +304,10 @@ def train(
 
     best_val_acc = 0.0
     epochs_without_improvement = 0
-    visualizer = TrainingVisualizer()
+
+    # Only use TrainingVisualizer when not using wandb
+    if not use_wandb:
+        visualizer = TrainingVisualizer()
 
     print("\n" + "=" * 60)
     print("TRAINING")
@@ -259,7 +319,22 @@ def train(
             model, optimizer, train_loader, loss_and_grad_fn
         )
         val_loss, val_acc = validate_epoch(model, val_loader)
-        visualizer.update(epoch + 1, train_loss, train_acc, val_loss, val_acc)
+
+        # Update visualizer or log to wandb
+        if use_wandb:
+            wandb_logger.log(
+                {
+                    "epoch": epoch + 1,
+                    "train/loss": train_loss,
+                    "train/accuracy": train_acc,
+                    "val/loss": val_loss,
+                    "val/accuracy": val_acc,
+                    "best_val_accuracy": best_val_acc,
+                },
+                step=epoch + 1,
+            )
+        else:
+            visualizer.update(epoch + 1, train_loss, train_acc, val_loss, val_acc)
 
         epoch_pbar.set_postfix(
             {
@@ -286,14 +361,25 @@ def train(
             print(f"\nEarly stopping triggered after {epoch + 1} epochs")
             break
 
-    visualizer.save()
-    visualizer.close()
+    # Save visualizations or log model to wandb
+    if use_wandb:
+        # Log the best model as an artifact
+        model_path = checkpoint_dir / BEST_MODEL_FILENAME
+        if model_path.exists():
+            wandb_logger.log_model(model_path, name="chess-cv-model", aliases=["best"])
+            print(f"\nLogged best model to wandb")
+    else:
+        visualizer.save()
+        visualizer.close()
 
     print("\n" + "=" * 60)
     print("TRAINING COMPLETE")
     print("=" * 60)
     print(f"Best validation accuracy: {best_val_acc:.4f}")
     print(f"Model saved to: {checkpoint_dir / BEST_MODEL_FILENAME}")
+
+    # Finish wandb run
+    wandb_logger.finish()
 
 
 def main() -> None:
@@ -361,6 +447,11 @@ def main() -> None:
         default=DEFAULT_NUM_WORKERS,
         help=f"Number of data loading workers (default: {DEFAULT_NUM_WORKERS})",
     )
+    parser.add_argument(
+        "--wandb",
+        action="store_true",
+        help="Enable Weights & Biases logging (disables matplotlib visualization)",
+    )
 
     args = parser.parse_args()
 
@@ -375,6 +466,7 @@ def main() -> None:
         patience=args.patience,
         image_size=args.image_size,
         num_workers=args.num_workers,
+        use_wandb=args.wandb,
     )
 
 
