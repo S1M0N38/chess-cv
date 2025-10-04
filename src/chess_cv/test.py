@@ -1,7 +1,10 @@
 """Test script for evaluating trained model."""
 
+import argparse
 import shutil
 from pathlib import Path
+
+__all__ = ["test", "main"]
 
 import mlx.core as mx
 import numpy as np
@@ -11,6 +14,19 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
 
+from .constants import (
+    BEST_MODEL_FILENAME,
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_CHECKPOINT_DIR,
+    DEFAULT_IMAGE_SIZE,
+    DEFAULT_NUM_WORKERS,
+    DEFAULT_OUTPUT_DIR,
+    DEFAULT_TEST_DIR,
+    DEFAULT_TRAIN_DIR,
+    MISCLASSIFIED_DIR,
+    TEST_CONFUSION_MATRIX_FILENAME,
+    TEST_PER_CLASS_ACCURACY_FILENAME,
+)
 from .data import (
     CLASS_NAMES,
     ChessPiecesDataset,
@@ -29,13 +45,13 @@ from .visualize import plot_confusion_matrix, plot_per_class_accuracy
 
 
 def test(
-    test_dir: Path | str = "data/test",
-    train_dir: Path | str = "data/train",  # For label map
-    checkpoint_path: Path | str = "checkpoints/best_model.safetensors",
-    batch_size: int = 256,
-    image_size: int = 32,
-    num_workers: int = 4,
-    output_dir: Path | str = "outputs",
+    test_dir: Path | str = DEFAULT_TEST_DIR,
+    train_dir: Path | str = DEFAULT_TRAIN_DIR,  # For label map
+    checkpoint_path: Path | str = DEFAULT_CHECKPOINT_DIR / BEST_MODEL_FILENAME,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+    image_size: int = DEFAULT_IMAGE_SIZE,
+    num_workers: int = DEFAULT_NUM_WORKERS,
+    output_dir: Path | str = DEFAULT_OUTPUT_DIR,
 ) -> None:
     """Test the trained model."""
     checkpoint_path = Path(checkpoint_path)
@@ -82,7 +98,9 @@ def test(
 
     print(f"Loading checkpoint from: {checkpoint_path}")
     checkpoint = mx.load(str(checkpoint_path))
-    model.update(tree_unflatten(list(checkpoint.items())))
+    # MLX load returns dict-like structure
+    checkpoint_items = list(checkpoint.items())  # type: ignore[attr-defined]
+    model.update(tree_unflatten(checkpoint_items))
     mx.eval(model.parameters())
     print("✓ Model loaded successfully")
 
@@ -109,18 +127,22 @@ def test(
 
     # Save misclassified images
     print("Saving misclassified images...")
-    misclassified_dir = output_dir / "misclassified_images"
+    misclassified_dir = output_dir / MISCLASSIFIED_DIR
     if misclassified_dir.exists():
         shutil.rmtree(misclassified_dir)
     misclassified_dir.mkdir(parents=True)
 
     predictions = mx.argmax(model(images_array), axis=1)
-    misclassified_indices = np.nonzero((predictions != labels_array).tolist())[0]
+    misclassified_mask = predictions != labels_array  # type: ignore[assignment]
+    misclassified_array = np.array(misclassified_mask)  # type: ignore[arg-type]
+    misclassified_indices = np.nonzero(misclassified_array)[0]
 
-    for i in misclassified_indices.tolist():
-        image_path = Path(test_dataset.image_files[i])
-        true_label = CLASS_NAMES[labels_array[i].item()]
-        predicted_label = CLASS_NAMES[predictions[i].item()]
+    for idx in misclassified_indices.tolist():
+        image_path = Path(test_dataset.image_files[idx])
+        true_label_idx = int(labels_array[idx].item())  # type: ignore[union-attr]
+        pred_label_idx = int(predictions[idx].item())  # type: ignore[union-attr]
+        true_label = CLASS_NAMES[true_label_idx]
+        predicted_label = CLASS_NAMES[pred_label_idx]
 
         # Open the original image (not the transformed one)
         img = Image.open(image_path)
@@ -137,12 +159,14 @@ def test(
         confusion_matrix,
         class_names=CLASS_NAMES,
         output_dir=output_dir,
-        filename="test_confusion_matrix.png",
+        filename=TEST_CONFUSION_MATRIX_FILENAME,
     )
+    per_class_acc = results["per_class_accuracy"]
+    assert isinstance(per_class_acc, dict)
     plot_per_class_accuracy(
-        results["per_class_accuracy"],
+        per_class_acc,
         output_dir=output_dir,
-        filename="test_per_class_accuracy.png",
+        filename=TEST_PER_CLASS_ACCURACY_FILENAME,
     )
 
     print("\n" + "=" * 60)
@@ -152,8 +176,64 @@ def test(
 
 
 def main() -> None:
-    """Run test script."""
-    test()
+    """Run test script with CLI argument parsing."""
+    parser = argparse.ArgumentParser(
+        description="Test and evaluate trained chess piece classification model"
+    )
+    parser.add_argument(
+        "--test-dir",
+        type=Path,
+        default=DEFAULT_TEST_DIR,
+        help=f"Test data directory (default: {DEFAULT_TEST_DIR})",
+    )
+    parser.add_argument(
+        "--train-dir",
+        type=Path,
+        default=DEFAULT_TRAIN_DIR,
+        help=f"Training data directory for label map (default: {DEFAULT_TRAIN_DIR})",
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=Path,
+        default=DEFAULT_CHECKPOINT_DIR / BEST_MODEL_FILENAME,
+        help=f"Model checkpoint path (default: {DEFAULT_CHECKPOINT_DIR / BEST_MODEL_FILENAME})",
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=DEFAULT_BATCH_SIZE,
+        help=f"Batch size (default: {DEFAULT_BATCH_SIZE})",
+    )
+    parser.add_argument(
+        "--image-size",
+        type=int,
+        default=DEFAULT_IMAGE_SIZE,
+        help=f"Image size (default: {DEFAULT_IMAGE_SIZE})",
+    )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=DEFAULT_NUM_WORKERS,
+        help=f"Number of data loading workers (default: {DEFAULT_NUM_WORKERS})",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=DEFAULT_OUTPUT_DIR,
+        help=f"Output directory for results (default: {DEFAULT_OUTPUT_DIR})",
+    )
+
+    args = parser.parse_args()
+
+    test(
+        test_dir=args.test_dir,
+        train_dir=args.train_dir,
+        checkpoint_path=args.checkpoint,
+        batch_size=args.batch_size,
+        image_size=args.image_size,
+        num_workers=args.num_workers,
+        output_dir=args.output_dir,
+    )
 
 
 if __name__ == "__main__":

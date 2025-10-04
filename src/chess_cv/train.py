@@ -1,7 +1,10 @@
 """Training script for chess piece classification."""
 
+import argparse
 import os
 from pathlib import Path
+
+__all__ = ["train", "main"]
 
 import matplotlib.pyplot as plt
 import mlx.core as mx
@@ -13,6 +16,29 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
 
+from .constants import (
+    AUGMENTATION_BRIGHTNESS,
+    AUGMENTATION_CONTRAST,
+    AUGMENTATION_NOISE_MEAN,
+    AUGMENTATION_NOISE_STD,
+    AUGMENTATION_ROTATION_DEGREES,
+    AUGMENTATION_SATURATION,
+    AUGMENTATION_SCALE_MAX,
+    AUGMENTATION_SCALE_MIN,
+    BEST_MODEL_FILENAME,
+    DEFAULT_BATCH_SIZE,
+    DEFAULT_CHECKPOINT_DIR,
+    DEFAULT_IMAGE_SIZE,
+    DEFAULT_LEARNING_RATE,
+    DEFAULT_NUM_EPOCHS,
+    DEFAULT_NUM_WORKERS,
+    DEFAULT_OUTPUT_DIR,
+    DEFAULT_PATIENCE,
+    DEFAULT_TRAIN_DIR,
+    DEFAULT_VAL_DIR,
+    DEFAULT_WEIGHT_DECAY,
+    OPTIMIZER_FILENAME,
+)
 from .data import (
     AddGaussianNoise,
     ChessPiecesDataset,
@@ -97,16 +123,16 @@ def validate_epoch(model: nn.Module, val_loader: DataLoader) -> tuple[float, flo
 
 
 def train(
-    train_dir: Path | str = "data/train",
-    val_dir: Path | str = "data/validate",
-    checkpoint_dir: Path | str = "checkpoints",
-    batch_size: int = 128,
-    learning_rate: float = 2e-4,
-    weight_decay: float = 5e-4,
-    num_epochs: int = 100,
-    patience: int = 15,
-    image_size: int = 32,
-    num_workers: int = 4,
+    train_dir: Path | str = DEFAULT_TRAIN_DIR,
+    val_dir: Path | str = DEFAULT_VAL_DIR,
+    checkpoint_dir: Path | str = DEFAULT_CHECKPOINT_DIR,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+    learning_rate: float = DEFAULT_LEARNING_RATE,
+    weight_decay: float = DEFAULT_WEIGHT_DECAY,
+    num_epochs: int = DEFAULT_NUM_EPOCHS,
+    patience: int = DEFAULT_PATIENCE,
+    image_size: int = DEFAULT_IMAGE_SIZE,
+    num_workers: int = DEFAULT_NUM_WORKERS,
 ) -> None:
     """Train the model."""
     checkpoint_dir = Path(checkpoint_dir)
@@ -127,12 +153,18 @@ def train(
     train_transforms = transforms.Compose(
         [
             transforms.RandomResizedCrop(
-                size=(image_size, image_size), scale=(0.8, 1.0), antialias=True
+                size=(image_size, image_size),
+                scale=(AUGMENTATION_SCALE_MIN, AUGMENTATION_SCALE_MAX),
+                antialias=True,
             ),
             transforms.RandomHorizontalFlip(),
-            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
-            transforms.RandomRotation(degrees=5),
-            AddGaussianNoise(mean=0.0, std=0.05),
+            transforms.ColorJitter(
+                brightness=AUGMENTATION_BRIGHTNESS,
+                contrast=AUGMENTATION_CONTRAST,
+                saturation=AUGMENTATION_SATURATION,
+            ),
+            transforms.RandomRotation(degrees=AUGMENTATION_ROTATION_DEGREES),
+            AddGaussianNoise(mean=AUGMENTATION_NOISE_MEAN, std=AUGMENTATION_NOISE_STD),
         ]
     )
     val_transforms = transforms.Compose(
@@ -185,9 +217,11 @@ def train(
         ax[1].axis("off")
 
         plt.tight_layout()
-        output_dir = "outputs"
+        output_dir = DEFAULT_OUTPUT_DIR
         os.makedirs(output_dir, exist_ok=True)
-        output_path = os.path.join(output_dir, "augmentation_example.png")
+        from .constants import AUGMENTATION_EXAMPLE_FILENAME
+
+        output_path = os.path.join(output_dir, AUGMENTATION_EXAMPLE_FILENAME)
         plt.savefig(output_path)
         print(f"\nSaved augmentation example to {output_path}")
         plt.close(fig)
@@ -199,7 +233,9 @@ def train(
     model = create_model(num_classes=num_classes)
     print(model)
 
-    num_params = sum(v.size for _, v in tree_flatten(model.parameters()))
+    # Calculate total parameters
+    param_list = tree_flatten(model.parameters())
+    num_params = sum(v.size for _, v in param_list)  # type: ignore[attr-defined]
     print(f"\nTotal parameters: {num_params:,}")
 
     optimizer = optim.AdamW(learning_rate=learning_rate, weight_decay=weight_decay)
@@ -237,9 +273,9 @@ def train(
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             epochs_without_improvement = 0
-            model_path = checkpoint_dir / "best_model.safetensors"
+            model_path = checkpoint_dir / BEST_MODEL_FILENAME
             mx.save_safetensors(str(model_path), dict(tree_flatten(model.parameters())))
-            optimizer_path = checkpoint_dir / "optimizer.safetensors"
+            optimizer_path = checkpoint_dir / OPTIMIZER_FILENAME
             mx.save_safetensors(
                 str(optimizer_path), dict(tree_flatten(optimizer.state))
             )
@@ -257,12 +293,89 @@ def train(
     print("TRAINING COMPLETE")
     print("=" * 60)
     print(f"Best validation accuracy: {best_val_acc:.4f}")
-    print(f"Model saved to: {checkpoint_dir / 'best_model.safetensors'}")
+    print(f"Model saved to: {checkpoint_dir / BEST_MODEL_FILENAME}")
 
 
 def main() -> None:
-    """Run training script."""
-    train()
+    """Run training script with CLI argument parsing."""
+    parser = argparse.ArgumentParser(
+        description="Train chess piece classification model"
+    )
+    parser.add_argument(
+        "--train-dir",
+        type=Path,
+        default=DEFAULT_TRAIN_DIR,
+        help=f"Training data directory (default: {DEFAULT_TRAIN_DIR})",
+    )
+    parser.add_argument(
+        "--val-dir",
+        type=Path,
+        default=DEFAULT_VAL_DIR,
+        help=f"Validation data directory (default: {DEFAULT_VAL_DIR})",
+    )
+    parser.add_argument(
+        "--checkpoint-dir",
+        type=Path,
+        default=DEFAULT_CHECKPOINT_DIR,
+        help=f"Checkpoint directory (default: {DEFAULT_CHECKPOINT_DIR})",
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=DEFAULT_BATCH_SIZE,
+        help=f"Batch size (default: {DEFAULT_BATCH_SIZE})",
+    )
+    parser.add_argument(
+        "--learning-rate",
+        type=float,
+        default=DEFAULT_LEARNING_RATE,
+        help=f"Learning rate (default: {DEFAULT_LEARNING_RATE})",
+    )
+    parser.add_argument(
+        "--weight-decay",
+        type=float,
+        default=DEFAULT_WEIGHT_DECAY,
+        help=f"Weight decay (default: {DEFAULT_WEIGHT_DECAY})",
+    )
+    parser.add_argument(
+        "--num-epochs",
+        type=int,
+        default=DEFAULT_NUM_EPOCHS,
+        help=f"Number of epochs (default: {DEFAULT_NUM_EPOCHS})",
+    )
+    parser.add_argument(
+        "--patience",
+        type=int,
+        default=DEFAULT_PATIENCE,
+        help=f"Early stopping patience (default: {DEFAULT_PATIENCE})",
+    )
+    parser.add_argument(
+        "--image-size",
+        type=int,
+        default=DEFAULT_IMAGE_SIZE,
+        help=f"Image size (default: {DEFAULT_IMAGE_SIZE})",
+    )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=DEFAULT_NUM_WORKERS,
+        help=f"Number of data loading workers (default: {DEFAULT_NUM_WORKERS})",
+    )
+
+    args = parser.parse_args()
+
+    train(
+        train_dir=args.train_dir,
+        val_dir=args.val_dir,
+        checkpoint_dir=args.checkpoint_dir,
+        batch_size=args.batch_size,
+        learning_rate=args.learning_rate,
+        weight_decay=args.weight_decay,
+        num_epochs=args.num_epochs,
+        patience=args.patience,
+        image_size=args.image_size,
+        num_workers=args.num_workers,
+    )
 
 
 if __name__ == "__main__":

@@ -3,6 +3,8 @@
 import mlx.core as mx
 import mlx.nn as nn
 
+__all__ = ["SimpleCNN", "create_model"]
+
 
 class SimpleCNN(nn.Module):
     """Simple CNN for 32x32 RGB image classification.

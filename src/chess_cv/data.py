@@ -1,6 +1,26 @@
 """Data loading utilities for chess piece images."""
 
-# Class names in alphabetical order
+import glob
+import os
+from typing import Callable
+
+import mlx.core as mx
+import numpy as np
+from PIL import Image
+from torch.utils.data import Dataset
+
+__all__ = [
+    "CLASS_NAMES",
+    "AddGaussianNoise",
+    "ChessPiecesDataset",
+    "collate_fn",
+    "get_all_labels",
+    "get_image_files",
+    "get_label_from_path",
+    "get_label_map",
+]
+
+# Class names in alphabetical order (used across multiple modules)
 CLASS_NAMES = [
     "black_bishop",
     "black_king",
@@ -16,16 +36,6 @@ CLASS_NAMES = [
     "white_queen",
     "white_rook",
 ]
-
-
-import glob
-import os
-from typing import Callable, List, Optional
-
-import mlx.core as mx
-import numpy as np
-from PIL import Image
-from torch.utils.data import Dataset
 
 
 # Custom transform for Gaussian Noise
@@ -54,7 +64,7 @@ class AddGaussianNoise:
         return f"{self.__class__.__name__}(mean={self.mean}, std={self.std})"
 
 
-def get_image_files(data_dir: str) -> List[str]:
+def get_image_files(data_dir: str) -> list[str]:
     """Get all image files from a directory."""
     return glob.glob(os.path.join(data_dir, "**", "*.png"), recursive=True)
 
@@ -64,12 +74,12 @@ def get_label_from_path(image_path: str) -> str:
     return image_path.split(os.sep)[-2]
 
 
-def get_all_labels(image_files: List[str]) -> List[str]:
+def get_all_labels(image_files: list[str]) -> list[str]:
     """Get all labels from a list of image files."""
     return [get_label_from_path(image_file) for image_file in image_files]
 
 
-def get_label_map(labels: List[str]) -> dict:
+def get_label_map(labels: list[str]) -> dict[str, int]:
     """Get a map from labels to integers."""
     unique_labels = sorted(list(set(labels)))
     return {label: i for i, label in enumerate(unique_labels)}
@@ -80,9 +90,9 @@ class ChessPiecesDataset(Dataset):
 
     def __init__(
         self,
-        image_files: List[str],
-        label_map: dict,
-        transform: Optional[Callable] = None,
+        image_files: list[str],
+        label_map: dict[str, int],
+        transform: Callable | None = None,
     ):
         self.image_files = image_files
         self.label_map = label_map

@@ -7,6 +7,14 @@ from torch.utils.data import DataLoader
 
 from .data import CLASS_NAMES
 
+__all__ = [
+    "compute_accuracy",
+    "compute_confusion_matrix",
+    "compute_per_class_accuracy",
+    "evaluate_model",
+    "print_evaluation_results",
+]
+
 
 def compute_accuracy(model: nn.Module, images: mx.array, labels: mx.array) -> float:
     """Compute accuracy on a dataset.
@@ -21,7 +29,7 @@ def compute_accuracy(model: nn.Module, images: mx.array, labels: mx.array) -> fl
     """
     logits = model(images)
     predictions = mx.argmax(logits, axis=1)
-    correct = mx.sum(predictions == labels)
+    correct = mx.sum(predictions == labels)  # type: ignore[arg-type]
     accuracy = correct / len(labels)
     return accuracy.item()
 
@@ -46,12 +54,12 @@ def compute_per_class_accuracy(
     per_class_acc = {}
     for class_idx in range(num_classes):
         # Find samples belonging to this class
-        class_mask = labels == class_idx
-        class_samples = mx.sum(class_mask)
+        class_mask = labels == class_idx  # type: ignore[assignment]
+        class_samples = mx.sum(class_mask)  # type: ignore[arg-type]
 
         if class_samples > 0:
             # Compute accuracy for this class
-            class_correct = mx.sum((predictions == labels) & class_mask)
+            class_correct = mx.sum((predictions == labels) & class_mask)  # type: ignore[arg-type,operator]
             class_accuracy = class_correct / class_samples
             per_class_acc[CLASS_NAMES[class_idx]] = class_accuracy.item()
         else:
@@ -119,19 +127,19 @@ def evaluate_model(
     all_labels = mx.concatenate(all_labels)
 
     # Compute overall accuracy
-    correct = mx.sum(all_predictions == all_labels)
+    correct = mx.sum(all_predictions == all_labels)  # type: ignore[arg-type]
     overall_accuracy = (correct / len(all_labels)).item()
 
     # Compute per-class accuracy
     per_class_acc = {}
     for class_idx, class_name in enumerate(CLASS_NAMES):
         # Find samples belonging to this class
-        class_mask = all_labels == class_idx
-        class_samples = mx.sum(class_mask)
+        class_mask = all_labels == class_idx  # type: ignore[assignment]
+        class_samples = mx.sum(class_mask)  # type: ignore[arg-type]
 
         if class_samples > 0:
             # Compute accuracy for this class
-            class_correct = mx.sum((all_predictions == all_labels) & class_mask)
+            class_correct = mx.sum((all_predictions == all_labels) & class_mask)  # type: ignore[arg-type,operator]
             class_accuracy = (class_correct / class_samples).item()
             per_class_acc[class_name] = class_accuracy
         else:
@@ -153,11 +161,14 @@ def print_evaluation_results(results: dict[str, float | dict[str, float]]) -> No
     print("EVALUATION RESULTS")
     print("=" * 60)
 
-    print(f"\nOverall Accuracy: {results['overall_accuracy']:.4f}")
+    overall_acc = results["overall_accuracy"]
+    assert isinstance(overall_acc, float)
+    print(f"\nOverall Accuracy: {overall_acc:.4f}")
 
     print("\nPer-Class Accuracy:")
     print("-" * 60)
     per_class = results["per_class_accuracy"]
+    assert isinstance(per_class, dict)
     for class_name in CLASS_NAMES:
         acc = per_class[class_name]
         print(f"  {class_name:20s}: {acc:.4f}")

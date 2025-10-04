@@ -5,6 +5,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+__all__ = [
+    "TrainingVisualizer",
+    "plot_confusion_matrix",
+    "plot_per_class_accuracy",
+]
+
 
 class TrainingVisualizer:
     """Real-time training visualization."""
@@ -130,7 +136,7 @@ def plot_confusion_matrix(
     # Add text annotations
     for i in range(len(class_names)):
         for j in range(len(class_names)):
-            text = ax.text(
+            ax.text(
                 j,
                 i,
                 str(confusion_matrix[i, j]),

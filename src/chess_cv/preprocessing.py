@@ -1,20 +1,34 @@
 """Data preprocessing: split data into train/validate/test sets."""
 
+import argparse
 import shutil
 from pathlib import Path
 
+__all__ = ["split_data", "main"]
+
 import numpy as np
+
+from .constants import (
+    DEFAULT_ALL_DIR,
+    DEFAULT_RANDOM_SEED,
+    DEFAULT_TEST_DIR,
+    DEFAULT_TEST_RATIO,
+    DEFAULT_TRAIN_DIR,
+    DEFAULT_TRAIN_RATIO,
+    DEFAULT_VAL_DIR,
+    DEFAULT_VAL_RATIO,
+)
 
 
 def split_data(
-    source_dir: Path = Path("data/all"),
-    train_dir: Path = Path("data/train"),
-    val_dir: Path = Path("data/validate"),
-    test_dir: Path = Path("data/test"),
-    train_ratio: float = 0.7,
-    val_ratio: float = 0.15,
-    test_ratio: float = 0.15,
-    seed: int = 42,
+    source_dir: Path = DEFAULT_ALL_DIR,
+    train_dir: Path = DEFAULT_TRAIN_DIR,
+    val_dir: Path = DEFAULT_VAL_DIR,
+    test_dir: Path = DEFAULT_TEST_DIR,
+    train_ratio: float = DEFAULT_TRAIN_RATIO,
+    val_ratio: float = DEFAULT_VAL_RATIO,
+    test_ratio: float = DEFAULT_TEST_RATIO,
+    seed: int = DEFAULT_RANDOM_SEED,
 ) -> None:
     """Split data into train/validate/test sets with stratification.
 
@@ -108,8 +122,71 @@ def split_data(
 
 
 def main() -> None:
-    """Run data preprocessing."""
-    split_data()
+    """Run data preprocessing with CLI argument parsing."""
+    parser = argparse.ArgumentParser(
+        description="Split chess piece data into train/validate/test sets"
+    )
+    parser.add_argument(
+        "--source-dir",
+        type=Path,
+        default=DEFAULT_ALL_DIR,
+        help=f"Source directory containing class subdirectories (default: {DEFAULT_ALL_DIR})",
+    )
+    parser.add_argument(
+        "--train-dir",
+        type=Path,
+        default=DEFAULT_TRAIN_DIR,
+        help=f"Training data output directory (default: {DEFAULT_TRAIN_DIR})",
+    )
+    parser.add_argument(
+        "--val-dir",
+        type=Path,
+        default=DEFAULT_VAL_DIR,
+        help=f"Validation data output directory (default: {DEFAULT_VAL_DIR})",
+    )
+    parser.add_argument(
+        "--test-dir",
+        type=Path,
+        default=DEFAULT_TEST_DIR,
+        help=f"Test data output directory (default: {DEFAULT_TEST_DIR})",
+    )
+    parser.add_argument(
+        "--train-ratio",
+        type=float,
+        default=DEFAULT_TRAIN_RATIO,
+        help=f"Training data ratio (default: {DEFAULT_TRAIN_RATIO})",
+    )
+    parser.add_argument(
+        "--val-ratio",
+        type=float,
+        default=DEFAULT_VAL_RATIO,
+        help=f"Validation data ratio (default: {DEFAULT_VAL_RATIO})",
+    )
+    parser.add_argument(
+        "--test-ratio",
+        type=float,
+        default=DEFAULT_TEST_RATIO,
+        help=f"Test data ratio (default: {DEFAULT_TEST_RATIO})",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=DEFAULT_RANDOM_SEED,
+        help=f"Random seed for reproducibility (default: {DEFAULT_RANDOM_SEED})",
+    )
+
+    args = parser.parse_args()
+
+    split_data(
+        source_dir=args.source_dir,
+        train_dir=args.train_dir,
+        val_dir=args.val_dir,
+        test_dir=args.test_dir,
+        train_ratio=args.train_ratio,
+        val_ratio=args.val_ratio,
+        test_ratio=args.test_ratio,
+        seed=args.seed,
+    )
     print("\n✓ Data preprocessing complete!")
 
 
