@@ -27,6 +27,7 @@ A machine learning project that uses Convolutional Neural Networks (CNNs) to cla
 - **PyTorch/torchvision** – Data loading and augmentation
 - **NumPy** – Numerical computing for data processing
 - **Matplotlib** – Training curve visualization and analysis
+- **Weights & Biases** – Experiment tracking and visualization (optional)
 - **Ruff** – Fast Python linter and formatter
 - **Basedpyright** – Static type checking
 - **pytest** – Testing framework
@@ -111,6 +112,7 @@ python -m chess_cv.train \
 ```
 
 **Training features:**
+
 - Early stopping with patience
 - AdamW optimizer with weight decay
 - Data augmentation (RandomResizedCrop, ColorJitter, Rotation, Gaussian Noise)
@@ -118,12 +120,64 @@ python -m chess_cv.train \
 - Automatic checkpoint saving
 
 **Output:**
+
 - `checkpoints/best_model.safetensors` – Best model weights
 - `checkpoints/optimizer.safetensors` – Optimizer state
 - `outputs/training_curves.png` – Loss and accuracy plots
 - `outputs/augmentation_example.png` – Example of data augmentation
 
-### 3. Evaluation
+### 3. Experiment Tracking with Weights & Biases (Optional)
+
+For advanced experiment tracking and visualization, you can use Weights & Biases (wandb). When enabled with the `--wandb` flag, metrics are logged to the W&B dashboard instead of using matplotlib.
+
+**Setup:**
+
+```bash
+# wandb is already installed as a dependency
+# Login to your W&B account (first time only)
+wandb login
+```
+
+**Training with W&B:**
+
+```bash
+# Train with wandb logging (disables matplotlib)
+python -m chess_cv.train --wandb
+
+# You can combine with other arguments
+python -m chess_cv.train \
+  --wandb \
+  --num-epochs 150 \
+  --learning-rate 0.0001 \
+  --batch-size 64
+```
+
+**What gets logged to W&B:**
+
+- Hyperparameters (batch size, learning rate, epochs, etc.)
+- Training metrics (loss, accuracy) per epoch
+- Validation metrics (loss, accuracy) per epoch
+- Data augmentation examples
+- Best model artifact
+- Real-time metric visualization in W&B dashboard
+
+**Testing with W&B:**
+
+```bash
+# Evaluate with wandb logging
+python -m chess_cv.test --wandb
+```
+
+**What gets logged during testing:**
+
+- Test accuracy and loss
+- Per-class accuracy metrics
+- Confusion matrix visualization
+- Sample misclassified images (up to 20)
+
+**Note:** When using `--wandb`, matplotlib visualization is automatically disabled to avoid redundancy.
+
+### 4. Evaluation
 
 Evaluate the trained model on test data:
 
