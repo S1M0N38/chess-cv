@@ -2,7 +2,7 @@
 
 # Chess CV
 
-*CNN-based chess piece classifier using MLX for Apple Silicon*
+*CNN-based chess piece classifier*
 
 </div>
 
@@ -15,12 +15,14 @@ A machine learning project that uses Convolutional Neural Networks (CNNs) to cla
 ## Features
 
 **Model Architecture**
+
 - Lightweight CNN for 32x32px chess square images
 - 13-class classification (6 white pieces, 6 black pieces, 1 empty)
 - MLX framework for Apple Silicon optimization
 - Data augmentation pipeline (rotation, flip, color jitter, noise)
 
 **Development Tools**
+
 - **MLX** – Apple's ML framework for efficient training on Mac
 - **PyTorch/torchvision** – Data loading and augmentation
 - **NumPy** – Numerical computing for data processing
@@ -71,6 +73,7 @@ python -m chess_cv.preprocessing \
 ```
 
 **Expected directory structure:**
+
 ```
 data/
 ├── boards/           # Board images (256x256px)
@@ -129,6 +132,7 @@ python -m chess_cv.test
 ```
 
 **Evaluation options:**
+
 ```bash
 python -m chess_cv.test \
   --test-dir data/test \
@@ -141,6 +145,7 @@ python -m chess_cv.test \
 ```
 
 **Output:**
+
 - `outputs/test_confusion_matrix.png` – Confusion matrix heatmap
 - `outputs/test_per_class_accuracy.png` – Per-class accuracy bar chart
 - `outputs/misclassified_images/` – Misclassified examples for analysis
@@ -164,13 +169,14 @@ chess-cv/
 ├── checkpoints/              # Model checkpoints
 ├── outputs/                  # Training/evaluation outputs
 ├── tests/                    # Test suite
-├── pyproject.toml           # Project configuration
-└── README.md                # This file
+├── pyproject.toml            # Project configuration
+└── README.md                 # This file
 ```
 
 ## Model Details
 
 ### Architecture
+
 - **Input**: 32×32 RGB images
 - **Layer 1**: Conv2d(3→16) + ReLU + MaxPool
 - **Layer 2**: Conv2d(16→32) + ReLU + MaxPool
@@ -179,6 +185,7 @@ chess-cv/
 - **FC2**: Linear(128→13) - Output logits
 
 ### Training Configuration
+
 - **Optimizer**: AdamW (lr=2e-4, weight_decay=5e-4)
 - **Loss**: Cross-entropy
 - **Batch Size**: 128
@@ -186,6 +193,7 @@ chess-cv/
 - **Classes**: 13 (bB, bK, bN, bP, bQ, bR, wB, wK, wN, wP, wQ, wR, xx)
 
 ### Data Augmentation
+
 - Random resized crop (scale: 0.8-1.0)
 - Random horizontal flip
 - Color jitter (brightness, contrast, saturation: ±0.2)
@@ -217,20 +225,24 @@ All default values are defined in `src/chess_cv/constants.py` and can be overrid
 ## Troubleshooting
 
 **Issue: MLX not working**
+
 - Ensure you're on Apple Silicon (M1/M2/M3)
 - Reinstall MLX: `uv pip install --force-reinstall mlx`
 
 **Issue: Out of memory during training**
+
 - Reduce `--batch-size` (try 64 or 32)
 - Reduce `--num-workers` (try 2 or 1)
 
 **Issue: Poor model performance**
+
 - Increase `--num-epochs` (try 150-200)
 - Adjust `--learning-rate` (try 1e-4 or 5e-4)
 - Check data quality and class balance
 - Review misclassified images in `outputs/misclassified_images/`
 
 **Issue: Data preprocessing fails**
+
 - Verify source directory structure matches expected format
 - Ensure all images are valid PNG files
 - Check that ratios sum to 1.0
