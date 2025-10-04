@@ -1,15 +1,17 @@
-"""Data preprocessing: split data into train/validate/test sets."""
+"""Data preprocessing: generate train/validate/test sets from board-piece combinations."""
 
 import argparse
-import shutil
+import multiprocessing
 from pathlib import Path
 
-__all__ = ["split_data", "main"]
+__all__ = ["generate_split_data", "main"]
 
 import numpy as np
+from PIL import Image
+from tqdm import tqdm
 
 from .constants import (
-    DEFAULT_ALL_DIR,
+    DEFAULT_DATA_DIR,
     DEFAULT_RANDOM_SEED,
     DEFAULT_TEST_DIR,
     DEFAULT_TEST_RATIO,
@@ -19,9 +21,149 @@ from .constants import (
     DEFAULT_VAL_RATIO,
 )
 
+# Image generation constants
+BOARD_SIZE = 256  # Full board in pixels
+SQUARE_SIZE = 32  # Each square in pixels (256 / 8)
+BOARDS_DIR = DEFAULT_DATA_DIR / "boards"
+PIECES_DIR = DEFAULT_DATA_DIR / "pieces"
 
-def split_data(
-    source_dir: Path = DEFAULT_ALL_DIR,
+# All piece classes (12 pieces + empty square)
+PIECE_CLASSES = ["bB", "bK", "bN", "bP", "bQ", "bR", "wB", "wK", "wN", "wP", "wQ", "wR", "xx"]
+
+# Square coordinates for rendering on dark (a1) and light (a2) squares
+DARK_SQUARE = {"file": 0, "rank": 7, "name": "dark"}
+LIGHT_SQUARE = {"file": 0, "rank": 6, "name": "light"}
+
+
+def get_boards() -> list[str]:
+    """Get all board names from boards directory.
+
+    Returns:
+        List of board names (without .png extension)
+    """
+    return sorted([f.stem for f in BOARDS_DIR.glob("*.png")])
+
+
+def get_piece_sets() -> list[str]:
+    """Get all piece set names from pieces directory.
+
+    Returns:
+        List of piece set directory names
+    """
+    return sorted([d.name for d in PIECES_DIR.iterdir() if d.is_dir()])
+
+
+def render_square_with_piece(
+    board_name: str, piece_set: str, piece_class: str, square_info: dict
+) -> Image.Image:
+    """Render a single square with a piece on it.
+
+    Args:
+        board_name: Name of the board (without .png)
+        piece_set: Name of the piece set directory
+        piece_class: Piece class name (e.g., 'bB', 'wP')
+        square_info: Dict with 'file', 'rank', 'name' keys
+
+    Returns:
+        PIL Image of the 32x32 square
+    """
+    # Load board
+    board_path = BOARDS_DIR / f"{board_name}.png"
+    board_img = Image.open(board_path)
+
+    if board_img.mode != "RGBA":
+        board_img = board_img.convert("RGBA")
+
+    # Load piece
+    piece_path = PIECES_DIR / piece_set / f"{piece_class}.png"
+    piece_img = Image.open(piece_path)
+
+    if piece_img.mode != "RGBA":
+        piece_img = piece_img.convert("RGBA")
+
+    # Calculate pixel position
+    x = square_info["file"] * SQUARE_SIZE
+    y = square_info["rank"] * SQUARE_SIZE
+
+    # Paste piece on board
+    board_img.paste(piece_img, (x, y), piece_img)
+
+    # Crop the square
+    crop_box = (x, y, x + SQUARE_SIZE, y + SQUARE_SIZE)
+    return board_img.crop(crop_box)
+
+
+def render_empty_square(board_name: str, square_info: dict) -> Image.Image:
+    """Render a single empty square.
+
+    Args:
+        board_name: Name of the board (without .png)
+        square_info: Dict with 'file', 'rank', 'name' keys
+
+    Returns:
+        PIL Image of the 32x32 square
+    """
+    # Load board
+    board_path = BOARDS_DIR / f"{board_name}.png"
+    board_img = Image.open(board_path)
+
+    if board_img.mode != "RGBA":
+        board_img = board_img.convert("RGBA")
+
+    # Calculate pixel position
+    x = square_info["file"] * SQUARE_SIZE
+    y = square_info["rank"] * SQUARE_SIZE
+
+    # Crop the square
+    crop_box = (x, y, x + SQUARE_SIZE, y + SQUARE_SIZE)
+    return board_img.crop(crop_box)
+
+
+def _process_combination(args: tuple) -> dict:
+    """Worker function to process one board-piece set combination.
+
+    Generates 26 images: 12 pieces × 2 squares + 2 empty squares.
+
+    Args:
+        args: Tuple of (board_name, piece_set, split_name, split_dir)
+
+    Returns:
+        Dict with split name and count of images generated
+    """
+    board, piece_set, split_name, split_dir = args
+
+    # Generate images for each piece on dark and light squares
+    for piece_class in PIECE_CLASSES:
+        if piece_class == "xx":
+            continue  # Handle empty squares separately
+
+        # Dark square
+        img_dark = render_square_with_piece(board, piece_set, piece_class, DARK_SQUARE)
+        output_path = split_dir / piece_class / f"{board}_{piece_set}_dark.png"
+        img_dark.save(output_path)
+
+        # Light square
+        img_light = render_square_with_piece(
+            board, piece_set, piece_class, LIGHT_SQUARE
+        )
+        output_path = split_dir / piece_class / f"{board}_{piece_set}_light.png"
+        img_light.save(output_path)
+
+    # Generate empty square images
+    # Dark square
+    img_dark = render_empty_square(board, DARK_SQUARE)
+    output_path = split_dir / "xx" / f"{board}_{piece_set}_dark.png"
+    img_dark.save(output_path)
+
+    # Light square
+    img_light = render_empty_square(board, LIGHT_SQUARE)
+    output_path = split_dir / "xx" / f"{board}_{piece_set}_light.png"
+    img_light.save(output_path)
+
+    return {"split": split_name, "count": len(PIECE_CLASSES) * 2}
+
+
+def generate_split_data(
     train_dir: Path = DEFAULT_TRAIN_DIR,
     val_dir: Path = DEFAULT_VAL_DIR,
     test_dir: Path = DEFAULT_TEST_DIR,
@@ -30,10 +172,9 @@ def split_data(
     test_ratio: float = DEFAULT_TEST_RATIO,
     seed: int = DEFAULT_RANDOM_SEED,
 ) -> None:
-    """Split data into train/validate/test sets with stratification.
+    """Generate train/validate/test sets from board-piece combinations.
 
     Args:
-        source_dir: Source directory containing class subdirectories
         train_dir: Destination directory for training data
         val_dir: Destination directory for validation data
         test_dir: Destination directory for test data
@@ -49,88 +190,76 @@ def split_data(
     # Set random seed
     rng = np.random.default_rng(seed)
 
-    # Get all class directories
-    class_dirs = sorted([d for d in source_dir.iterdir() if d.is_dir()])
-    class_dirs = [d for d in class_dirs if not d.name.startswith(".")]
+    # Get all boards and piece sets
+    boards = get_boards()
+    piece_sets = get_piece_sets()
 
-    print(f"Found {len(class_dirs)} classes:")
-    for class_dir in class_dirs:
-        print(f"  - {class_dir.name}")
+    print(f"Found {len(boards)} boards and {len(piece_sets)} piece sets")
 
-    # Create destination directories
+    # Create output directory structure
     for split_dir in [train_dir, val_dir, test_dir]:
         split_dir.mkdir(parents=True, exist_ok=True)
-        for class_dir in class_dirs:
-            (split_dir / class_dir.name).mkdir(exist_ok=True)
+        for piece_class in PIECE_CLASSES:
+            (split_dir / piece_class).mkdir(exist_ok=True)
 
-    # Split each class
-    total_train = 0
-    total_val = 0
-    total_test = 0
+    # Create all combinations and assign to splits
+    combinations = [(board, piece_set) for board in boards for piece_set in piece_sets]
+    total_combinations = len(combinations)
 
-    print(
-        f"\nSplitting data (train/val/test = {train_ratio}/{val_ratio}/{test_ratio}):"
+    print(f"Total combinations: {total_combinations}")
+
+    # Randomly assign each combination to a split
+    split_assignments = rng.choice(
+        ["train", "val", "test"],
+        size=total_combinations,
+        p=[train_ratio, val_ratio, test_ratio],
     )
 
-    for class_dir in class_dirs:
-        # Get all image files
-        image_files = sorted(list(class_dir.glob("*.png")))
+    # Prepare tasks for multiprocessing
+    tasks = []
+    for (board, piece_set), split_name in zip(combinations, split_assignments):
+        if split_name == "train":
+            split_dir = train_dir
+        elif split_name == "val":
+            split_dir = val_dir
+        else:
+            split_dir = test_dir
+        tasks.append((board, piece_set, split_name, split_dir))
 
-        # Shuffle files
-        indices = rng.permutation(len(image_files))
+    # Use all CPU cores
+    num_processes = multiprocessing.cpu_count()
 
-        # Calculate split points
-        n_train = int(len(image_files) * train_ratio)
-        n_val = int(len(image_files) * val_ratio)
+    print(
+        f"\nGenerating images using {num_processes} processes "
+        f"(train/val/test = {train_ratio}/{val_ratio}/{test_ratio})..."
+    )
 
-        # Split indices
-        train_indices = indices[:n_train]
-        val_indices = indices[n_train : n_train + n_val]
-        test_indices = indices[n_train + n_val :]
-
-        # Copy files to respective directories
-        for idx in train_indices:
-            shutil.copy2(
-                image_files[idx],
-                train_dir / class_dir.name / image_files[idx].name,
+    # Process combinations in parallel
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        results = list(
+            tqdm(
+                pool.imap_unordered(_process_combination, tasks),
+                total=total_combinations,
+                desc="Generating images",
             )
-        for idx in val_indices:
-            shutil.copy2(
-                image_files[idx],
-                val_dir / class_dir.name / image_files[idx].name,
-            )
-        for idx in test_indices:
-            shutil.copy2(
-                image_files[idx],
-                test_dir / class_dir.name / image_files[idx].name,
-            )
-
-        total_train += len(train_indices)
-        total_val += len(val_indices)
-        total_test += len(test_indices)
-
-        print(
-            f"  {class_dir.name:20s}: {len(train_indices):4d} train, "
-            f"{len(val_indices):4d} val, {len(test_indices):4d} test"
         )
 
-    print("\nTotal:")
-    print(f"  Train:      {total_train:5d} images")
-    print(f"  Validation: {total_val:5d} images")
-    print(f"  Test:       {total_test:5d} images")
-    print(f"  Total:      {total_train + total_val + total_test:5d} images")
+    # Count images per split
+    train_count = sum(r["count"] for r in results if r["split"] == "train")
+    val_count = sum(r["count"] for r in results if r["split"] == "val")
+    test_count = sum(r["count"] for r in results if r["split"] == "test")
+
+    print("\nGeneration complete!")
+    print(f"  Train:      {train_count:6d} images")
+    print(f"  Validation: {val_count:6d} images")
+    print(f"  Test:       {test_count:6d} images")
+    print(f"  Total:      {train_count + val_count + test_count:6d} images")
 
 
 def main() -> None:
     """Run data preprocessing with CLI argument parsing."""
     parser = argparse.ArgumentParser(
-        description="Split chess piece data into train/validate/test sets"
-    )
-    parser.add_argument(
-        "--source-dir",
-        type=Path,
-        default=DEFAULT_ALL_DIR,
-        help=f"Source directory containing class subdirectories (default: {DEFAULT_ALL_DIR})",
+        description="Generate train/validate/test sets from board-piece combinations"
     )
     parser.add_argument(
         "--train-dir",
@@ -177,8 +306,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    split_data(
-        source_dir=args.source_dir,
+    generate_split_data(
         train_dir=args.train_dir,
         val_dir=args.val_dir,
         test_dir=args.test_dir,
@@ -187,7 +315,7 @@ def main() -> None:
         test_ratio=args.test_ratio,
         seed=args.seed,
     )
-    print("\n✓ Data preprocessing complete!")
+    print("\n✓ Data generation complete!")
 
 
 if __name__ == "__main__":
