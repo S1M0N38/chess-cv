@@ -1,6 +1,6 @@
 # Contributing
 
-Welcome to **template-python**! We appreciate your interest in contributing.
+Welcome to **chess-cv**! We appreciate your interest in contributing.
 
 This document provides guidelines and instructions for contributing to the project. Whether you're fixing bugs, improving documentation, or proposing new features, your contributions are welcome.
 
@@ -23,8 +23,8 @@ This section describes how to set up the **recommended** development environment
 1. Download the repository:
 
 ```sh
-git clone https://github.com/S1M0N38/template-python.git
-cd template-python
+git clone https://github.com/S1M0N38/chess-cv.git
+cd chess-cv
 ```
 
 2. Create environment:
@@ -58,7 +58,7 @@ The project follows an automated release process using GitHub Actions:
 2. **Release Please PR**: The [Release Please](https://github.com/googleapis/release-please) GitHub Action automatically maintains a release PR that:
 
    - Updates the version in `pyproject.toml`
-   - Updates the version in `src/template_python/__init__.py`
+   - Updates the version in `src/chess_cv/__init__.py`
    - Updates the `CHANGELOG.md` based on conventional commits
    - The PR is continuously updated as new commits are added to the main branch
 
