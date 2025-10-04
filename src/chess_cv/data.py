@@ -22,19 +22,19 @@ __all__ = [
 
 # Class names in alphabetical order (used across multiple modules)
 CLASS_NAMES = [
-    "black_bishop",
-    "black_king",
-    "black_knight",
-    "black_pawn",
-    "black_queen",
-    "black_rook",
-    "free",
-    "white_bishop",
-    "white_king",
-    "white_knight",
-    "white_pawn",
-    "white_queen",
-    "white_rook",
+    "bB",  # black bishop
+    "bK",  # black king
+    "bN",  # black knight
+    "bP",  # black pawn
+    "bQ",  # black queen
+    "bR",  # black rook
+    "wB",  # white bishop
+    "wK",  # white king
+    "wN",  # white knight
+    "wP",  # white pawn
+    "wQ",  # white queen
+    "wR",  # white rook
+    "xx",  # empty square
 ]
 
 
