@@ -63,32 +63,32 @@ python -m chess_cv.train \
   --train-dir data/train \
   --val-dir data/validate \
   --checkpoint-dir checkpoints \
-  --batch-size 128 \
-  --learning-rate 0.0002 \
-  --weight-decay 0.0005 \
-  --num-epochs 100 \
-  --patience 15 \
+  --batch-size 64 \
+  --learning-rate 0.0003 \
+  --weight-decay 0.0003 \
+  --num-epochs 200 \
+  --patience 999999 \
   --image-size 32 \
-  --num-workers 4
+  --num-workers 8
 ```
 
 ### Training Parameters
 
 **Optimizer Settings:**
 
-- `--learning-rate`: Learning rate for AdamW optimizer (default: 0.0002)
-- `--weight-decay`: Weight decay for regularization (default: 0.0005)
+- `--learning-rate`: Learning rate for AdamW optimizer (default: 0.0003)
+- `--weight-decay`: Weight decay for regularization (default: 0.0003)
 
 **Training Control:**
 
-- `--num-epochs`: Maximum number of epochs (default: 100)
-- `--patience`: Early stopping patience (default: 15)
-- `--batch-size`: Batch size for training (default: 128)
+- `--num-epochs`: Maximum number of epochs (default: 200)
+- `--patience`: Early stopping patience (default: 999999, effectively disabled)
+- `--batch-size`: Batch size for training (default: 64)
 
 **Data Settings:**
 
 - `--image-size`: Input image size (default: 32)
-- `--num-workers`: Number of data loading workers (default: 4)
+- `--num-workers`: Number of data loading workers (default: 8)
 
 **Directories:**
 
@@ -108,7 +108,7 @@ python -m chess_cv.train \
 
 **Early Stopping:**
 
-Training automatically stops if validation accuracy doesn't improve for `--patience` epochs.
+Training can automatically stop if validation accuracy doesn't improve for `--patience` epochs. By default, patience is set very high (999999) to effectively disable early stopping, allowing the full training schedule to run.
 
 **Automatic Checkpointing:**
 
@@ -176,10 +176,10 @@ metric:
 parameters:
   learning_rate:
     distribution: log_uniform
-    min: 0.00001
+    min: 0.0001
     max: 0.001
   batch_size:
-    values: [64, 128, 256]
+    values: [32, 64, 128]
   weight_decay:
     distribution: log_uniform
     min: 0.0001
@@ -203,9 +203,9 @@ python -m chess_cv.test \
   --test-dir data/test \
   --train-dir data/train \
   --checkpoint checkpoints/best_model.safetensors \
-  --batch-size 256 \
+  --batch-size 64 \
   --image-size 32 \
-  --num-workers 4 \
+  --num-workers 8 \
   --output-dir outputs
 ```
 
@@ -277,8 +277,8 @@ python -m chess_cv.upload \
 
 **Out of Memory During Training**: Reduce batch size with `--batch-size 64` or reduce number of workers with `--num-workers 2`.
 
-**Poor Model Performance**: Try training for more epochs (`--num-epochs 150`), experiment with different hyperparameters, use W&B sweeps for optimization, or review misclassified images to verify data quality.
+**Poor Model Performance**: Try adjusting hyperparameters, use W&B sweeps for optimization, or review misclassified images to verify data quality. Enable early stopping with lower patience (`--patience 15`) to save time during hyperparameter tuning.
 
-**Training Too Slow**: Increase batch size if memory allows (`--batch-size 256`), increase workers (`--num-workers 8`), or use faster iteration with reduced patience (`--patience 10 --num-epochs 50`).
+**Training Too Slow**: Increase batch size if memory allows (`--batch-size 128`), or enable early stopping (`--patience 15`) for faster iteration during experimentation.
 
 **Evaluation Issues**: Ensure the checkpoint exists, verify the test data directory is populated, and run with appropriate batch size.

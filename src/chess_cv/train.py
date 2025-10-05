@@ -38,6 +38,7 @@ from .constants import (
     DEFAULT_VAL_DIR,
     DEFAULT_WEIGHT_DECAY,
     OPTIMIZER_FILENAME,
+    TRAINING_CURVES_FILENAME,
 )
 from .data import (
     AddGaussianNoise,
@@ -373,7 +374,7 @@ def train(
             wandb_logger.log_model(model_path, name="chess-cv-model", aliases=["best"])
             print("\nLogged best model to wandb")
     else:
-        visualizer.save()
+        visualizer.save(TRAINING_CURVES_FILENAME)
         visualizer.close()
 
     print("\n" + "=" * 60)

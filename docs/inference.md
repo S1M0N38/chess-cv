@@ -169,9 +169,9 @@ from chess_cv.data import create_dataloaders
 train_loader, val_loader = create_dataloaders(
     train_dir="data/train",
     val_dir="data/validate",
-    batch_size=128,
+    batch_size=64,
     image_size=32,
-    num_workers=4
+    num_workers=8
 )
 
 # Create model
@@ -182,10 +182,10 @@ train_model(
     model=model,
     train_loader=train_loader,
     val_loader=val_loader,
-    num_epochs=100,
-    learning_rate=0.0002,
-    weight_decay=0.0005,
-    patience=15,
+    num_epochs=200,
+    learning_rate=0.0003,
+    weight_decay=0.0003,
+    patience=999999,
     checkpoint_dir="checkpoints"
 )
 ```
@@ -206,7 +206,7 @@ model.eval()
 # Create test loader
 test_loader = create_test_dataloader(
     test_dir="data/test",
-    batch_size=256,
+    batch_size=64,
     image_size=32
 )
 
