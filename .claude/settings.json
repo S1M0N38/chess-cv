@@ -8,7 +8,6 @@
     ],
     "deny": [
       "Edit(CHANGELOG.md)",
-      "MultiEdit(CHANGELOG.md)",
       "Write(CHANGELOG.md)"
     ]
   },
@@ -21,6 +20,10 @@
             "type": "command",
             "command": "ruff check --select I --fix . && ruff format -s ."
           },
+          {
+            "type": "command",
+            "command": "mdformat ."
+          }
         ]
       }
     ]
