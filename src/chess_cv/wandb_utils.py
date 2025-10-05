@@ -1,9 +1,13 @@
 """Utilities for optional Weights & Biases integration."""
 
+import types
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+
+if TYPE_CHECKING:
+    import wandb as wandb_module
 
 __all__ = ["WandbLogger"]
 
@@ -23,6 +27,7 @@ class WandbLogger:
         """
         self.enabled = enabled
         self.run = None
+        self.wandb: types.ModuleType | None
 
         if self.enabled:
             try:
@@ -36,6 +41,8 @@ class WandbLogger:
                 )
                 self.enabled = False
                 self.wandb = None
+        else:
+            self.wandb = None
 
     def init(
         self,
@@ -52,7 +59,7 @@ class WandbLogger:
             name: Run name (optional)
             tags: List of tags (optional)
         """
-        if not self.enabled:
+        if not self.enabled or self.wandb is None:
             return
 
         self.run = self.wandb.init(
@@ -69,7 +76,7 @@ class WandbLogger:
             metrics: Dictionary of metric names to values
             step: Optional step number (epoch, iteration, etc.)
         """
-        if not self.enabled or self.run is None:
+        if not self.enabled or self.run is None or self.wandb is None:
             return
 
         if step is not None:
@@ -94,7 +101,7 @@ class WandbLogger:
             step: Optional step number
             commit: Whether to commit the log (increment step counter)
         """
-        if not self.enabled or self.run is None:
+        if not self.enabled or self.run is None or self.wandb is None:
             return
 
         log_dict = {
@@ -123,15 +130,15 @@ class WandbLogger:
             class_names: List of class names
             title: Title for the confusion matrix
         """
-        if not self.enabled or self.run is None:
+        if not self.enabled or self.run is None or self.wandb is None:
             return
 
         self.wandb.log(
             {
                 title: self.wandb.plot.confusion_matrix(
                     probs=None,
-                    y_true=y_true,
-                    preds=y_pred,
+                    y_true=y_true.tolist(),
+                    preds=y_pred.tolist(),
                     class_names=class_names,
                 )
             }
@@ -152,7 +159,7 @@ class WandbLogger:
             x_label: Label for x-axis
             y_label: Label for y-axis
         """
-        if not self.enabled or self.run is None:
+        if not self.enabled or self.run is None or self.wandb is None:
             return
 
         # Create a wandb Table for bar chart
@@ -176,7 +183,7 @@ class WandbLogger:
             name: Name for the model artifact
             aliases: List of aliases (e.g., ["best", "latest"])
         """
-        if not self.enabled or self.run is None:
+        if not self.enabled or self.run is None or self.wandb is None:
             return
 
         artifact = self.wandb.Artifact(name, type="model")
@@ -185,7 +192,7 @@ class WandbLogger:
 
     def finish(self) -> None:
         """Finish the wandb run."""
-        if not self.enabled or self.run is None:
+        if not self.enabled or self.run is None or self.wandb is None:
             return
 
         self.wandb.finish()
