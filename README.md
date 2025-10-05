@@ -77,10 +77,9 @@ predictions = model(image_tensor)
 For detailed documentation, visit [s1m0n38.github.io/chess-cv](https://s1m0n38.github.io/chess-cv/) or explore:
 
 - **[Setup Guide](https://s1m0n38.github.io/chess-cv/setup/)** – Installation and data preparation
-- **[Usage Guide](https://s1m0n38.github.io/chess-cv/usage/)** – Training, evaluation, and deployment
-- **[Model Usage](https://s1m0n38.github.io/chess-cv/inference/)** – Using pre-trained models and the library
+- **[Train and Evaluate](https://s1m0n38.github.io/chess-cv/train-and-eval/)** – Training, evaluation, and deployment
+- **[Inference](https://s1m0n38.github.io/chess-cv/inference/)** – Using pre-trained models and the library
 - **[Architecture](https://s1m0n38.github.io/chess-cv/architecture/)** – Model design and performance characteristics
-- **[Hugging Face Integration](https://s1m0n38.github.io/chess-cv/HUGGINGFACE_INTEGRATION/)** – Model deployment guide
 
 ## License
 

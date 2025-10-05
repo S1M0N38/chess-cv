@@ -1,4 +1,4 @@
-# Setup
+# Setup Guide
 
 This guide will help you install and configure Chess CV for training chess piece classifiers.
 

@@ -1,4 +1,4 @@
-# Model Usage
+# Inference
 
 Learn how to use Chess CV as a library and load pre-trained models from Hugging Face Hub.
 
