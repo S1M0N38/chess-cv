@@ -6,6 +6,9 @@
   <a href="https://github.com/S1M0N38/chess-cv/releases">
     <img alt="GitHub release" src="https://img.shields.io/github/v/release/S1M0N38/chess-cv?include_prereleases&sort=semver&style=for-the-badge&logo=github"/>
   </a>
+  <a href="https://pypi.org/project/chess-cv/">
+    <img alt="PyPI" src="https://img.shields.io/pypi/v/chess-cv?style=for-the-badge&logo=pypi&logoColor=white"/>
+  </a>
   <a href="https://www.python.org/downloads/">
     <img alt="Python 3.13+" src="https://img.shields.io/badge/python-3.13+-blue.svg?style=for-the-badge&logo=python&logoColor=white"/>
   </a>
