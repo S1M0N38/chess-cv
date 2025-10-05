@@ -200,8 +200,8 @@ Examples:
     parser.add_argument(
         "--message",
         type=str,
-        default="Upload trained model",
-        help="Commit message for the upload (default: 'Upload trained model')",
+        default="feat: upload new model version",
+        help="Commit message for the upload (default: 'feat: upload new model version')",
     )
 
     parser.add_argument(
