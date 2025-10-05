@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install installdev lint format typecheck test quality clean docs all
+.PHONY: help install installdev lint format typecheck test quality clean docs all eval
 
 # Colors for output
 YELLOW := \033[33m
@@ -67,3 +67,10 @@ clean: ## Clean build artifacts
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 	@echo "$(GREEN)✓ Cleanup completed$(RESET)"
+
+# Evaluation targets
+eval: ## Evaluate model over multiple datasets
+	@echo "$(YELLOW)Evaluating model on test data...$(RESET)"
+	python -m chess_cv.test --test-dir data/test --output-dir evals/test
+	@echo "$(YELLOW)Evaluating model on openboard dataset...$(RESET)"
+	python -m chess_cv.test --hf-test-dir S1M0N38/chess-cv-openboard --output-dir evals/openboard
