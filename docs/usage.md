@@ -1,0 +1,284 @@
+# Usage
+
+Learn how to generate data, train models, and evaluate performance with Chess CV.
+
+## Data Generation
+
+### Basic Usage
+
+Generate synthetic chess piece images:
+
+```bash
+# Using default settings (70% train, 15% val, 15% test)
+python -m chess_cv.preprocessing
+```
+
+### Custom Configuration
+
+```bash
+python -m chess_cv.preprocessing \
+  --train-dir data/train \
+  --val-dir data/validate \
+  --test-dir data/test \
+  --train-ratio 0.7 \
+  --val-ratio 0.15 \
+  --test-ratio 0.15 \
+  --seed 42
+```
+
+### Understanding Data Generation
+
+The preprocessing script:
+
+1. Reads board images from `data/boards/`
+2. Reads piece sets from `data/pieces/`
+3. For each board-piece combination:
+   - Renders pieces onto the board
+   - Extracts 32×32 pixel squares
+   - Saves images to train/validate/test directories
+4. Splits data according to specified ratios
+
+**Output:**
+
+- **Train set**: ~65,000 images (70%)
+- **Validation set**: ~14,000 images (15%)
+- **Test set**: ~14,000 images (15%)
+
+Each set contains balanced examples of all 13 classes.
+
+## Model Training
+
+### Basic Training
+
+Train with default settings:
+
+```bash
+python -m chess_cv.train
+```
+
+### Custom Training Configuration
+
+```bash
+python -m chess_cv.train \
+  --train-dir data/train \
+  --val-dir data/validate \
+  --checkpoint-dir checkpoints \
+  --batch-size 128 \
+  --learning-rate 0.0002 \
+  --weight-decay 0.0005 \
+  --num-epochs 100 \
+  --patience 15 \
+  --image-size 32 \
+  --num-workers 4
+```
+
+### Training Parameters
+
+**Optimizer Settings:**
+
+- `--learning-rate`: Learning rate for AdamW optimizer (default: 0.0002)
+- `--weight-decay`: Weight decay for regularization (default: 0.0005)
+
+**Training Control:**
+
+- `--num-epochs`: Maximum number of epochs (default: 100)
+- `--patience`: Early stopping patience (default: 15)
+- `--batch-size`: Batch size for training (default: 128)
+
+**Data Settings:**
+
+- `--image-size`: Input image size (default: 32)
+- `--num-workers`: Number of data loading workers (default: 4)
+
+**Directories:**
+
+- `--train-dir`: Training data directory (default: data/train)
+- `--val-dir`: Validation data directory (default: data/validate)
+- `--checkpoint-dir`: Where to save model checkpoints (default: checkpoints)
+
+### Training Features
+
+**Data Augmentation:**
+
+- Random resized crop (scale: 0.8-1.0)
+- Random horizontal flip
+- Color jitter (brightness, contrast, saturation: ±0.2)
+- Random rotation (±5°)
+- Gaussian noise (std: 0.05)
+
+**Early Stopping:**
+
+Training automatically stops if validation accuracy doesn't improve for `--patience` epochs.
+
+**Automatic Checkpointing:**
+
+- Best model weights saved to `checkpoints/best_model.safetensors`
+- Optimizer state saved to `checkpoints/optimizer.safetensors`
+
+### Training Output
+
+**Files Generated:**
+
+- `checkpoints/best_model.safetensors` – Best model weights
+- `checkpoints/optimizer.safetensors` – Optimizer state
+- `outputs/training_curves.png` – Loss and accuracy plots
+- `outputs/augmentation_example.png` – Example of data augmentation
+
+**Console Output:**
+
+```
+Epoch 1/100
+Train Loss: 2.345, Train Acc: 45.67%
+Val Loss: 1.234, Val Acc: 67.89%
+
+Epoch 2/100
+Train Loss: 1.123, Train Acc: 78.90%
+Val Loss: 0.987, Val Acc: 82.34%
+...
+```
+
+## Experiment Tracking
+
+### Weights & Biases Integration
+
+Track experiments with the W&B dashboard by adding the `--wandb` flag:
+
+```bash
+# First time setup
+wandb login
+
+# Train with wandb logging
+python -m chess_cv.train --wandb
+```
+
+**Features**: Real-time metric logging, hyperparameter tracking, model comparison, and experiment organization.
+
+### Hyperparameter Sweeps
+
+Optimize hyperparameters with W&B sweeps:
+
+```bash
+# Initialize sweep with configuration
+wandb sweep sweep.yaml
+
+# Run sweep agent
+wandb agent your-entity/chess-cv/sweep-id
+```
+
+Example `sweep.yaml`:
+
+```yaml
+program: -m chess_cv.train
+method: bayes
+metric:
+  name: val_accuracy
+  goal: maximize
+parameters:
+  learning_rate:
+    distribution: log_uniform
+    min: 0.00001
+    max: 0.001
+  batch_size:
+    values: [64, 128, 256]
+  weight_decay:
+    distribution: log_uniform
+    min: 0.0001
+    max: 0.001
+```
+
+## Model Evaluation
+
+### Basic Evaluation
+
+Evaluate trained model on test set:
+
+```bash
+python -m chess_cv.test
+```
+
+### Custom Evaluation
+
+```bash
+python -m chess_cv.test \
+  --test-dir data/test \
+  --train-dir data/train \
+  --checkpoint checkpoints/best_model.safetensors \
+  --batch-size 256 \
+  --image-size 32 \
+  --num-workers 4 \
+  --output-dir outputs
+```
+
+### Evaluation Output
+
+**Files Generated:**
+
+- `outputs/test_confusion_matrix.png` – Confusion matrix heatmap
+- `outputs/test_per_class_accuracy.png` – Per-class accuracy bar chart
+- `outputs/misclassified_images/` – Misclassified examples for analysis
+
+**Console Output:**
+
+```
+Overall Test Accuracy: 95.67%
+
+Per-class Accuracy:
+bB: 96.23%
+bK: 97.45%
+bN: 94.12%
+...
+```
+
+### Analyzing Results
+
+**Confusion Matrix:**
+
+Shows where the model makes mistakes. Look for:
+
+- High off-diagonal values (common misclassifications)
+- Patterns in similar piece types (e.g., knights vs bishops)
+
+**Misclassified Images:**
+
+Review examples in `outputs/misclassified_images/` to understand:
+
+- Which board/piece combinations are challenging
+- Whether augmentation needs adjustment
+- If more training data would help
+
+## Model Deployment
+
+### Upload to Hugging Face Hub
+
+Share your trained model on Hugging Face Hub:
+
+```bash
+# First time setup
+huggingface-cli login
+
+# Upload model
+python -m chess_cv.upload --repo-id username/chess-cv
+```
+
+**Options:**
+
+```bash
+python -m chess_cv.upload \
+  --repo-id username/chess-cv \
+  --checkpoint-dir checkpoints \
+  --output-dir outputs \
+  --message "feat: initial model release" \
+  --private  # Optional: create private repository
+```
+
+**What gets uploaded**: Model weights, model card with metadata, training visualizations, and model configuration.
+
+## Troubleshooting
+
+**Out of Memory During Training**: Reduce batch size with `--batch-size 64` or reduce number of workers with `--num-workers 2`.
+
+**Poor Model Performance**: Try training for more epochs (`--num-epochs 150`), experiment with different hyperparameters, use W&B sweeps for optimization, or review misclassified images to verify data quality.
+
+**Training Too Slow**: Increase batch size if memory allows (`--batch-size 256`), increase workers (`--num-workers 8`), or use faster iteration with reduced patience (`--patience 10 --num-epochs 50`).
+
+**Evaluation Issues**: Ensure the checkpoint exists, verify the test data directory is populated, and run with appropriate batch size.
