@@ -180,3 +180,4 @@ outputs
 checkpoints
 .DS_Store
 wandb
+evals
