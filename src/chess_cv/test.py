@@ -1,6 +1,7 @@
 """Test script for evaluating trained model."""
 
 import argparse
+import json
 import shutil
 from pathlib import Path
 
@@ -26,10 +27,12 @@ from .constants import (
     MISCLASSIFIED_DIR,
     TEST_CONFUSION_MATRIX_FILENAME,
     TEST_PER_CLASS_ACCURACY_FILENAME,
+    TEST_SUMMARY_FILENAME,
 )
 from .data import (
     CLASS_NAMES,
     ChessPiecesDataset,
+    HuggingFaceChessPiecesDataset,
     collate_fn,
     get_all_labels,
     get_image_files,
@@ -55,8 +58,22 @@ def test(
     num_workers: int = DEFAULT_NUM_WORKERS,
     output_dir: Path | str = DEFAULT_OUTPUT_DIR,
     use_wandb: bool = False,
+    hf_test_dir: str | None = None,
 ) -> None:
-    """Test the trained model."""
+    """Test the trained model.
+
+    Args:
+        test_dir: Local test data directory
+        train_dir: Training data directory for label map
+        checkpoint_path: Path to model checkpoint
+        batch_size: Batch size for testing
+        image_size: Image size for resizing
+        num_workers: Number of data loading workers
+        output_dir: Directory for saving results
+        use_wandb: Enable Weights & Biases logging
+        hf_test_dir: HuggingFace dataset ID (e.g., "S1M0N38/chess-cv-openboard").
+                     If provided, test_dir is ignored.
+    """
     checkpoint_path = Path(checkpoint_path)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -67,11 +84,12 @@ def test(
         wandb_logger.init(
             project="chess-cv-evaluation",
             config={
-                "test_dir": str(test_dir),
+                "test_dir": str(test_dir) if hf_test_dir is None else hf_test_dir,
                 "checkpoint_path": str(checkpoint_path),
                 "batch_size": batch_size,
                 "image_size": image_size,
                 "num_workers": num_workers,
+                "hf_test_dir": hf_test_dir,
             },
         )
 
@@ -94,8 +112,19 @@ def test(
         [transforms.Resize((image_size, image_size), antialias=True)]
     )
 
-    test_files = get_image_files(str(test_dir))
-    test_dataset = ChessPiecesDataset(test_files, label_map, transform=test_transforms)
+    # Load test dataset from HuggingFace or local directory
+    if hf_test_dir is not None:
+        print(f"Loading test data from HuggingFace dataset: {hf_test_dir}")
+        test_dataset = HuggingFaceChessPiecesDataset(
+            hf_test_dir, label_map, split="train", transform=test_transforms
+        )
+    else:
+        print(f"Loading test data from local directory: {test_dir}")
+        test_files = get_image_files(str(test_dir))
+        test_dataset = ChessPiecesDataset(
+            test_files, label_map, transform=test_transforms
+        )
+
     test_loader = DataLoader(
         test_dataset,
         batch_size=batch_size,
@@ -143,6 +172,19 @@ def test(
     )
     results["f1_score_macro"] = compute_f1_score(confusion_matrix)
 
+    # Save summary to JSON
+    print(f"Saving test summary to: {output_dir / TEST_SUMMARY_FILENAME}")
+    summary = {
+        "overall_accuracy": results["overall_accuracy"],
+        "f1_score_macro": results["f1_score_macro"],
+        "per_class_accuracy": results["per_class_accuracy"],
+        "checkpoint_path": str(checkpoint_path),
+        "test_dir": str(test_dir) if hf_test_dir is None else hf_test_dir,
+        "num_test_samples": len(test_dataset),
+    }
+    with open(output_dir / TEST_SUMMARY_FILENAME, "w") as f:
+        json.dump(summary, f, indent=2)
+
     # Log test results to wandb
     if use_wandb:
         wandb_logger.log(
@@ -170,17 +212,29 @@ def test(
     misclassified_indices = np.nonzero(misclassified_array)[0]
 
     for idx in misclassified_indices.tolist():
-        image_path = Path(test_dataset.image_files[idx])
         true_label_idx = int(labels_array[idx].item())  # type: ignore[union-attr]
         pred_label_idx = int(predictions[idx].item())  # type: ignore[union-attr]
         true_label = CLASS_NAMES[true_label_idx]
         predicted_label = CLASS_NAMES[pred_label_idx]
 
-        # Open the original image (not the transformed one)
-        img = Image.open(image_path)
+        # Get the original image based on dataset type
+        if isinstance(test_dataset, HuggingFaceChessPiecesDataset):
+            # For HuggingFace datasets, get image from the dataset directly
+            item = test_dataset.dataset[idx]  # type: ignore[index]
+            img = item["image"]
+            if not isinstance(img, Image.Image):
+                img = Image.open(img).convert("RGB")
+            else:
+                img = img.convert("RGB")
+            image_name = f"{idx}.png"
+        else:
+            # For local datasets, open from file path
+            image_path = Path(test_dataset.image_files[idx])
+            img = Image.open(image_path)
+            image_name = image_path.name
 
         # Save the image with a descriptive name
-        new_filename = f"true_{true_label}_pred_{predicted_label}_{image_path.name}"
+        new_filename = f"true_{true_label}_pred_{predicted_label}_{image_name}"
         img.save(misclassified_dir / new_filename)
 
     print("\n" + "=" * 60)
@@ -207,11 +261,20 @@ def test(
         print("Logging sample misclassified images to wandb...")
         max_samples = min(20, len(misclassified_indices))  # Log up to 20 samples
         for i, idx in enumerate(misclassified_indices[:max_samples].tolist()):
-            image_path = Path(test_dataset.image_files[idx])
             true_label_idx = int(labels_array[idx].item())  # type: ignore[union-attr]
             pred_label_idx = int(predictions[idx].item())  # type: ignore[union-attr]
             true_label = CLASS_NAMES[true_label_idx]
             predicted_label = CLASS_NAMES[pred_label_idx]
+
+            # Get image path based on dataset type
+            if isinstance(test_dataset, HuggingFaceChessPiecesDataset):
+                # For HuggingFace datasets, use the saved misclassified image
+                image_name = f"{idx}.png"
+                new_filename = f"true_{true_label}_pred_{predicted_label}_{image_name}"
+                image_path = misclassified_dir / new_filename
+            else:
+                # For local datasets, use the original file path
+                image_path = Path(test_dataset.image_files[idx])
 
             wandb_logger.log_image(
                 f"misclassified/{i}",
@@ -285,6 +348,12 @@ def main() -> None:
         action="store_true",
         help="Enable Weights & Biases logging (disables matplotlib visualization)",
     )
+    parser.add_argument(
+        "--hf-test-dir",
+        type=str,
+        default=None,
+        help="HuggingFace dataset ID (e.g., 'S1M0N38/chess-cv-openboard'). If provided, --test-dir is ignored.",
+    )
 
     args = parser.parse_args()
 
@@ -297,6 +366,7 @@ def main() -> None:
         num_workers=args.num_workers,
         output_dir=args.output_dir,
         use_wandb=args.wandb,
+        hf_test_dir=args.hf_test_dir,
     )
 
 

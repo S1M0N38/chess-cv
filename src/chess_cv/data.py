@@ -13,6 +13,7 @@ __all__ = [
     "CLASS_NAMES",
     "AddGaussianNoise",
     "ChessPiecesDataset",
+    "HuggingFaceChessPiecesDataset",
     "collate_fn",
     "get_all_labels",
     "get_image_files",
@@ -132,3 +133,62 @@ def collate_fn(batch: list) -> tuple[mx.array, mx.array]:
     images = np.stack(images)
     labels = np.array(labels)
     return mx.array(images), mx.array(labels)
+
+
+class HuggingFaceChessPiecesDataset(Dataset):
+    """A PyTorch Dataset for loading chess piece images from HuggingFace datasets."""
+
+    def __init__(
+        self,
+        dataset_id: str,
+        label_map: dict[str, int],
+        split: str = "train",
+        transform: Callable | None = None,
+    ):
+        """
+        Args:
+            dataset_id: HuggingFace dataset ID (e.g., "S1M0N38/chess-cv-openboard")
+            label_map: Dictionary mapping label names to integers
+            split: Dataset split to use (default: "train")
+            transform: Optional transform to apply to images
+        """
+        try:
+            from datasets import load_dataset
+        except ImportError as e:
+            msg = "datasets library is required for HuggingFace dataset loading. Install it with: pip install datasets"
+            raise ImportError(msg) from e
+
+        self.dataset = load_dataset(dataset_id, split=split)
+        self.label_map = label_map
+        self.transform = transform
+
+    def __len__(self) -> int:
+        return len(self.dataset)  # type: ignore[arg-type]
+
+    def __getitem__(self, idx: int) -> tuple:
+        item = self.dataset[idx]  # type: ignore[index]
+
+        try:
+            # HuggingFace datasets typically store images in an 'image' column
+            img = item["image"]
+            if not isinstance(img, Image.Image):
+                img = Image.open(img).convert("RGB")
+            else:
+                img = img.convert("RGB")
+        except Exception as e:
+            print(f"Error loading image at index {idx}: {e}")
+            # On error, return the next item
+            return self.__getitem__((idx + 1) % len(self))
+
+        if self.transform:
+            img = self.transform(img)
+
+        # Normalize to [0, 1]
+        img_array = np.array(img, dtype=np.float32) / 255.0
+
+        # Get label from the dataset
+        # HuggingFace imagefolder datasets store labels in a 'label' column (as integers)
+        # but we need to map them correctly
+        label_idx = item["label"]
+
+        return img_array, label_idx
