@@ -1,0 +1,78 @@
+site_name: Chess CV
+site_description: CNN-based chess piece classifier
+site_author: 'S1M0N38'
+repo_name: 'S1M0N38/chess-cv'
+repo_url: https://github.com/S1M0N38/chess-cv
+site_url: https://s1m0n38.github.io/chess-cv/
+docs_dir: docs/
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - content.code.copy
+    - content.tabs.link
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      accent: black
+      primary: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - scheme: slate
+      accent: white
+      primary: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+extra:
+  generator: false
+plugins:
+  - search
+  - llmstxt:
+      markdown_description: |
+        Chess CV is a machine learning project that trains a lightweight CNN to classify chess pieces from 32×32px square images.
+        The model uses MLX framework and achieves ~95-97% accuracy on synthetic training data.
+        It combines 55 board styles with 64 piece sets to generate diverse training datasets.
+        The project provides tools for data generation, model training, evaluation, and deployment to Hugging Face Hub.
+      sections:
+        Documentation:
+          - setup.md
+          - usage.md
+          - inference.md
+          - architecture.md
+      full_output: llms-full.txt
+      autoclean: true
+nav:
+  - index.md
+  - Setup: setup.md
+  - Usage: usage.md
+  - Model Usage: inference.md
+  - Architecture: architecture.md
+  - Hugging Face Integration: HUGGINGFACE_INTEGRATION.md
+markdown_extensions:
+  - toc:
+      toc_depth: 3
+  - attr_list
+  - md_in_html
+  - pymdownx.blocks.caption
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - tables
