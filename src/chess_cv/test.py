@@ -187,27 +187,22 @@ def test(
     print("SAVING VISUALIZATIONS")
     print("=" * 60)
 
+    # Save matplotlib plots to files
+    plot_confusion_matrix(
+        confusion_matrix,
+        class_names=CLASS_NAMES,
+        output_dir=output_dir,
+        filename=TEST_CONFUSION_MATRIX_FILENAME,
+    )
+    per_class_acc = results["per_class_accuracy"]
+    assert isinstance(per_class_acc, dict)
+    plot_per_class_accuracy(
+        per_class_acc,
+        output_dir=output_dir,
+        filename=TEST_PER_CLASS_ACCURACY_FILENAME,
+    )
+
     if use_wandb:
-        # Log confusion matrix to wandb
-        y_true = labels_array.tolist()
-        y_pred = predictions.tolist()
-        wandb_logger.log_confusion_matrix(
-            y_true=np.array(y_true),
-            y_pred=np.array(y_pred),
-            class_names=CLASS_NAMES,
-            title="Test Confusion Matrix",
-        )
-
-        # Log per-class accuracy as bar chart
-        per_class_acc = results["per_class_accuracy"]
-        assert isinstance(per_class_acc, dict)
-        wandb_logger.log_bar_chart(
-            data=per_class_acc,
-            title="Per-Class Accuracy",
-            x_label="Class",
-            y_label="Accuracy",
-        )
-
         # Log sample misclassified images to wandb
         print("Logging sample misclassified images to wandb...")
         max_samples = min(20, len(misclassified_indices))  # Log up to 20 samples
@@ -225,21 +220,6 @@ def test(
             )
 
         print(f"Logged {max_samples} misclassified images to wandb")
-    else:
-        # Save matplotlib plots to files
-        plot_confusion_matrix(
-            confusion_matrix,
-            class_names=CLASS_NAMES,
-            output_dir=output_dir,
-            filename=TEST_CONFUSION_MATRIX_FILENAME,
-        )
-        per_class_acc = results["per_class_accuracy"]
-        assert isinstance(per_class_acc, dict)
-        plot_per_class_accuracy(
-            per_class_acc,
-            output_dir=output_dir,
-            filename=TEST_PER_CLASS_ACCURACY_FILENAME,
-        )
 
     print("\n" + "=" * 60)
     print("TESTING COMPLETE")
