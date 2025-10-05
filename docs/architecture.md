@@ -96,21 +96,21 @@ With the default configuration:
 
 Typical accuracy by piece type:
 
-| Class | Accuracy | Notes                           |
-| ----- | -------- | ------------------------------- |
-| bB    | 96-98%   | Bishops are distinctive         |
-| bK    | 97-99%   | Kings are highly recognizable   |
-| bN    | 94-96%   | Knights can be challenging      |
-| bP    | 95-97%   | Pawns vary by piece set         |
-| bQ    | 96-98%   | Queens are distinctive          |
-| bR    | 96-98%   | Rooks are easily recognized     |
-| wB    | 96-98%   | Similar to black bishops        |
-| wK    | 97-99%   | Similar to black kings          |
-| wN    | 94-96%   | Similar to black knights        |
-| wP    | 95-97%   | Similar to black pawns          |
-| wQ    | 96-98%   | Similar to black queens         |
-| wR    | 96-98%   | Similar to black rooks          |
-| xx    | 98-99%   | Empty squares are easiest       |
+| Class | Accuracy | Notes                         |
+| ----- | -------- | ----------------------------- |
+| bB    | 96-98%   | Bishops are distinctive       |
+| bK    | 97-99%   | Kings are highly recognizable |
+| bN    | 94-96%   | Knights can be challenging    |
+| bP    | 95-97%   | Pawns vary by piece set       |
+| bQ    | 96-98%   | Queens are distinctive        |
+| bR    | 96-98%   | Rooks are easily recognized   |
+| wB    | 96-98%   | Similar to black bishops      |
+| wK    | 97-99%   | Similar to black kings        |
+| wN    | 94-96%   | Similar to black knights      |
+| wP    | 95-97%   | Similar to black pawns        |
+| wQ    | 96-98%   | Similar to black queens       |
+| wR    | 96-98%   | Similar to black rooks        |
+| xx    | 98-99%   | Empty squares are easiest     |
 
 ### Confusion Patterns
 

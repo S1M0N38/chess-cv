@@ -33,9 +33,9 @@ The preprocessing script:
 1. Reads board images from `data/boards/`
 2. Reads piece sets from `data/pieces/`
 3. For each board-piece combination:
-   - Renders pieces onto the board
-   - Extracts 32×32 pixel squares
-   - Saves images to train/validate/test directories
+    - Renders pieces onto the board
+    - Extracts 32×32 pixel squares
+    - Saves images to train/validate/test directories
 4. Splits data according to specified ratios
 
 **Output:**
