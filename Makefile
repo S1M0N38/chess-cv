@@ -13,6 +13,7 @@ PYTHON := python
 UV := uv
 RUFF := ruff
 TYPECHECK := basedpyright
+MDFORMAT := mdformat
 
 help: ## Show this help message
 	@echo "$(BLUE)Chess CV Development Makefile$(RESET)"
@@ -27,13 +28,15 @@ install: ## Install package with all dependencies
 # Code quality targets
 lint: ## Run ruff linter (check only)
 	@echo "$(YELLOW)Running ruff linter...$(RESET)"
-	$(RUFF) check --select --fix I .
+	$(RUFF) check --fix --select I .
 	$(RUFF) check --fix .
 
-format: ## Run ruff formatter
+format: ## Run ruff and mdformat formatters
 	@echo "$(YELLOW)Running ruff formatter...$(RESET)"
 	$(RUFF) check --select I --fix .
 	$(RUFF) format .
+	@echo "$(YELLOW)Running mdformat formatter...$(RESET)"
+	$(MDFORMAT) .
 
 typecheck: ## Run type checker
 	@echo "$(YELLOW)Running type checker...$(RESET)"
