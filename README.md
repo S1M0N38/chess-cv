@@ -2,6 +2,9 @@
 
 # Chess CV
 
+<img src="docs/assets/model.svg" alt="Model Architecture" width="800">
+<br>
+
 *CNN-based chess piece classifier*
 
 </div>
@@ -10,7 +13,7 @@
 
 ## Overview
 
-A machine learning project that trains a lightweight CNN from scratch to classify chess pieces from synthetically generated chessboard square images. The project combines 55 board styles (256×256px) with 64 piece sets (32×32px) from chess.com and lichess to generate a diverse training dataset of ~93,000 images. By rendering pieces onto different board backgrounds and extracting individual squares, the model learns robust piece recognition across various visual styles.
+A machine learning project that trains a lightweight CNN (156k parameters) from scratch to classify chess pieces from synthetically generated chessboard square images. The project combines 55 board styles (256×256px) with 64 piece sets (32×32px) from chess.com and lichess to generate a diverse training dataset of ~93,000 images. By rendering pieces onto different board backgrounds and extracting individual squares, the model learns robust piece recognition across various visual styles.
 
 ## Features
 
@@ -278,10 +281,6 @@ chess-cv/
 ## Model Details
 
 ### Architecture
-
-<div align="center">
-  <img src="docs/assets/model.svg" alt="Model Architecture" width="800">
-</div>
 
 - **Input**: 32×32 RGB images
 - **Layer 1**: Conv2d(3→16) + ReLU + MaxPool
