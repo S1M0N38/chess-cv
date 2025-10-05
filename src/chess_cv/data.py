@@ -172,7 +172,7 @@ class HuggingFaceChessPiecesDataset(Dataset):
             # HuggingFace datasets typically store images in an 'image' column
             img = item["image"]
             if not isinstance(img, Image.Image):
-                img = Image.open(img).convert("RGB")
+                img = Image.open(img).convert("RGB")  # type: ignore[arg-type]
             else:
                 img = img.convert("RGB")
         except Exception as e:

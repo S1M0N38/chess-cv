@@ -223,7 +223,7 @@ def test(
             item = test_dataset.dataset[idx]  # type: ignore[index]
             img = item["image"]
             if not isinstance(img, Image.Image):
-                img = Image.open(img).convert("RGB")
+                img = Image.open(img).convert("RGB")  # type: ignore[arg-type]
             else:
                 img = img.convert("RGB")
             image_name = f"{idx}.png"
