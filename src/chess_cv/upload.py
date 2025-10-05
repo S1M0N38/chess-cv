@@ -8,15 +8,7 @@ from typing import Optional
 
 from huggingface_hub import HfApi, create_repo
 
-from chess_cv.constants import (
-    AUGMENTATION_EXAMPLE_FILENAME,
-    BEST_MODEL_FILENAME,
-    DEFAULT_CHECKPOINT_DIR,
-    DEFAULT_OUTPUT_DIR,
-    TEST_CONFUSION_MATRIX_FILENAME,
-    TEST_PER_CLASS_ACCURACY_FILENAME,
-    TRAINING_CURVES_FILENAME,
-)
+from chess_cv.constants import BEST_MODEL_FILENAME, DEFAULT_CHECKPOINT_DIR
 
 __all__ = ["upload_to_hub", "main"]
 
@@ -24,7 +16,6 @@ __all__ = ["upload_to_hub", "main"]
 def upload_to_hub(
     repo_id: str,
     checkpoint_dir: Path = DEFAULT_CHECKPOINT_DIR,
-    output_dir: Path = DEFAULT_OUTPUT_DIR,
     readme_path: Optional[Path] = None,
     commit_message: str = "Upload trained model",
     private: bool = False,
@@ -35,7 +26,6 @@ def upload_to_hub(
     Args:
         repo_id: Repository ID on Hugging Face Hub (format: "username/repo-name")
         checkpoint_dir: Directory containing model checkpoints
-        output_dir: Directory containing training outputs (plots, metrics)
         readme_path: Path to model card README (defaults to docs/README_hf.md)
         commit_message: Commit message for the upload
         private: Whether to create a private repository
@@ -55,7 +45,6 @@ def upload_to_hub(
 
     # Validate required files exist
     checkpoint_dir = Path(checkpoint_dir)
-    output_dir = Path(output_dir)
     model_file = checkpoint_dir / BEST_MODEL_FILENAME
 
     if not model_file.exists():
@@ -99,20 +88,6 @@ def upload_to_hub(
         # Copy README (model card)
         print(f"  - Copying README: {readme_path.name}")
         shutil.copy2(readme_path, tmpdir / "README.md")
-
-        # Copy training outputs if they exist
-        output_files = [
-            TRAINING_CURVES_FILENAME,
-            TEST_CONFUSION_MATRIX_FILENAME,
-            TEST_PER_CLASS_ACCURACY_FILENAME,
-            AUGMENTATION_EXAMPLE_FILENAME,
-        ]
-
-        for output_file in output_files:
-            src_path = output_dir / output_file
-            if src_path.exists():
-                print(f"  - Copying output: {output_file}")
-                shutil.copy2(src_path, tmpdir / output_file)
 
         # Create a model config file with metadata
         config_content = """{
@@ -164,7 +139,6 @@ Examples:
   # Specify custom paths
   python -m chess_cv.upload --repo-id username/chess-cv \\
     --checkpoint-dir ./my-checkpoints \\
-    --output-dir ./my-outputs \\
     --readme docs/custom_README.md
         """,
     )
@@ -181,13 +155,6 @@ Examples:
         type=Path,
         default=DEFAULT_CHECKPOINT_DIR,
         help=f"Directory containing model checkpoints (default: {DEFAULT_CHECKPOINT_DIR})",
-    )
-
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=DEFAULT_OUTPUT_DIR,
-        help=f"Directory containing training outputs (default: {DEFAULT_OUTPUT_DIR})",
     )
 
     parser.add_argument(
@@ -223,7 +190,6 @@ Examples:
         upload_to_hub(
             repo_id=args.repo_id,
             checkpoint_dir=args.checkpoint_dir,
-            output_dir=args.output_dir,
             readme_path=args.readme,
             commit_message=args.message,
             private=args.private,
