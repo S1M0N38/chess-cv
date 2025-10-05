@@ -5,15 +5,7 @@ description = "CNN-based chess piece classifier"
 readme = "README.md"
 authors = [{ name = "S1M0N38", email = "bertolottosimone@gmail.com" }]
 requires-python = ">=3.13"
-dependencies = [
-  "mlx>=0.24.0",
-  "numpy>=2.0.0",
-  "matplotlib>=3.10.0",
-  "tqdm>=4.67.1",
-  "pillow>=11.3.0",
-  "torch>=2.8.0",
-  "torchvision>=0.23.0",
-]
+dependencies = ["mlx>=0.24.0", "numpy>=2.0.0", "pillow>=11.3.0"]
 classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3.13",
@@ -63,4 +55,8 @@ dev = [
   "mkdocs-llmstxt>=0.3.0",
   "wandb>=0.22.1",
   "huggingface-hub>=0.35.3",
+  "matplotlib>=3.10.0",
+  "tqdm>=4.67.1",
+  "torch>=2.8.0",
+  "torchvision>=0.23.0",
 ]

@@ -108,19 +108,16 @@ name = "chess-cv"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "matplotlib" },
     { name = "mlx" },
     { name = "numpy" },
     { name = "pillow" },
-    { name = "torch" },
-    { name = "torchvision" },
-    { name = "tqdm" },
 ]
 
 [package.dev-dependencies]
 dev = [
     { name = "basedpyright" },
     { name = "huggingface-hub" },
+    { name = "matplotlib" },
     { name = "mdformat" },
     { name = "mdformat-footnote" },
     { name = "mdformat-frontmatter" },
@@ -134,24 +131,24 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "tqdm" },
     { name = "wandb" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "matplotlib", specifier = ">=3.10.0" },
     { name = "mlx", specifier = ">=0.24.0" },
     { name = "numpy", specifier = ">=2.0.0" },
     { name = "pillow", specifier = ">=11.3.0" },
-    { name = "torch", specifier = ">=2.8.0" },
-    { name = "torchvision", specifier = ">=0.23.0" },
-    { name = "tqdm", specifier = ">=4.67.1" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "basedpyright", specifier = ">=1.31.1" },
     { name = "huggingface-hub", specifier = ">=0.35.3" },
+    { name = "matplotlib", specifier = ">=3.10.0" },
     { name = "mdformat", specifier = ">=0.7.22" },
     { name = "mdformat-footnote", specifier = ">=0.1.1" },
     { name = "mdformat-frontmatter", specifier = ">=2.0.8" },
@@ -165,6 +162,9 @@ dev = [
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-asyncio", specifier = ">=1.1.0" },
     { name = "ruff", specifier = ">=0.12.8" },
+    { name = "torch", specifier = ">=2.8.0" },
+    { name = "torchvision", specifier = ">=0.23.0" },
+    { name = "tqdm", specifier = ">=4.67.1" },
     { name = "wandb", specifier = ">=0.22.1" },
 ]
 
