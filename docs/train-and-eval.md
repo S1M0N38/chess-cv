@@ -1,4 +1,4 @@
-# Usage
+# Train and Evaluate
 
 Learn how to generate data, train models, and evaluate performance with Chess CV.
 
@@ -124,19 +124,6 @@ Training can automatically stop if validation accuracy doesn't improve for `--pa
 - `outputs/training_curves.png` – Loss and accuracy plots
 - `outputs/augmentation_example.png` – Example of data augmentation
 
-**Console Output:**
-
-```
-Epoch 1/100
-Train Loss: 2.345, Train Acc: 45.67%
-Val Loss: 1.234, Val Acc: 67.89%
-
-Epoch 2/100
-Train Loss: 1.123, Train Acc: 78.90%
-Val Loss: 0.987, Val Acc: 82.34%
-...
-```
-
 ## Experiment Tracking
 
 ### Weights & Biases Integration
@@ -217,18 +204,6 @@ python -m chess_cv.test \
 - `outputs/test_per_class_accuracy.png` – Per-class accuracy bar chart
 - `outputs/misclassified_images/` – Misclassified examples for analysis
 
-**Console Output:**
-
-```
-Overall Test Accuracy: 95.67%
-
-Per-class Accuracy:
-bB: 96.23%
-bK: 97.45%
-bN: 94.12%
-...
-```
-
 ### Analyzing Results
 
 **Confusion Matrix:**
@@ -282,3 +257,9 @@ python -m chess_cv.upload \
 **Training Too Slow**: Increase batch size if memory allows (`--batch-size 128`), or enable early stopping (`--patience 15`) for faster iteration during experimentation.
 
 **Evaluation Issues**: Ensure the checkpoint exists, verify the test data directory is populated, and run with appropriate batch size.
+
+## Next Steps
+
+- Use your trained model for inference with [Model Usage](inference.md)
+- Explore model internals with [Architecture](architecture.md)
+- Share your model on Hugging Face Hub using the upload command above

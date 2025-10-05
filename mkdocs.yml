@@ -40,18 +40,17 @@ plugins:
       sections:
         Documentation:
           - setup.md
-          - usage.md
           - inference.md
+          - train-and-eval.md
           - architecture.md
       full_output: llms-full.txt
       autoclean: true
 nav:
   - index.md
   - Setup: setup.md
-  - Usage: usage.md
   - Model Usage: inference.md
+  - Train and Evaluate: train-and-eval.md
   - Architecture: architecture.md
-  - Hugging Face Integration: HUGGINGFACE_INTEGRATION.md
 markdown_extensions:
   - toc:
       toc_depth: 3

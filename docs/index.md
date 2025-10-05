@@ -17,17 +17,9 @@ Chess CV is a machine learning project that trains a lightweight CNN (156k param
 
     ---
 
-    Installation guide covering dependencies, environment setup, and data preparation.
+    Installation guide covering dependencies and environment setup.
 
     [:octicons-arrow-right-24: Setup](setup.md)
-
-- :material-play:{ .lg .middle } __Usage__
-
-    ---
-
-    Learn how to generate data, train models, and evaluate performance.
-
-    [:octicons-arrow-right-24: Usage](usage.md)
 
 - :material-code-braces:{ .lg .middle } __Model Usage__
 
@@ -37,11 +29,19 @@ Chess CV is a machine learning project that trains a lightweight CNN (156k param
 
     [:octicons-arrow-right-24: Model Usage](inference.md)
 
+- :material-play:{ .lg .middle } __Train and Evaluate__
+
+    ---
+
+    Learn how to generate data, train models, and evaluate performance.
+
+    [:octicons-arrow-right-24: Train and Evaluate](train-and-eval.md)
+
 - :octicons-sparkle-fill-16:{ .lg .middle } __Documentation for LLM__
 
     ---
 
-    Documentation in [llms.txt](https://llmstxt.org/) format. Just paste the following link (or its content) into the LLM chat.
+    Documentation in [llms.txt](https://llmstxt.org/) format. Just paste the following link into the LLM chat.
 
     [:octicons-arrow-right-24: llms-full.txt](llms-full.txt)
 
