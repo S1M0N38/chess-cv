@@ -366,8 +366,6 @@ This project is licensed under the MIT License – see the [LICENSE](LICENSE) fi
 
 <div align="center">
 
-**Train chess piece classifiers on Apple Silicon**
-
 [Get Started](#quick-start) • [Contribute](CONTRIBUTING.md) • [Report Issues](https://github.com/S1M0N38/chess-cv/issues)
 
 </div>
