@@ -2,15 +2,21 @@
 
 # Chess CV
 
+<p align="center">
+  <a href="https://github.com/S1M0N38/chess-cv/releases">
+    <img alt="GitHub release" src="https://img.shields.io/github/v/release/S1M0N38/chess-cv?include_prereleases&sort=semver&style=for-the-badge&logo=github"/>
+  </a>
+  <a href="https://www.python.org/downloads/">
+    <img alt="Python 3.13+" src="https://img.shields.io/badge/python-3.13+-blue.svg?style=for-the-badge&logo=python&logoColor=white"/>
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge"/>
+  </a>
+</p>
+
 <img src="docs/assets/model.svg" alt="Model Architecture" width="600">
 
 *CNN-based chess piece classifier*
-
-[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
-
-[Documentation](https://s1m0n38.github.io/chess-cv/) • [Contributing](CONTRIBUTING.md) • [Issues](https://github.com/S1M0N38/chess-cv/issues)
 
 </div>
 
@@ -23,24 +29,6 @@ A machine learning project that trains a lightweight CNN (156k parameters) from 
 By rendering pieces onto different board backgrounds and extracting individual squares, the model learns robust piece recognition across various visual styles.
 
 ## Quick Start
-
-```bash
-# Clone and install
-git clone https://github.com/S1M0N38/chess-cv.git
-cd chess-cv
-uv sync
-
-# Generate training data
-python -m chess_cv.preprocessing
-
-# Train the model
-python -m chess_cv.train
-
-# Evaluate performance
-python -m chess_cv.test
-```
-
-Or install from PyPI (once published):
 
 ```bash
 pip install chess-cv
@@ -61,16 +49,16 @@ model.load_weights(model_path)
 predictions = model(image_tensor)
 ```
 
-## Features
+## ✨ Features
 
-**Lightweight Architecture**
+**🪶 Lightweight Architecture**
 
 - 156k parameter CNN optimized for 32×32px images
 - 13-class classification (6 white pieces, 6 black pieces, 1 empty)
 - MLX framework for efficient training
 - Aggressive data augmentation for robust generalization
 
-**Complete Pipeline**
+**🏗️ Complete Pipeline**
 
 - Synthetic data generation from board/piece combinations
 - Training with early stopping and checkpointing
@@ -78,14 +66,7 @@ predictions = model(image_tensor)
 - Optional Weights & Biases integration for experiment tracking
 - Hugging Face Hub deployment for model sharing
 
-**Developer Friendly**
-
-- Type-checked with Basedpyright
-- Formatted and linted with Ruff
-- Comprehensive test suite with pytest
-- Detailed documentation with MkDocs
-
-## Documentation
+## 📚 Documentation
 
 For detailed documentation, visit [s1m0n38.github.io/chess-cv](https://s1m0n38.github.io/chess-cv/) or explore:
 
@@ -95,25 +76,14 @@ For detailed documentation, visit [s1m0n38.github.io/chess-cv](https://s1m0n38.g
 - **[Architecture](https://s1m0n38.github.io/chess-cv/architecture/)** – Model design and performance characteristics
 - **[Hugging Face Integration](https://s1m0n38.github.io/chess-cv/HUGGINGFACE_INTEGRATION/)** – Model deployment guide
 
-## Project Structure
-
-```
-chess-cv/
-├── src/chess_cv/        # Source code
-│   ├── model.py         # CNN architecture
-│   ├── train.py         # Training script
-│   ├── test.py          # Evaluation script
-│   └── ...
-├── docs/                # Documentation
-├── data/                # Datasets
-├── checkpoints/         # Saved models
-└── tests/               # Test suite
-```
-
-## Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
-
 ## License
 
 This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+[Get Started](#quick-start) • [Contribute](CONTRIBUTING.md) • [Report Issues](https://github.com/S1M0N38/chess-cv/issues)
+
+</div>
