@@ -53,6 +53,13 @@ pipeline_tag: image-classification
 
 Lightweight CNN (156k parameters) that classifies chess pieces from 32×32 pixel square images into 13 classes (6 white pieces, 6 black pieces, empty square). Trained on synthetic data from chess.com/lichess boards and piece sets.
 
+| Dataset                                                                                  | Accuracy | F1-Score (Macro) |
+| ---------------------------------------------------------------------------------------- | -------- | ---------------- |
+| Test Data                                                                                | 99.85%   | 99.89%           |
+| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) | \*       | 95.78%           |
+
+\* OpenBoard has an unbalanced class distribution (many more samples for empty square class), so accuracy is not representative.
+
 ## Quick Start
 
 ```bash

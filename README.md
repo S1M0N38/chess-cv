@@ -29,6 +29,11 @@ A machine learning project that trains a lightweight CNN (156k parameters) from 
 
 By rendering pieces onto different board backgrounds and extracting individual squares, the model learns robust piece recognition across various visual styles.
 
+| Dataset                                                                                  | Accuracy | F1-Score (Macro) |
+| ---------------------------------------------------------------------------------------- | -------- | ---------------- |
+| Test Data                                                                                | 99.85%   | 99.89%           |
+| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) | -[^1]    | 95.78%           |
+
 ## ⚡️ Quick Start
 
 ```bash
@@ -88,3 +93,5 @@ This project is licensed under the MIT License – see the [LICENSE](LICENSE) fi
 [Get Started](#quick-start) • [Contribute](CONTRIBUTING.md) • [Report Issues](https://github.com/S1M0N38/chess-cv/issues)
 
 </div>
+
+[^1]: OpenBoard has an unbalanced class distribution (many more samples for empty square class), so accuracy is not representative.
