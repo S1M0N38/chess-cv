@@ -13,6 +13,7 @@ __all__ = [
     "compute_per_class_accuracy",
     "evaluate_model",
     "print_evaluation_results",
+    "compute_f1_score",
 ]
 
 
@@ -165,6 +166,11 @@ def print_evaluation_results(results: dict[str, float | dict[str, float]]) -> No
     assert isinstance(overall_acc, float)
     print(f"\nOverall Accuracy: {overall_acc:.4f}")
 
+    f1_score = results.get("f1_score_macro")
+    if f1_score:
+        assert isinstance(f1_score, float)
+        print(f"Macro F1-Score:   {f1_score:.4f}")
+
     print("\nPer-Class Accuracy:")
     print("-" * 60)
     per_class = results["per_class_accuracy"]
@@ -174,3 +180,33 @@ def print_evaluation_results(results: dict[str, float | dict[str, float]]) -> No
         print(f"  {class_name:20s}: {acc:.4f}")
 
     print("=" * 60 + "\n")
+
+
+def compute_f1_score(confusion_matrix: np.ndarray) -> float:
+    """Compute macro F1-score from a confusion matrix.
+
+    Args:
+        confusion_matrix: Confusion matrix as numpy array
+
+    Returns:
+        Macro F1-score
+    """
+    num_classes = confusion_matrix.shape[0]
+    f1_scores = []
+
+    for i in range(num_classes):
+        tp = confusion_matrix[i, i]
+        fp = np.sum(confusion_matrix[:, i]) - tp
+        fn = np.sum(confusion_matrix[i, :]) - tp
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+
+        if precision + recall > 0:
+            f1 = 2 * (precision * recall) / (precision + recall)
+            f1_scores.append(f1)
+        else:
+            f1_scores.append(0)
+
+    macro_f1 = np.mean(f1_scores)
+    return float(macro_f1)

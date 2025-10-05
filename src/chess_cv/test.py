@@ -39,6 +39,7 @@ from .evaluate import (
     compute_confusion_matrix,
     evaluate_model,
     print_evaluation_results,
+    compute_f1_score,
 )
 from .model import create_model
 from .visualize import plot_confusion_matrix, plot_per_class_accuracy
@@ -131,6 +132,7 @@ def test(
         wandb_logger.log(
             {
                 "test/accuracy": results["overall_accuracy"],
+                "test/f1_score_macro": results["f1_score_macro"],
             }
         )
         # Log per-class accuracy
@@ -153,6 +155,7 @@ def test(
     confusion_matrix = compute_confusion_matrix(
         model, images_array, labels_array, num_classes=num_classes
     )
+    results["f1_score_macro"] = compute_f1_score(confusion_matrix)
 
     # Save misclassified images
     print("Saving misclassified images...")
