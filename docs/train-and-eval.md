@@ -229,7 +229,7 @@ Share your trained model on Hugging Face Hub:
 
 ```bash
 # First time setup
-huggingface-cli login
+hf login
 
 # Upload model
 python -m chess_cv.upload --repo-id username/chess-cv

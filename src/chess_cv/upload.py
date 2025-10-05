@@ -214,7 +214,7 @@ Examples:
         "--token",
         type=str,
         default=None,
-        help="Hugging Face API token (if not provided, uses cached token from 'huggingface-cli login')",
+        help="Hugging Face API token (if not provided, uses cached token from 'hf login')",
     )
 
     args = parser.parse_args()
