@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.2.0](https://github.com/S1M0N38/chess-cv/compare/v0.1.1...v0.2.0) (2025-10-05)
+
+
+### Features
+
+* add evaluation targets ([ffa5e81](https://github.com/S1M0N38/chess-cv/commit/ffa5e813679a0e5b2f2ca71b45196d42506b4ebb))
+* add f1 score in test ([23a2853](https://github.com/S1M0N38/chess-cv/commit/23a2853c8a36f91b302d6d04d073370f8105f710))
+* add support for huggingface datasets ([36842b5](https://github.com/S1M0N38/chess-cv/commit/36842b5c73293e40f06be04959d2d3ebcc278fdc))
+* generate the confusion matrix only locally ([225b691](https://github.com/S1M0N38/chess-cv/commit/225b691bd13815a1f57b7b00814b8b8054ee9822))
+
+
+### Bug Fixes
+
+* computation of f1 score ([247205d](https://github.com/S1M0N38/chess-cv/commit/247205d23674afa17e7fe9be477d85c4a3b7131b))
+* typechecking errors ([c5424ac](https://github.com/S1M0N38/chess-cv/commit/c5424ac209c1b736e931ce27cd048c2c5ba90aec))
+
+
+### Documentation
+
+* add result tables in the READMEs ([e1a91d3](https://github.com/S1M0N38/chess-cv/commit/e1a91d31a092f76511444bd0ad24e4f06b2c6c28))
+* update performance in docs files ([b87c660](https://github.com/S1M0N38/chess-cv/commit/b87c660f2fd2747f50de9d72053fcaef6fa880bf))
+
 ## [0.1.1](https://github.com/S1M0N38/chess-cv/compare/v0.1.0...v0.1.1) (2025-10-05)
 
 
