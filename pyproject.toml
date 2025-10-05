@@ -1,7 +1,7 @@
 [project]
 name = "chess-cv"
 version = "0.1.0"
-description = "CNN-based chess piece classifier using MLX for Apple Silicon"
+description = "CNN-based chess piece classifier"
 readme = "README.md"
 authors = [{ name = "S1M0N38", email = "bertolottosimone@gmail.com" }]
 requires-python = ">=3.13"
