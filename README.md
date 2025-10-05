@@ -231,6 +231,10 @@ chess-cv/
 
 ### Architecture
 
+<div align="center">
+  <img src="docs/assets/model.svg" alt="Model Architecture" width="800">
+</div>
+
 - **Input**: 32×32 RGB images
 - **Layer 1**: Conv2d(3→16) + ReLU + MaxPool
 - **Layer 2**: Conv2d(16→32) + ReLU + MaxPool
