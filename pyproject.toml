@@ -13,7 +13,6 @@ dependencies = [
   "pillow>=11.3.0",
   "torch>=2.8.0",
   "torchvision>=0.23.0",
-  "wandb>=0.22.1",
 ]
 classifiers = [
   "License :: OSI Approved :: MIT License",
@@ -52,4 +51,16 @@ dev = [
   "pytest>=8.4.1",
   "pytest-asyncio>=1.1.0",
   "ruff>=0.12.8",
+  "mdformat>=0.7.22",
+  "mdformat-footnote>=0.1.1",
+  "mdformat-frontmatter>=2.0.8",
+  "mdformat-gfm>=0.4.1",
+  "mdformat-gfm-alerts>=2.0.0",
+  "mdformat-mkdocs>=4.3.0",
+  "mdformat-simple-breaks>=0.0.1",
+  "mkdocs>=1.6.0",
+  "mkdocs-material>=9.6.15",
+  "mkdocs-llmstxt>=0.3.0",
+  "wandb>=0.22.1",
+  "huggingface-hub>=0.35.3",
 ]
