@@ -37,9 +37,9 @@ from .data import (
 )
 from .evaluate import (
     compute_confusion_matrix,
+    compute_f1_score,
     evaluate_model,
     print_evaluation_results,
-    compute_f1_score,
 )
 from .model import create_model
 from .visualize import plot_confusion_matrix, plot_per_class_accuracy
@@ -127,20 +127,6 @@ def test(
     results = evaluate_model(model, test_loader, batch_size=batch_size)
     print_evaluation_results(results)
 
-    # Log test results to wandb
-    if use_wandb:
-        wandb_logger.log(
-            {
-                "test/accuracy": results["overall_accuracy"],
-                "test/f1_score_macro": results["f1_score_macro"],
-            }
-        )
-        # Log per-class accuracy
-        per_class_acc = results["per_class_accuracy"]
-        if isinstance(per_class_acc, dict):
-            for class_name, acc in per_class_acc.items():
-                wandb_logger.log({f"test/class_accuracy/{class_name}": acc})
-
     # Gather all data for confusion matrix
     print("\nGathering all test data for confusion matrix...")
     all_images = []
@@ -156,6 +142,20 @@ def test(
         model, images_array, labels_array, num_classes=num_classes
     )
     results["f1_score_macro"] = compute_f1_score(confusion_matrix)
+
+    # Log test results to wandb
+    if use_wandb:
+        wandb_logger.log(
+            {
+                "test/accuracy": results["overall_accuracy"],
+                "test/f1_score_macro": results["f1_score_macro"],
+            }
+        )
+        # Log per-class accuracy
+        per_class_acc = results["per_class_accuracy"]
+        if isinstance(per_class_acc, dict):
+            for class_name, acc in per_class_acc.items():
+                wandb_logger.log({f"test/class_accuracy/{class_name}": acc})
 
     # Save misclassified images
     print("Saving misclassified images...")
