@@ -1,7 +1,5 @@
 ---
 license: mit
-language:
-  - en
 library_name: mlx
 tags:
   - computer-vision
@@ -9,7 +7,6 @@ tags:
   - chess
   - cnn
   - lightweight
-  - apple-silicon
 datasets:
   - synthetic-chess-squares
 model-index:
@@ -19,15 +16,33 @@ model-index:
           type: image-classification
           name: Image Classification
         dataset:
-          name: synthetic-chess-squares
-          type: synthetic
+          name: Chess CV Test Dataset
+          type: chess-cv-test
         metrics:
           - type: accuracy
-            value: 0.98
-            name: Test Accuracy
+            value: 0.9985
+            name: Accuracy
+            verified: false
+          - type: f1
+            value: 0.9989
+            name: F1 Score (Macro)
+            verified: false
+      - task:
+          type: image-classification
+          name: Image Classification
+        dataset:
+          name: Chess CV OpenBoard Dataset
+          type: chess-cv-openboard
+        metrics:
+          - type: accuracy
+            value: 0.9757
+            name: Accuracy
+            verified: false
+          - type: f1
+            value: 0.9578
+            name: F1 Score (Macro)
             verified: false
 pipeline_tag: image-classification
-base_model:
 ---
 
 # Chess CV

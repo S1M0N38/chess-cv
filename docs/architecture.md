@@ -86,39 +86,50 @@ The model classifies chess squares into 13 categories:
 
 With the default configuration:
 
-- **Training Accuracy**: ~98-99%
-- **Validation Accuracy**: ~95-97%
-- **Test Accuracy**: ~95-97%
-- **Training Time**: ~10-15 minutes (varies by hardware)
-- **Inference Speed**: ~1000 images/second (batch size 128)
+- **Test Accuracy**: ~99.85%
+- **F1 Score (Macro)**: ~99.89%
+- **Training Time**: ~90 minutes (varies by hardware)
 
 ### Per-Class Performance
 
-Typical accuracy by piece type:
+Actual accuracy by piece type (Test Dataset):
 
-| Class | Accuracy | Notes                         |
-| ----- | -------- | ----------------------------- |
-| bB    | 96-98%   | Bishops are distinctive       |
-| bK    | 97-99%   | Kings are highly recognizable |
-| bN    | 94-96%   | Knights can be challenging    |
-| bP    | 95-97%   | Pawns vary by piece set       |
-| bQ    | 96-98%   | Queens are distinctive        |
-| bR    | 96-98%   | Rooks are easily recognized   |
-| wB    | 96-98%   | Similar to black bishops      |
-| wK    | 97-99%   | Similar to black kings        |
-| wN    | 94-96%   | Similar to black knights      |
-| wP    | 95-97%   | Similar to black pawns        |
-| wQ    | 96-98%   | Similar to black queens       |
-| wR    | 96-98%   | Similar to black rooks        |
-| xx    | 98-99%   | Empty squares are easiest     |
+| Class | Accuracy | Class | Accuracy |
+| ----- | -------- | ----- | -------- |
+| bB    | 99.82%   | wB    | 99.91%   |
+| bK    | 99.82%   | wK    | 99.54%   |
+| bN    | 99.73%   | wN    | 99.91%   |
+| bP    | 99.82%   | wP    | 100%     |
+| bQ    | 100%     | wQ    | 99.82%   |
+| bR    | 99.64%   | wR    | 100%     |
+| xx    | 100%     |       |          |
 
-### Confusion Patterns
+### Evaluation on External Datasets
 
-Common misclassifications:
+The model has been evaluated on external datasets to assess generalization:
 
-- **Knights ↔ Bishops**: Similar silhouettes in some piece sets
-- **Black ↔ White**: Rare confusion when board colors are similar
-- **Pawns ↔ Other pieces**: Can occur with unusual piece designs
+#### OpenBoard
+
+- **Dataset**: [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard)
+- **Number of samples**: 6,016
+- **Overall Accuracy**: 97.57%
+- **F1 Score (Macro)**: 95.78%
+
+Per-class performance on OpenBoard:
+
+| Class | Accuracy | Class | Accuracy |
+| ----- | -------- | ----- | -------- |
+| bB    | 100%     | wB    | 100%     |
+| bK    | 98.94%   | wK    | 100%     |
+| bN    | 100%     | wN    | 98.97%   |
+| bP    | 99.62%   | wP    | 98.82%   |
+| bQ    | 97.10%   | wQ    | 100%     |
+| bR    | 99.32%   | wR    | 97.37%   |
+| xx    | 96.72%   |       |          |
+
+!!! note "Out of Sample Performance"
+
+    The lower performance on OpenBoard compared to the test set (97.57% vs 99.85%) indicates some domain gap between the synthetic training data and this external dataset.
 
 ## Dataset Characteristics
 
