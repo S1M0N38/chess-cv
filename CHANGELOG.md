@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.1](https://github.com/S1M0N38/chess-cv/compare/v0.1.0...v0.1.1) (2025-10-05)
+
+
+### Documentation
+
+* make the image bigger in docs home ([1427ff3](https://github.com/S1M0N38/chess-cv/commit/1427ff306f8d54dc9d991507d988d4ca4f8d54d4))
+* refine docs ([9ac5fce](https://github.com/S1M0N38/chess-cv/commit/9ac5fce68d353ea607594c5f7c907dd58930cbae))
+* update readme section titles ([d5dca66](https://github.com/S1M0N38/chess-cv/commit/d5dca66c27bc8cef45a74e32f28c00902362f527))
+
 ## 0.1.0 (2025-10-05)
 
 
