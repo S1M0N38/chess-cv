@@ -89,6 +89,7 @@ With the default configuration:
 - **Test Accuracy**: ~99.85%
 - **F1 Score (Macro)**: ~99.89%
 - **Training Time**: ~90 minutes (varies by hardware)
+- **Inference Speed**: 0.05 ms per image (batch size 8192, varying by hardware)
 
 ### Per-Class Performance
 
