@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/S1M0N38/chess-cv/compare/v0.2.0...v0.2.1) (2025-10-06)
+
+
+### Documentation
+
+* add citation file ([b45f940](https://github.com/S1M0N38/chess-cv/commit/b45f940376f4e64578031c9828f5d5e27d11fad2))
+* centering table in READMEs ([a169796](https://github.com/S1M0N38/chess-cv/commit/a169796e6b815e0f3db30cecc84ca8b7d0120b9b))
+
 ## [0.2.0](https://github.com/S1M0N38/chess-cv/compare/v0.1.1...v0.2.0) (2025-10-05)
 
 
