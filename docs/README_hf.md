@@ -121,11 +121,11 @@ For detailed documentation, architecture details, and advanced usage, see the [f
 ## Citation
 
 ```bibtex
-@software{bertolotto2024chesscv,
+@software{bertolotto2025chesscv,
   author = {Bertolotto, Simone},
-  title = {Chess CV: Lightweight CNN for Chess Piece Recognition},
-  year = {2025},
-  url = {https://github.com/S1M0N38/chess-cv}
+  title = {{Chess CV: CNN-based Chess Piece Classifier}},
+  url = {https://github.com/S1M0N38/chess-cv},
+  year = {2025}
 }
 ```
 
