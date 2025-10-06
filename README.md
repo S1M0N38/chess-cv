@@ -15,6 +15,9 @@
   <a href="https://opensource.org/licenses/MIT">
     <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge"/>
   </a>
+  <a href="https://s1m0n38.github.io/chess-cv/llms-full.txt">
+    <img alt="llms.txt" src="https://img.shields.io/badge/llms.txt-black?style=for-the-badge"/>
+  </a>
 </p>
 
 <img src="docs/assets/model.svg" alt="Model Architecture" width="600">
