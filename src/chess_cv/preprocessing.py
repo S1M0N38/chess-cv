@@ -1,6 +1,7 @@
 """Data preprocessing: generate train/validate/test sets from board-piece combinations."""
 
 import multiprocessing
+import random
 from pathlib import Path
 
 __all__ = ["generate_split_data"]
@@ -44,6 +45,55 @@ def get_piece_sets() -> list[str]:
         List of piece set directory names
     """
     return sorted([d.name for d in PIECES_DIR.iterdir() if d.is_dir()])
+
+
+def get_arrow_types() -> list[str]:
+    """Get all arrow type names from arrows directory.
+
+    Returns:
+        List of arrow type directory names (sorted)
+    """
+    arrows_dir = DEFAULT_DATA_DIR / "arrows"
+    if not arrows_dir.exists():
+        return []
+    return sorted([d.name for d in arrows_dir.iterdir() if d.is_dir()])
+
+
+def overlay_arrow(base_image: Image.Image, arrow_type: str) -> tuple[Image.Image, str]:
+    """Overlay a random arrow image of the specified type onto a base image.
+
+    Args:
+        base_image: Base PIL Image (32x32 square)
+        arrow_type: Arrow type directory name (e.g., 'head-N', 'corner-E-S')
+
+    Returns:
+        Tuple of (PIL Image with arrow overlayed, overlay_name)
+        overlay_name is the filename stem (e.g., 'chess-com-blue', 'lichess-red')
+    """
+    arrows_dir = DEFAULT_DATA_DIR / "arrows" / arrow_type
+
+    # Get all arrow images for this type
+    arrow_files = list(arrows_dir.glob("*.png"))
+    if not arrow_files:
+        raise FileNotFoundError(f"No arrow images found in {arrows_dir}")
+
+    # Pick a random arrow image from this type
+    arrow_path = random.choice(arrow_files)
+    overlay_name = arrow_path.stem  # e.g., 'chess-com-blue'
+
+    arrow_img = Image.open(arrow_path)
+
+    if arrow_img.mode != "RGBA":
+        arrow_img = arrow_img.convert("RGBA")
+
+    # Convert base image to RGBA for compositing
+    if base_image.mode != "RGBA":
+        base_image = base_image.convert("RGBA")
+
+    # Composite arrow on top of base using alpha channel
+    result = Image.alpha_composite(base_image, arrow_img)
+
+    return result, overlay_name
 
 
 def render_square_with_piece(
@@ -156,6 +206,85 @@ def _process_combination(args: tuple) -> dict:
     return {"split": split_name, "count": len(piece_classes) * 2}
 
 
+def _process_arrows_combination(args: tuple) -> dict:
+    """Worker function to process one board-piece set combination for arrows model.
+
+    First generates base images (xx category), then creates arrow overlay versions.
+
+    Args:
+        args: Tuple of (board_name, piece_set, split_name, split_dir, arrow_types)
+
+    Returns:
+        Dict with split name and count of images generated
+    """
+    board, piece_set, split_name, split_dir, arrow_types = args
+    piece_classes = ["bB", "bK", "bN", "bP", "bQ", "bR", "wB", "wK", "wN", "wP", "wQ", "wR", "xx"]
+
+    # Step 1: Generate base images (no arrows) for xx category
+    base_images = {}  # Store base images to reuse for arrow overlays
+
+    # Generate images for each piece on dark and light squares
+    for piece_class in piece_classes:
+        if piece_class == "xx":
+            continue
+
+        # Dark square
+        img_dark = render_square_with_piece(board, piece_set, piece_class, DARK_SQUARE)
+        filename = f"{board}_{piece_set}_dark.png"
+        base_images[f"{piece_class}_dark"] = img_dark
+        # Save to xx category
+        output_path = split_dir / "xx" / filename
+        img_dark.save(output_path)
+
+        # Light square
+        img_light = render_square_with_piece(board, piece_set, piece_class, LIGHT_SQUARE)
+        filename = f"{board}_{piece_set}_light.png"
+        base_images[f"{piece_class}_light"] = img_light
+        # Save to xx category
+        output_path = split_dir / "xx" / filename
+        img_light.save(output_path)
+
+    # Generate empty square images
+    # Dark square
+    img_dark = render_empty_square(board, DARK_SQUARE)
+    filename = f"{board}_{piece_set}_dark.png"
+    base_images["xx_dark"] = img_dark
+    output_path = split_dir / "xx" / filename
+    img_dark.save(output_path)
+
+    # Light square
+    img_light = render_empty_square(board, LIGHT_SQUARE)
+    filename = f"{board}_{piece_set}_light.png"
+    base_images["xx_light"] = img_light
+    output_path = split_dir / "xx" / filename
+    img_light.save(output_path)
+
+    # Step 2: Generate arrow overlay versions for each arrow type
+    for arrow_type in arrow_types:
+        if arrow_type == "xx":
+            continue  # Already generated
+
+        # For each base image, create an arrow overlay version
+        for base_key, base_img in base_images.items():
+            # Extract square_type from base_key
+            # base_key format: "{piece_class}_{square_type}"
+            parts = base_key.rsplit("_", 1)
+            square_type = parts[-1]  # "dark" or "light"
+
+            # Create arrow overlay and get the overlay name
+            arrow_img, overlay_name = overlay_arrow(base_img.copy(), arrow_type)
+
+            # Save with filename including overlay name
+            # Format: {board}_{piece_set}_{square_type}-{overlay_name}.png
+            filename = f"{board}_{piece_set}_{square_type}-{overlay_name}.png"
+            output_path = split_dir / arrow_type / filename
+            arrow_img.save(output_path)
+
+    # Total images = 26 base images for xx + (26 base images * 48 arrow types) = 1274 images
+    total_images = 26 + (26 * (len(arrow_types) - 1))  # -1 to exclude "xx"
+    return {"split": split_name, "count": total_images}
+
+
 def generate_split_data(
     model_id: str,
     train_dir: Path | None = None,
@@ -182,7 +311,7 @@ def generate_split_data(
 
     # Get model configuration
     model_config = get_model_config(model_id)
-    piece_classes = model_config["class_names"]
+    class_names = model_config["class_names"]
 
     # Set default directories if not provided
     if train_dir is None:
@@ -208,8 +337,8 @@ def generate_split_data(
     # Create output directory structure
     for split_dir in [train_dir, val_dir, test_dir]:
         split_dir.mkdir(parents=True, exist_ok=True)
-        for piece_class in piece_classes:
-            (split_dir / piece_class).mkdir(exist_ok=True)
+        for class_name in class_names:
+            (split_dir / class_name).mkdir(exist_ok=True)
 
     # Create all combinations and assign to splits
     combinations = [(board, piece_set) for board in boards for piece_set in piece_sets]
@@ -233,7 +362,12 @@ def generate_split_data(
             split_dir = val_dir
         else:
             split_dir = test_dir
-        tasks.append((board, piece_set, split_name, split_dir, piece_classes))
+
+        # Choose appropriate data for task based on model_id
+        if model_id == "arrows":
+            tasks.append((board, piece_set, split_name, split_dir, class_names))
+        else:  # pieces or other models
+            tasks.append((board, piece_set, split_name, split_dir, class_names))
 
     # Use all CPU cores
     num_processes = multiprocessing.cpu_count()
@@ -243,11 +377,17 @@ def generate_split_data(
         f"(train/val/test = {train_ratio}/{val_ratio}/{test_ratio})..."
     )
 
+    # Choose the appropriate processing function based on model_id
+    if model_id == "arrows":
+        process_func = _process_arrows_combination
+    else:  # pieces or other models
+        process_func = _process_combination
+
     # Process combinations in parallel
     with multiprocessing.Pool(processes=num_processes) as pool:
         results = list(
             tqdm(
-                pool.imap_unordered(_process_combination, tasks),
+                pool.imap_unordered(process_func, tasks),
                 total=total_combinations,
                 desc="Generating images",
             )
