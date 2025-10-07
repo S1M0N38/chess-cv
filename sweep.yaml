@@ -9,26 +9,26 @@ metric:
 # Hyperparameters to tune
 parameters:
   # Batch size - categorical search
-  batch-size:
+  batch_size:
     values: [32, 64, 128, 256]
   # Learning rate - log-uniform distribution for exponential search
   # Searches from 1e-5 to 1e-3 on logarithmic scale
-  learning-rate:
+  learning_rate:
     distribution: log_uniform_values
     min: 0.00001
     max: 0.001
   # Weight decay - log-uniform distribution for exponential search
   # Searches from 1e-5 to 1e-3 on logarithmic scale
-  weight-decay:
+  weight_decay:
     distribution: log_uniform_values
     min: 0.00001
     max: 0.001
   # Fixed parameters
-  num-epochs:
+  num_epochs:
     value: 200
-  train-dir:
+  train_dir:
     value: data/train
-  val-dir:
+  val_dir:
     value: data/validate
 # Early termination to stop poor runs and save compute
 # Hyperband with aggressive pruning for faster convergence

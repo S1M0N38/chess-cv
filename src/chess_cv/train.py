@@ -16,16 +16,7 @@ from torchvision import transforms
 from tqdm import tqdm
 
 from .constants import (
-    AUGMENTATION_ARROW_PROBABILITY,
-    AUGMENTATION_BRIGHTNESS,
-    AUGMENTATION_CONTRAST,
-    AUGMENTATION_HIGHLIGHT_PROBABILITY,
-    AUGMENTATION_NOISE_MEAN,
-    AUGMENTATION_NOISE_STD,
-    AUGMENTATION_ROTATION_DEGREES,
-    AUGMENTATION_SATURATION,
-    AUGMENTATION_SCALE_MAX,
-    AUGMENTATION_SCALE_MIN,
+    AUGMENTATION_CONFIGS,
     BEST_MODEL_FILENAME,
     DEFAULT_ARROW_DIR,
     DEFAULT_BATCH_SIZE,
@@ -186,22 +177,39 @@ def train(
     # Initialize wandb logger
     wandb_logger = WandbLogger(enabled=use_wandb)
     if use_wandb:
+        # Only log essential hyperparameters to config
+        # Avoid logging parameters that are already tracked by sweep
+        config = {
+            "model_id": model_id,
+            "num_classes": num_classes,
+            "architecture": "SimpleCNN",
+            "total_train_samples": 0,  # Will update after loading data
+            "total_val_samples": 0,  # Will update after loading data
+        }
+
+        # Add hyperparameters only if not running a sweep
+        # (sweeps automatically log these from command line)
+        import os
+
+        if not os.environ.get("WANDB_SWEEP_ID"):
+            config.update(
+                {
+                    "batch_size": batch_size,
+                    "learning_rate": learning_rate,
+                    "weight_decay": weight_decay,
+                    "num_epochs": num_epochs,
+                    "patience": patience,
+                    "image_size": image_size,
+                }
+            )
+
         wandb_logger.init(
             project=f"chess-cv-{model_id}",
-            config={
-                "model_id": model_id,
-                "num_classes": num_classes,
-                "batch_size": batch_size,
-                "learning_rate": learning_rate,
-                "weight_decay": weight_decay,
-                "num_epochs": num_epochs,
-                "patience": patience,
-                "image_size": image_size,
-                "num_workers": num_workers,
-                "train_dir": str(train_dir),
-                "val_dir": str(val_dir),
-            },
+            config=config,
         )
+
+        # Define custom metrics with step as x-axis
+        wandb_logger.define_metrics()
 
     print("=" * 60)
     print("LOADING DATA")
@@ -213,32 +221,66 @@ def train(
     all_labels = get_all_labels(train_files)
     label_map = get_label_map(all_labels)
 
-    # Define augmentations
-    train_transforms = transforms.Compose(
-        [
+    # Define augmentations using model-specific configuration
+    aug_config = AUGMENTATION_CONFIGS[model_id]
+
+    train_transform_list = []
+
+    # Arrow overlay
+    if aug_config["arrow_probability"] > 0:
+        train_transform_list.append(
             RandomArrowOverlay(
                 arrow_dir=DEFAULT_ARROW_DIR,
-                probability=AUGMENTATION_ARROW_PROBABILITY,
-            ),
+                probability=aug_config["arrow_probability"],
+            )
+        )
+
+    # Highlight overlay
+    if aug_config["highlight_probability"] > 0:
+        train_transform_list.append(
             RandomHighlightOverlay(
                 highlight_dir=DEFAULT_HIGHLIGHT_DIR,
-                probability=AUGMENTATION_HIGHLIGHT_PROBABILITY,
-            ),
-            transforms.RandomResizedCrop(
-                size=(image_size, image_size),
-                scale=(AUGMENTATION_SCALE_MIN, AUGMENTATION_SCALE_MAX),
-                antialias=True,
-            ),
-            transforms.RandomHorizontalFlip(),
-            transforms.ColorJitter(
-                brightness=AUGMENTATION_BRIGHTNESS,
-                contrast=AUGMENTATION_CONTRAST,
-                saturation=AUGMENTATION_SATURATION,
-            ),
-            transforms.RandomRotation(degrees=AUGMENTATION_ROTATION_DEGREES),
-            AddGaussianNoise(mean=AUGMENTATION_NOISE_MEAN, std=AUGMENTATION_NOISE_STD),
-        ]
+                probability=aug_config["highlight_probability"],
+            )
+        )
+
+    # Random resized crop
+    train_transform_list.append(
+        transforms.RandomResizedCrop(
+            size=(image_size, image_size),
+            scale=(aug_config["scale_min"], aug_config["scale_max"]),
+            antialias=True,
+        )
     )
+
+    # Horizontal flip
+    if aug_config["horizontal_flip"]:
+        train_transform_list.append(transforms.RandomHorizontalFlip())
+
+    # Color jitter
+    train_transform_list.append(
+        transforms.ColorJitter(
+            brightness=aug_config["brightness"],
+            contrast=aug_config["contrast"],
+            saturation=aug_config["saturation"],
+        )
+    )
+
+    # Rotation
+    if aug_config["rotation_degrees"] > 0:
+        train_transform_list.append(
+            transforms.RandomRotation(degrees=aug_config["rotation_degrees"])
+        )
+
+    # Gaussian noise
+    train_transform_list.append(
+        AddGaussianNoise(
+            mean=aug_config["noise_mean"],
+            std=aug_config["noise_std"],
+        )
+    )
+
+    train_transforms = transforms.Compose(train_transform_list)
     val_transforms = transforms.Compose(
         [
             transforms.Resize((image_size, image_size), antialias=True),
@@ -273,6 +315,17 @@ def train(
     print(f"Batch size:         {batch_size}")
     print(f"Training batches:   {len(train_loader)}")
     print(f"Validation batches: {len(val_loader)}")
+
+    # Update wandb config with actual dataset sizes
+    if use_wandb:
+        wandb_logger.update_config(
+            {
+                "total_train_samples": len(train_dataset),
+                "total_val_samples": len(val_dataset),
+                "train_batches": len(train_loader),
+                "val_batches": len(val_loader),
+            }
+        )
 
     # Visualization of augmentation
     if train_files and len(train_files) >= 8:
@@ -379,16 +432,15 @@ def train(
 
         # Update visualizer or log to wandb
         if use_wandb:
+            # Log metrics - step will be used as x-axis for all metrics
             wandb_logger.log(
                 {
-                    "epoch": epoch + 1,
+                    "step": epoch + 1,
                     "train/loss": train_loss,
                     "train/accuracy": train_acc,
                     "val/loss": val_loss,
                     "val/accuracy": val_acc,
-                    "best_val_accuracy": best_val_acc,
                 },
-                step=epoch + 1,
             )
         else:
             visualizer.update(epoch + 1, train_loss, train_acc, val_loss, val_acc)

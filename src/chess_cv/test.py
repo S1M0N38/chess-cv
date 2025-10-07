@@ -25,7 +25,6 @@ from .constants import (
     TEST_SUMMARY_FILENAME,
 )
 from .data import (
-    CLASS_NAMES,
     ChessPiecesDataset,
     HuggingFaceChessPiecesDataset,
     collate_fn,
@@ -82,6 +81,7 @@ def test(
     # Get model configuration
     model_config = get_model_config(model_id)
     num_classes = model_config["num_classes"]
+    class_names = model_config["class_names"]
 
     # Set default directories if not provided
     if test_dir is None:
@@ -173,8 +173,10 @@ def test(
     print("\n" + "=" * 60)
     print("EVALUATING MODEL")
     print("=" * 60)
-    results = evaluate_model(model, test_loader, batch_size=batch_size)
-    print_evaluation_results(results)
+    results = evaluate_model(
+        model, test_loader, class_names=class_names, batch_size=batch_size
+    )
+    print_evaluation_results(results, class_names=class_names)
 
     # Gather all data for confusion matrix
     print("\nGathering all test data for confusion matrix...")
@@ -234,8 +236,8 @@ def test(
     for idx in misclassified_indices.tolist():
         true_label_idx = int(labels_array[idx].item())  # type: ignore[union-attr]
         pred_label_idx = int(predictions[idx].item())  # type: ignore[union-attr]
-        true_label = CLASS_NAMES[true_label_idx]
-        predicted_label = CLASS_NAMES[pred_label_idx]
+        true_label = class_names[true_label_idx]
+        predicted_label = class_names[pred_label_idx]
 
         # Get the original image based on dataset type
         if isinstance(test_dataset, HuggingFaceChessPiecesDataset):
@@ -264,7 +266,7 @@ def test(
     # Save matplotlib plots to files
     plot_confusion_matrix(
         confusion_matrix,
-        class_names=CLASS_NAMES,
+        class_names=class_names,
         output_dir=output_dir,
         filename=TEST_CONFUSION_MATRIX_FILENAME,
     )
@@ -283,8 +285,8 @@ def test(
         for i, idx in enumerate(misclassified_indices[:max_samples].tolist()):
             true_label_idx = int(labels_array[idx].item())  # type: ignore[union-attr]
             pred_label_idx = int(predictions[idx].item())  # type: ignore[union-attr]
-            true_label = CLASS_NAMES[true_label_idx]
-            predicted_label = CLASS_NAMES[pred_label_idx]
+            true_label = class_names[true_label_idx]
+            predicted_label = class_names[pred_label_idx]
 
             # Get image path based on dataset type
             if isinstance(test_dataset, HuggingFaceChessPiecesDataset):

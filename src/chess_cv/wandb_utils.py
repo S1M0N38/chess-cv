@@ -69,6 +69,32 @@ class WandbLogger:
             tags=tags,
         )
 
+    def define_metrics(self) -> None:
+        """Define custom metrics and their x-axis.
+
+        This ensures train and val metrics are plotted on the same graph
+        with 'step' (epoch) as the x-axis.
+        """
+        if not self.enabled or self.run is None or self.wandb is None:
+            return
+
+        # Define step as the x-axis for all metrics
+        self.wandb.define_metric("*", step_metric="step")
+
+        # This will make train/loss and val/loss appear on the same graph
+        # and train/accuracy and val/accuracy appear on the same graph
+
+    def update_config(self, config: dict[str, Any]) -> None:
+        """Update the run configuration.
+
+        Args:
+            config: Dictionary of configuration values to update
+        """
+        if not self.enabled or self.run is None or self.wandb is None:
+            return
+
+        self.run.config.update(config)
+
     def log(self, metrics: dict[str, Any], step: int | None = None) -> None:
         """Log metrics to wandb.
 

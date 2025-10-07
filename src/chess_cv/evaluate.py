@@ -5,8 +5,6 @@ import mlx.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 
-from .data import CLASS_NAMES
-
 __all__ = [
     "compute_accuracy",
     "compute_confusion_matrix",
@@ -36,7 +34,11 @@ def compute_accuracy(model: nn.Module, images: mx.array, labels: mx.array) -> fl
 
 
 def compute_per_class_accuracy(
-    model: nn.Module, images: mx.array, labels: mx.array, num_classes: int = 13
+    model: nn.Module,
+    images: mx.array,
+    labels: mx.array,
+    class_names: list[str],
+    num_classes: int | None = None,
 ) -> dict[str, float]:
     """Compute per-class accuracy.
 
@@ -44,11 +46,15 @@ def compute_per_class_accuracy(
         model: Trained model
         images: Images array of shape (N, H, W, C)
         labels: Labels array of shape (N,)
-        num_classes: Number of classes
+        class_names: List of class names
+        num_classes: Number of classes (if None, inferred from class_names)
 
     Returns:
         Dictionary mapping class names to accuracy values
     """
+    if num_classes is None:
+        num_classes = len(class_names)
+
     logits = model(images)
     predictions = mx.argmax(logits, axis=1)
 
@@ -62,9 +68,9 @@ def compute_per_class_accuracy(
             # Compute accuracy for this class
             class_correct = mx.sum((predictions == labels) & class_mask)  # type: ignore[arg-type,operator]
             class_accuracy = class_correct / class_samples
-            per_class_acc[CLASS_NAMES[class_idx]] = class_accuracy.item()
+            per_class_acc[class_names[class_idx]] = class_accuracy.item()
         else:
-            per_class_acc[CLASS_NAMES[class_idx]] = 0.0
+            per_class_acc[class_names[class_idx]] = 0.0
 
     return per_class_acc
 
@@ -100,13 +106,17 @@ def compute_confusion_matrix(
 
 
 def evaluate_model(
-    model: nn.Module, data_loader: DataLoader, batch_size: int = 256
+    model: nn.Module,
+    data_loader: DataLoader,
+    class_names: list[str],
+    batch_size: int = 256,
 ) -> dict[str, float | dict[str, float]]:
     """Evaluate model on a dataset.
 
     Args:
         model: Trained model
         data_loader: Data loader
+        class_names: List of class names
         batch_size: Batch size for evaluation
 
     Returns:
@@ -133,7 +143,7 @@ def evaluate_model(
 
     # Compute per-class accuracy
     per_class_acc = {}
-    for class_idx, class_name in enumerate(CLASS_NAMES):
+    for class_idx, class_name in enumerate(class_names):
         # Find samples belonging to this class
         class_mask = all_labels == class_idx  # type: ignore[assignment]
         class_samples = mx.sum(class_mask)  # type: ignore[arg-type]
@@ -152,11 +162,14 @@ def evaluate_model(
     }
 
 
-def print_evaluation_results(results: dict[str, float | dict[str, float]]) -> None:
+def print_evaluation_results(
+    results: dict[str, float | dict[str, float]], class_names: list[str]
+) -> None:
     """Pretty print evaluation results.
 
     Args:
         results: Dictionary from evaluate_model
+        class_names: List of class names
     """
     print("\n" + "=" * 60)
     print("EVALUATION RESULTS")
@@ -175,7 +188,7 @@ def print_evaluation_results(results: dict[str, float | dict[str, float]]) -> No
     print("-" * 60)
     per_class = results["per_class_accuracy"]
     assert isinstance(per_class, dict)
-    for class_name in CLASS_NAMES:
+    for class_name in class_names:
         acc = per_class[class_name]
         print(f"  {class_name:20s}: {acc:.4f}")
 

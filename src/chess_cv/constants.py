@@ -58,19 +58,39 @@ DEFAULT_VAL_RATIO = 0.15
 DEFAULT_TEST_RATIO = 0.15
 DEFAULT_RANDOM_SEED = 42
 
-# Augmentation parameters
-AUGMENTATION_SCALE_MIN = 0.8
-AUGMENTATION_SCALE_MAX = 1.0
-AUGMENTATION_BRIGHTNESS = 0.2
-AUGMENTATION_CONTRAST = 0.2
-AUGMENTATION_SATURATION = 0.2
-AUGMENTATION_ROTATION_DEGREES = 5
-AUGMENTATION_NOISE_MEAN = 0.0
-AUGMENTATION_NOISE_STD = 0.05
-AUGMENTATION_ARROW_PROBABILITY = 0.80
+# Augmentation resource directories
 DEFAULT_ARROW_DIR = DEFAULT_DATA_DIR / "arrows"
-AUGMENTATION_HIGHLIGHT_PROBABILITY = 0.25
 DEFAULT_HIGHLIGHT_DIR = DEFAULT_DATA_DIR / "highlights"
+
+# Model-specific augmentation configurations
+AUGMENTATION_CONFIGS = {
+    "pieces": {
+        "arrow_probability": 0.80,
+        "highlight_probability": 0.25,
+        "scale_min": 0.8,
+        "scale_max": 1.0,
+        "horizontal_flip": True,
+        "brightness": 0.2,
+        "contrast": 0.2,
+        "saturation": 0.2,
+        "rotation_degrees": 5,
+        "noise_mean": 0.0,
+        "noise_std": 0.05,
+    },
+    "arrows": {
+        "arrow_probability": 0.0,  # No arrow overlay for arrows model
+        "highlight_probability": 0.25,
+        "scale_min": 0.8,
+        "scale_max": 1.0,
+        "horizontal_flip": False,  # No horizontal flip
+        "brightness": 0.05,  # Tame color jitter
+        "contrast": 0.05,
+        "saturation": 0.05,
+        "rotation_degrees": 0,  # No rotation
+        "noise_mean": 0.0,
+        "noise_std": 0.01,  # Tame gaussian noise
+    },
+}
 
 # File patterns
 IMAGE_PATTERN = "**/*.png"

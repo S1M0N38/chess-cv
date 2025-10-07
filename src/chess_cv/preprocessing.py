@@ -46,7 +46,7 @@ def _index_to_subdir(index: int) -> str:
     return chr(ord("a") + first) + chr(ord("a") + second)
 
 
-def _get_subdir_for_counter(counter: int, max_files_per_dir: int = 8192) -> str:
+def _get_subdir_for_counter(counter: int, max_files_per_dir: int = 512) -> str:
     """Get subdir name based on file counter.
 
     Args:
