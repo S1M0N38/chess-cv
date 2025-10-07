@@ -10,13 +10,13 @@ Generate synthetic chess piece images:
 
 ```bash
 # Using default settings (70% train, 15% val, 15% test)
-python -m chess_cv.preprocessing
+chess-cv preprocessing
 ```
 
 ### Custom Configuration
 
 ```bash
-python -m chess_cv.preprocessing \
+chess-cv preprocessing \
   --train-dir data/splits/pieces/train \
   --val-dir data/splits/pieces/validate \
   --test-dir data/splits/pieces/test \
@@ -53,13 +53,13 @@ Each set contains balanced examples of all 13 classes.
 Train with default settings:
 
 ```bash
-python -m chess_cv.train
+chess-cv train
 ```
 
 ### Custom Training Configuration
 
 ```bash
-python -m chess_cv.train \
+chess-cv train \
   --train-dir data/splits/pieces/train \
   --val-dir data/splits/pieces/validate \
   --checkpoint-dir checkpoints \
@@ -135,7 +135,7 @@ Track experiments with the W&B dashboard by adding the `--wandb` flag:
 wandb login
 
 # Train with wandb logging
-python -m chess_cv.train --wandb
+chess-cv train --wandb
 ```
 
 **Features**: Real-time metric logging, hyperparameter tracking, model comparison, and experiment organization.
@@ -155,7 +155,10 @@ wandb agent your-entity/chess-cv/sweep-id
 Example `sweep.yaml`:
 
 ```yaml
-program: -m chess_cv.train
+program: chess-cv
+command:
+  - train
+  - --wandb
 method: bayes
 metric:
   name: val_accuracy
@@ -180,13 +183,13 @@ parameters:
 Evaluate trained model on test set:
 
 ```bash
-python -m chess_cv.test
+chess-cv test
 ```
 
 ### Custom Evaluation
 
 ```bash
-python -m chess_cv.test \
+chess-cv test \
   --test-dir data/splits/pieces/test \
   --train-dir data/splits/pieces/train \
   --checkpoint checkpoints/best_model.safetensors \
@@ -232,16 +235,15 @@ Share your trained model on Hugging Face Hub:
 hf login
 
 # Upload model
-python -m chess_cv.upload --repo-id username/chess-cv
+chess-cv upload --repo-id username/chess-cv
 ```
 
 **Options:**
 
 ```bash
-python -m chess_cv.upload \
+chess-cv upload \
   --repo-id username/chess-cv \
   --checkpoint-dir checkpoints \
-  --output-dir outputs \
   --message "feat: initial model release" \
   --private  # Optional: create private repository
 ```

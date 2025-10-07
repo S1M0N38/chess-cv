@@ -98,13 +98,13 @@ cd chess-cv
 uv sync --all-extras
 
 # Generate training data
-python -m chess_cv.preprocessing
+chess-cv preprocessing
 
 # Train model
-python -m chess_cv.train
+chess-cv train
 
 # Evaluate model
-python -m chess_cv.test
+chess-cv test
 ```
 
 See the [Setup Guide](https://s1m0n38.github.io/chess-cv/setup/) and [Usage Guide](https://s1m0n38.github.io/chess-cv/usage/) for detailed instructions on data generation, training configuration, and evaluation.

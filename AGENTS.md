@@ -58,18 +58,31 @@ make docs        # Serve at http://127.0.0.1:8000
 
 ```bash
 # 1. Generate synthetic training data (boards + pieces → square images in data/splits/pieces/)
-python -m chess_cv.preprocessing
+chess-cv preprocessing
 
 # 2. Train model
-python -m chess_cv.train
-python -m chess_cv.train --wandb  # with W&B logging
+chess-cv train
+chess-cv train --wandb  # with W&B logging
 
 # 3. Evaluate model
-python -m chess_cv.test
+chess-cv test
 make eval  # Run full evaluation suite
 
 # 4. Upload to Hugging Face Hub
-python -m chess_cv.upload
+chess-cv upload --repo-id username/chess-cv
+```
+
+### CLI Help
+
+```bash
+# See all available commands
+chess-cv --help
+
+# See help for specific command
+chess-cv preprocessing --help
+chess-cv train --help
+chess-cv test --help
+chess-cv upload --help
 ```
 
 ### Run Single Test
