@@ -2,6 +2,8 @@
 
 import glob
 import os
+import random
+from pathlib import Path
 from typing import Callable
 
 import mlx.core as mx
@@ -12,6 +14,8 @@ from torch.utils.data import Dataset
 __all__ = [
     "CLASS_NAMES",
     "AddGaussianNoise",
+    "RandomArrowOverlay",
+    "RandomHighlightOverlay",
     "ChessPiecesDataset",
     "HuggingFaceChessPiecesDataset",
     "collate_fn",
@@ -63,6 +67,146 @@ class AddGaussianNoise:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(mean={self.mean}, std={self.std})"
+
+
+class RandomArrowOverlay:
+    """Randomly overlays arrow images on chess piece images."""
+
+    def __init__(self, arrow_dir: Path | str, probability: float = 0.3):
+        """
+        Args:
+            arrow_dir: Directory containing arrow component subdirectories
+                      (head-*, tail-*, middle-*, corner-*)
+            probability: Probability of applying arrow overlay (0.0 to 1.0)
+        """
+        self.probability = probability
+        self.arrow_images: list[Image.Image] = []
+
+        # Load all arrow images from all subdirectories
+        arrow_dir = Path(arrow_dir)
+        arrow_paths = glob.glob(str(arrow_dir / "*" / "*.png"))
+
+        if not arrow_paths:
+            raise FileNotFoundError(
+                f"No arrow images found in {arrow_dir} subdirectories"
+            )
+
+        # Load and cache all arrow images
+        for arrow_path in arrow_paths:
+            try:
+                arrow_img = Image.open(arrow_path).convert("RGBA")
+                self.arrow_images.append(arrow_img)
+            except Exception as e:
+                print(f"Warning: Could not load arrow image {arrow_path}: {e}")
+
+        if not self.arrow_images:
+            raise ValueError("No valid arrow images could be loaded")
+
+        print(f"Loaded {len(self.arrow_images)} arrow images for augmentation")
+
+    def __call__(self, img: Image.Image) -> Image.Image:
+        """
+        Args:
+            img (PIL Image): Image to be augmented.
+
+        Returns:
+            PIL Image: Augmented image (with or without arrow overlay).
+        """
+        # Randomly decide whether to apply arrow overlay
+        if random.random() > self.probability:
+            return img
+
+        # Convert to RGBA to support alpha compositing
+        if img.mode != "RGBA":
+            img = img.convert("RGBA")
+
+        # Randomly select an arrow (no rotation needed, all rotations pre-generated)
+        arrow = random.choice(self.arrow_images).copy()
+
+        # Composite arrow onto the image
+        img.paste(arrow, (0, 0), arrow)
+
+        # Convert back to RGB
+        return img.convert("RGB")
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(num_arrows={len(self.arrow_images)}, "
+            f"probability={self.probability})"
+        )
+
+
+class RandomHighlightOverlay:
+    """Randomly overlays highlight images on chess piece images."""
+
+    def __init__(self, highlight_dir: Path | str, probability: float = 0.3):
+        """
+        Args:
+            highlight_dir: Directory containing highlight subdirectories (circle, sqaure)
+            probability: Probability of applying highlight overlay (0.0 to 1.0)
+        """
+        self.probability = probability
+        self.highlight_images: list[Image.Image] = []
+
+        # Load all highlight images from circle subdirectory only
+        highlight_dir = Path(highlight_dir)
+        highlight_paths = []
+        # NOTE: we are only using circle highlights. Square highlights (sqaure/)
+        # are just different background colors for the square, which we already
+        # handle with different board backgrounds
+        for subdir in ["circle"]:
+            subdir_path = highlight_dir / subdir
+            if subdir_path.exists():
+                highlight_paths.extend(glob.glob(str(subdir_path / "*.png")))
+
+        if not highlight_paths:
+            raise FileNotFoundError(
+                f"No highlight images found in {highlight_dir}/circle"
+            )
+
+        # Load and cache all highlight images
+        for highlight_path in highlight_paths:
+            try:
+                highlight_img = Image.open(highlight_path).convert("RGBA")
+                self.highlight_images.append(highlight_img)
+            except Exception as e:
+                print(f"Warning: Could not load highlight image {highlight_path}: {e}")
+
+        if not self.highlight_images:
+            raise ValueError("No valid highlight images could be loaded")
+
+        print(f"Loaded {len(self.highlight_images)} highlight images for augmentation")
+
+    def __call__(self, img: Image.Image) -> Image.Image:
+        """
+        Args:
+            img (PIL Image): Image to be augmented.
+
+        Returns:
+            PIL Image: Augmented image (with or without highlight overlay).
+        """
+        # Randomly decide whether to apply highlight overlay
+        if random.random() > self.probability:
+            return img
+
+        # Convert to RGBA to support alpha compositing
+        if img.mode != "RGBA":
+            img = img.convert("RGBA")
+
+        # Randomly select a highlight (no rotation needed, all rotations pre-generated)
+        highlight = random.choice(self.highlight_images).copy()
+
+        # Composite highlight onto the image
+        img.paste(highlight, (0, 0), highlight)
+
+        # Convert back to RGB
+        return img.convert("RGB")
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(num_highlights={len(self.highlight_images)}, "
+            f"probability={self.probability})"
+        )
 
 
 def get_image_files(data_dir: str) -> list[str]:

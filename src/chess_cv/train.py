@@ -17,8 +17,10 @@ from torchvision import transforms
 from tqdm import tqdm
 
 from .constants import (
+    AUGMENTATION_ARROW_PROBABILITY,
     AUGMENTATION_BRIGHTNESS,
     AUGMENTATION_CONTRAST,
+    AUGMENTATION_HIGHLIGHT_PROBABILITY,
     AUGMENTATION_NOISE_MEAN,
     AUGMENTATION_NOISE_STD,
     AUGMENTATION_ROTATION_DEGREES,
@@ -26,8 +28,10 @@ from .constants import (
     AUGMENTATION_SCALE_MAX,
     AUGMENTATION_SCALE_MIN,
     BEST_MODEL_FILENAME,
+    DEFAULT_ARROW_DIR,
     DEFAULT_BATCH_SIZE,
     DEFAULT_CHECKPOINT_DIR,
+    DEFAULT_HIGHLIGHT_DIR,
     DEFAULT_IMAGE_SIZE,
     DEFAULT_LEARNING_RATE,
     DEFAULT_NUM_EPOCHS,
@@ -43,6 +47,8 @@ from .constants import (
 from .data import (
     AddGaussianNoise,
     ChessPiecesDataset,
+    RandomArrowOverlay,
+    RandomHighlightOverlay,
     collate_fn,
     get_all_labels,
     get_image_files,
@@ -173,6 +179,14 @@ def train(
     # Define augmentations
     train_transforms = transforms.Compose(
         [
+            RandomArrowOverlay(
+                arrow_dir=DEFAULT_ARROW_DIR,
+                probability=AUGMENTATION_ARROW_PROBABILITY,
+            ),
+            RandomHighlightOverlay(
+                highlight_dir=DEFAULT_HIGHLIGHT_DIR,
+                probability=AUGMENTATION_HIGHLIGHT_PROBABILITY,
+            ),
             transforms.RandomResizedCrop(
                 size=(image_size, image_size),
                 scale=(AUGMENTATION_SCALE_MIN, AUGMENTATION_SCALE_MAX),
