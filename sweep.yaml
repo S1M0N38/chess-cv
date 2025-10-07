@@ -31,11 +31,15 @@ parameters:
   val-dir:
     value: data/validate
 # Early termination to stop poor runs and save compute
+# Hyperband with aggressive pruning for faster convergence
 early_terminate:
   type: hyperband
-  min_iter: 10
-  eta: 3
-  s: 2
+  min_iter: 10 # Minimum iterations before stopping
+  eta: 3 # Bracket multiplier (3x resource reduction per bracket)
+  s: 2 # Number of brackets to explore
+  strict: true # Enable aggressive pruning of underperforming runs
+# Maximum number of runs to execute (optional limit for cost control)
+run_cap: 20
 # Command to run (wandb will automatically append parameters)
 command:
   - python
