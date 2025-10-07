@@ -70,19 +70,25 @@ class WandbLogger:
         )
 
     def define_metrics(self) -> None:
-        """Define custom metrics and their x-axis.
+        """Define custom metrics and their summary statistics.
 
-        This ensures train and val metrics are plotted on the same graph
-        with 'step' (epoch) as the x-axis.
+        This defines summary statistics for key metrics. WandB automatically
+        groups metrics with the same prefix (e.g., loss/* and accuracy/*) on the same graph.
         """
         if not self.enabled or self.run is None or self.wandb is None:
             return
 
-        # Define step as the x-axis for all metrics
-        self.wandb.define_metric("*", step_metric="step")
+        # Define epoch as the x-axis for all metrics
+        self.run.define_metric("epoch")
 
-        # This will make train/loss and val/loss appear on the same graph
-        # and train/accuracy and val/accuracy appear on the same graph
+        # Define all metrics to use epoch as step
+        # Group by metric type (loss, accuracy) rather than dataset (train, val)
+        self.run.define_metric("loss/train", step_metric="epoch", summary="min")
+        self.run.define_metric("loss/val", step_metric="epoch", summary="min")
+        self.run.define_metric(
+            "accuracy/train", step_metric="epoch", summary="max,last"
+        )
+        self.run.define_metric("accuracy/val", step_metric="epoch", summary="max,last")
 
     def update_config(self, config: dict[str, Any]) -> None:
         """Update the run configuration.
@@ -106,9 +112,9 @@ class WandbLogger:
             return
 
         if step is not None:
-            self.wandb.log(metrics, step=step)
+            self.run.log(metrics, step=step)
         else:
-            self.wandb.log(metrics)
+            self.run.log(metrics)
 
     def log_image(
         self,
@@ -137,9 +143,9 @@ class WandbLogger:
         }
 
         if step is not None:
-            self.wandb.log(log_dict, step=step, commit=commit)
+            self.run.log(log_dict, step=step, commit=commit)
         else:
-            self.wandb.log(log_dict, commit=commit)
+            self.run.log(log_dict, commit=commit)
 
     def log_confusion_matrix(
         self,
@@ -159,7 +165,7 @@ class WandbLogger:
         if not self.enabled or self.run is None or self.wandb is None:
             return
 
-        self.wandb.log(
+        self.run.log(
             {
                 title: self.wandb.plot.confusion_matrix(
                     probs=None,
@@ -192,9 +198,7 @@ class WandbLogger:
         table = self.wandb.Table(
             data=[[k, v] for k, v in data.items()], columns=[x_label, y_label]
         )
-        self.wandb.log(
-            {title: self.wandb.plot.bar(table, x_label, y_label, title=title)}
-        )
+        self.run.log({title: self.wandb.plot.bar(table, x_label, y_label, title=title)})
 
     def log_model(
         self,
@@ -215,6 +219,97 @@ class WandbLogger:
         artifact = self.wandb.Artifact(name, type="model")
         artifact.add_file(str(model_path))
         self.run.log_artifact(artifact, aliases=aliases)
+
+    def log_table(
+        self,
+        key: str,
+        columns: list[str],
+        data: list[list[Any]],
+    ) -> None:
+        """Log a table to wandb.
+
+        Args:
+            key: Table name/key
+            columns: List of column names
+            data: List of rows, where each row is a list of values
+        """
+        if not self.enabled or self.run is None or self.wandb is None:
+            return
+
+        table = self.wandb.Table(columns=columns, data=data)
+        self.run.log({key: table})
+
+    def log_artifact(
+        self,
+        artifact_path: Path | str,
+        artifact_type: str = "model",
+        name: str | None = None,
+        aliases: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Log an artifact to wandb with metadata.
+
+        Args:
+            artifact_path: Path to the artifact file or directory
+            artifact_type: Type of artifact (e.g., "model", "dataset", "evaluation")
+            name: Name for the artifact (defaults to filename)
+            aliases: List of aliases (e.g., ["best", "latest", "production"])
+            metadata: Dictionary of metadata to attach to the artifact
+        """
+        if not self.enabled or self.run is None or self.wandb is None:
+            return
+
+        if name is None:
+            name = Path(artifact_path).stem
+
+        artifact = self.wandb.Artifact(
+            name, type=artifact_type, metadata=metadata or {}
+        )
+
+        # Add file or directory
+        if Path(artifact_path).is_dir():
+            artifact.add_dir(str(artifact_path))
+        else:
+            artifact.add_file(str(artifact_path))
+
+        self.run.log_artifact(artifact, aliases=aliases or ["latest"])
+
+    def create_alert(
+        self,
+        title: str,
+        text: str,
+        level: str = "INFO",
+        wait_duration: int = 0,
+    ) -> None:
+        """Create an alert in wandb.
+
+        Args:
+            title: Alert title
+            text: Alert message
+            level: Alert level ("INFO", "WARN", or "ERROR")
+            wait_duration: Minimum seconds to wait between alerts (default: 0)
+        """
+        if not self.enabled or self.run is None or self.wandb is None:
+            return
+
+        self.wandb.alert(
+            title=title,
+            text=text,
+            level=getattr(self.wandb.AlertLevel, level, self.wandb.AlertLevel.INFO),
+            wait_duration=wait_duration,
+        )
+
+    def log_summary(self, summary: dict[str, Any]) -> None:
+        """Log summary metrics that appear at the top of the run page.
+
+        Args:
+            summary: Dictionary of summary metrics
+        """
+        if not self.enabled or self.run is None or self.wandb is None:
+            return
+
+        for key, value in summary.items():
+            self.run.summary[key] = value
 
     def finish(self) -> None:
         """Finish the wandb run."""
