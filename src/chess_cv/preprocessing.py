@@ -489,6 +489,7 @@ def generate_split_data(
                 pool.imap_unordered(process_func, tasks),
                 total=total_combinations,
                 desc="Generating images",
+                smoothing=0.9,
             )
         )
 
