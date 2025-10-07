@@ -217,8 +217,13 @@ def get_image_files(data_dir: str) -> list[str]:
 
 
 def get_label_from_path(image_path: str) -> str:
-    """Get the label from the image path."""
-    return image_path.split(os.sep)[-2]
+    """Get the label from the image path.
+
+    Note: Images are stored in subdirectories for performance:
+    e.g., data/splits/pieces/train/bB/aa/image.png
+    So we extract [-3] (the class name), not [-2] (the hashed subdir).
+    """
+    return image_path.split(os.sep)[-3]
 
 
 def get_all_labels(image_files: list[str]) -> list[str]:
