@@ -181,3 +181,4 @@ checkpoints
 .DS_Store
 wandb
 evals
+scripts
