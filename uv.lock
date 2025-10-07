@@ -176,6 +176,7 @@ dependencies = [
     { name = "mlx" },
     { name = "numpy" },
     { name = "pillow" },
+    { name = "pyyaml" },
 ]
 
 [package.dev-dependencies]
@@ -209,6 +210,7 @@ requires-dist = [
     { name = "mlx", specifier = ">=0.24.0" },
     { name = "numpy", specifier = ">=2.0.0" },
     { name = "pillow", specifier = ">=11.3.0" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
 ]
 
 [package.metadata.requires-dev]
