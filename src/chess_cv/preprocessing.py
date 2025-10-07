@@ -29,6 +29,37 @@ DARK_SQUARE = {"file": 0, "rank": 7, "name": "dark"}
 LIGHT_SQUARE = {"file": 0, "rank": 6, "name": "light"}
 
 
+def _index_to_subdir(index: int) -> str:
+    """Convert index (0-675) to subdir name (aa-zz).
+
+    Args:
+        index: Integer from 0 to 675
+
+    Returns:
+        Two-letter subdir name (e.g., 'aa', 'ab', 'zz')
+
+    Example:
+        0 → 'aa', 1 → 'ab', 25 → 'az', 26 → 'ba', 675 → 'zz'
+    """
+    first = index // 26
+    second = index % 26
+    return chr(ord("a") + first) + chr(ord("a") + second)
+
+
+def _get_subdir_for_counter(counter: int, max_files_per_dir: int = 8192) -> str:
+    """Get subdir name based on file counter.
+
+    Args:
+        counter: Number of files already saved in this class
+        max_files_per_dir: Maximum files per subdirectory
+
+    Returns:
+        Subdir name (e.g., 'aa', 'ab', etc.)
+    """
+    index = counter // max_files_per_dir
+    return _index_to_subdir(index)
+
+
 def get_boards() -> list[str]:
     """Get all board names from boards directory.
 
@@ -168,12 +199,12 @@ def _process_combination(args: tuple) -> dict:
     Generates 26 images: 12 pieces × 2 squares + 2 empty squares.
 
     Args:
-        args: Tuple of (board_name, piece_set, split_name, split_dir, piece_classes)
+        args: Tuple of (board_name, piece_set, split_name, split_dir, piece_classes, counters)
 
     Returns:
         Dict with split name and count of images generated
     """
-    board, piece_set, split_name, split_dir, piece_classes = args
+    board, piece_set, split_name, split_dir, piece_classes, counters = args
 
     # Generate images for each piece on dark and light squares
     for piece_class in piece_classes:
@@ -182,26 +213,46 @@ def _process_combination(args: tuple) -> dict:
 
         # Dark square
         img_dark = render_square_with_piece(board, piece_set, piece_class, DARK_SQUARE)
-        output_path = split_dir / piece_class / f"{board}_{piece_set}_dark.png"
+        counter = counters[piece_class]
+        subdir = _get_subdir_for_counter(counter)
+        output_dir = split_dir / piece_class / subdir
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / f"{board}_{piece_set}_dark.png"
         img_dark.save(output_path)
+        counters[piece_class] = counter + 1
 
         # Light square
         img_light = render_square_with_piece(
             board, piece_set, piece_class, LIGHT_SQUARE
         )
-        output_path = split_dir / piece_class / f"{board}_{piece_set}_light.png"
+        counter = counters[piece_class]
+        subdir = _get_subdir_for_counter(counter)
+        output_dir = split_dir / piece_class / subdir
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / f"{board}_{piece_set}_light.png"
         img_light.save(output_path)
+        counters[piece_class] = counter + 1
 
     # Generate empty square images
     # Dark square
     img_dark = render_empty_square(board, DARK_SQUARE)
-    output_path = split_dir / "xx" / f"{board}_{piece_set}_dark.png"
+    counter = counters["xx"]
+    subdir = _get_subdir_for_counter(counter)
+    output_dir = split_dir / "xx" / subdir
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / f"{board}_{piece_set}_dark.png"
     img_dark.save(output_path)
+    counters["xx"] = counter + 1
 
     # Light square
     img_light = render_empty_square(board, LIGHT_SQUARE)
-    output_path = split_dir / "xx" / f"{board}_{piece_set}_light.png"
+    counter = counters["xx"]
+    subdir = _get_subdir_for_counter(counter)
+    output_dir = split_dir / "xx" / subdir
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / f"{board}_{piece_set}_light.png"
     img_light.save(output_path)
+    counters["xx"] = counter + 1
 
     return {"split": split_name, "count": len(piece_classes) * 2}
 
@@ -213,13 +264,27 @@ def _process_arrows_combination(args: tuple) -> dict:
     Step 2: For each arrow category, duplicate all base images with arrow overlays applied.
 
     Args:
-        args: Tuple of (board_name, piece_set, split_name, split_dir, arrow_types)
+        args: Tuple of (board_name, piece_set, split_name, split_dir, arrow_types, counters)
 
     Returns:
         Dict with split name and count of images generated
     """
-    board, piece_set, split_name, split_dir, arrow_types = args
-    piece_classes = ["bB", "bK", "bN", "bP", "bQ", "bR", "wB", "wK", "wN", "wP", "wQ", "wR", "xx"]
+    board, piece_set, split_name, split_dir, arrow_types, counters = args
+    piece_classes = [
+        "bB",
+        "bK",
+        "bN",
+        "bP",
+        "bQ",
+        "bR",
+        "wB",
+        "wK",
+        "wN",
+        "wP",
+        "wQ",
+        "wR",
+        "xx",
+    ]
 
     # Step 1: Generate and save base images to xx category (no arrows)
     # Store filenames to reuse for arrow overlay generation
@@ -233,30 +298,52 @@ def _process_arrows_combination(args: tuple) -> dict:
         # Dark square with piece
         img_dark = render_square_with_piece(board, piece_set, piece_class, DARK_SQUARE)
         filename_dark = f"{board}_{piece_set}_{piece_class}_dark.png"
-        output_path_dark = split_dir / "xx" / filename_dark
+        counter = counters["xx"]
+        subdir = _get_subdir_for_counter(counter)
+        output_dir = split_dir / "xx" / subdir
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path_dark = output_dir / filename_dark
         img_dark.save(output_path_dark)
+        counters["xx"] = counter + 1
         base_image_files.append((piece_class, "dark", output_path_dark))
 
         # Light square with piece
-        img_light = render_square_with_piece(board, piece_set, piece_class, LIGHT_SQUARE)
+        img_light = render_square_with_piece(
+            board, piece_set, piece_class, LIGHT_SQUARE
+        )
         filename_light = f"{board}_{piece_set}_{piece_class}_light.png"
-        output_path_light = split_dir / "xx" / filename_light
+        counter = counters["xx"]
+        subdir = _get_subdir_for_counter(counter)
+        output_dir = split_dir / "xx" / subdir
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path_light = output_dir / filename_light
         img_light.save(output_path_light)
+        counters["xx"] = counter + 1
         base_image_files.append((piece_class, "light", output_path_light))
 
     # Generate empty square images
     # Dark empty square
     img_dark = render_empty_square(board, DARK_SQUARE)
     filename_dark = f"{board}_{piece_set}_xx_dark.png"
-    output_path_dark = split_dir / "xx" / filename_dark
+    counter = counters["xx"]
+    subdir = _get_subdir_for_counter(counter)
+    output_dir = split_dir / "xx" / subdir
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path_dark = output_dir / filename_dark
     img_dark.save(output_path_dark)
+    counters["xx"] = counter + 1
     base_image_files.append(("xx", "dark", output_path_dark))
 
     # Light empty square
     img_light = render_empty_square(board, LIGHT_SQUARE)
     filename_light = f"{board}_{piece_set}_xx_light.png"
-    output_path_light = split_dir / "xx" / filename_light
+    counter = counters["xx"]
+    subdir = _get_subdir_for_counter(counter)
+    output_dir = split_dir / "xx" / subdir
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path_light = output_dir / filename_light
     img_light.save(output_path_light)
+    counters["xx"] = counter + 1
     base_image_files.append(("xx", "light", output_path_light))
 
     # Step 2: For each arrow category, apply arrow overlays to all base images
@@ -274,9 +361,16 @@ def _process_arrows_combination(args: tuple) -> dict:
 
             # Save with filename including piece class and overlay name
             # Format: {board}_{piece_set}_{piece_class}_{square_type}-{overlay_name}.png
-            filename = f"{board}_{piece_set}_{piece_class}_{square_type}-{overlay_name}.png"
-            output_path = split_dir / arrow_type / filename
+            filename = (
+                f"{board}_{piece_set}_{piece_class}_{square_type}-{overlay_name}.png"
+            )
+            counter = counters[arrow_type]
+            subdir = _get_subdir_for_counter(counter)
+            output_dir = split_dir / arrow_type / subdir
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_path = output_dir / filename
             arrow_img.save(output_path)
+            counters[arrow_type] = counter + 1
 
     # Total images = 26 for xx + (26 * 48 arrow types) = 26 * 49 = 1274 images
     total_images = len(base_image_files) * len(arrow_types)
@@ -332,12 +426,6 @@ def generate_split_data(
 
     print(f"Found {len(boards)} boards and {len(piece_sets)} piece sets")
 
-    # Create output directory structure
-    for split_dir in [train_dir, val_dir, test_dir]:
-        split_dir.mkdir(parents=True, exist_ok=True)
-        for class_name in class_names:
-            (split_dir / class_name).mkdir(exist_ok=True)
-
     # Create all combinations and assign to splits
     combinations = [(board, piece_set) for board in boards for piece_set in piece_sets]
     total_combinations = len(combinations)
@@ -351,21 +439,34 @@ def generate_split_data(
         p=[train_ratio, val_ratio, test_ratio],
     )
 
+    # Initialize counters for each split using multiprocessing Manager
+    manager = multiprocessing.Manager()
+    train_counters = manager.dict({class_name: 0 for class_name in class_names})
+    val_counters = manager.dict({class_name: 0 for class_name in class_names})
+    test_counters = manager.dict({class_name: 0 for class_name in class_names})
+
     # Prepare tasks for multiprocessing
     tasks = []
     for (board, piece_set), split_name in zip(combinations, split_assignments):
         if split_name == "train":
             split_dir = train_dir
+            counters = train_counters
         elif split_name == "val":
             split_dir = val_dir
+            counters = val_counters
         else:
             split_dir = test_dir
+            counters = test_counters
 
-        # Choose appropriate data for task based on model_id
-        if model_id == "arrows":
-            tasks.append((board, piece_set, split_name, split_dir, class_names))
-        else:  # pieces or other models
-            tasks.append((board, piece_set, split_name, split_dir, class_names))
+        # Ensure base split directory exists
+        split_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create base class directories
+        for class_name in class_names:
+            (split_dir / class_name).mkdir(exist_ok=True)
+
+        # Add counter to task arguments
+        tasks.append((board, piece_set, split_name, split_dir, class_names, counters))
 
     # Use all CPU cores
     num_processes = multiprocessing.cpu_count()
