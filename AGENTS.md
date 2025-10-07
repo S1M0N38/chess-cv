@@ -57,7 +57,7 @@ make docs        # Serve at http://127.0.0.1:8000
 ### Model Pipeline
 
 ```bash
-# 1. Generate synthetic training data (boards + pieces → square images)
+# 1. Generate synthetic training data (boards + pieces → square images in data/splits/pieces/)
 python -m chess_cv.preprocessing
 
 # 2. Train model
@@ -175,14 +175,16 @@ chess-cv/
 ├── data/                  # Data directory
 │   ├── boards/           # Board images (256×256px)
 │   ├── pieces/           # Piece sets (32×32px)
-│   ├── train/            # Training data
-│   ├── validate/         # Validation data
-│   └── test/             # Test data
+│   └── splits/           # Generated training/validation/test splits
+│       └── pieces/       # Piece classification data
+│           ├── train/    # Training data
+│           ├── validate/ # Validation data
+│           └── test/     # Test data
 ├── checkpoints/          # Model checkpoints
 ├── outputs/              # Training outputs
 ├── evals/                # Evaluation results
 ├── docs/                 # MkDocs documentation
-└── tests/               # Pytest tests
+└── tests/                # Pytest tests
 ```
 
 ## Important Conventions

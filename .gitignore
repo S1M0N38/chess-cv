@@ -173,12 +173,10 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .envrc
-data/train
-data/validate
-data/test
 outputs
 checkpoints
 .DS_Store
 wandb
 evals
 scripts
+data/splits/pieces

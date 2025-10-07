@@ -17,9 +17,9 @@ python -m chess_cv.preprocessing
 
 ```bash
 python -m chess_cv.preprocessing \
-  --train-dir data/train \
-  --val-dir data/validate \
-  --test-dir data/test \
+  --train-dir data/splits/pieces/train \
+  --val-dir data/splits/pieces/validate \
+  --test-dir data/splits/pieces/test \
   --train-ratio 0.7 \
   --val-ratio 0.15 \
   --test-ratio 0.15 \
@@ -60,8 +60,8 @@ python -m chess_cv.train
 
 ```bash
 python -m chess_cv.train \
-  --train-dir data/train \
-  --val-dir data/validate \
+  --train-dir data/splits/pieces/train \
+  --val-dir data/splits/pieces/validate \
   --checkpoint-dir checkpoints \
   --batch-size 64 \
   --learning-rate 0.0003 \
@@ -92,8 +92,8 @@ python -m chess_cv.train \
 
 **Directories:**
 
-- `--train-dir`: Training data directory (default: data/train)
-- `--val-dir`: Validation data directory (default: data/validate)
+- `--train-dir`: Training data directory (default: data/splits/pieces/train)
+- `--val-dir`: Validation data directory (default: data/splits/pieces/validate)
 - `--checkpoint-dir`: Where to save model checkpoints (default: checkpoints)
 
 ### Training Features
@@ -187,8 +187,8 @@ python -m chess_cv.test
 
 ```bash
 python -m chess_cv.test \
-  --test-dir data/test \
-  --train-dir data/train \
+  --test-dir data/splits/pieces/test \
+  --train-dir data/splits/pieces/train \
   --checkpoint checkpoints/best_model.safetensors \
   --batch-size 64 \
   --image-size 32 \
