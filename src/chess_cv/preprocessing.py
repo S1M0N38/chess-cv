@@ -209,7 +209,8 @@ def _process_combination(args: tuple) -> dict:
 def _process_arrows_combination(args: tuple) -> dict:
     """Worker function to process one board-piece set combination for arrows model.
 
-    First generates base images (xx category), then creates arrow overlay versions.
+    Step 1: Generate all base images (pieces + empty squares) and save to xx category (no arrows).
+    Step 2: For each arrow category, duplicate all base images with arrow overlays applied.
 
     Args:
         args: Tuple of (board_name, piece_set, split_name, split_dir, arrow_types)
@@ -220,68 +221,65 @@ def _process_arrows_combination(args: tuple) -> dict:
     board, piece_set, split_name, split_dir, arrow_types = args
     piece_classes = ["bB", "bK", "bN", "bP", "bQ", "bR", "wB", "wK", "wN", "wP", "wQ", "wR", "xx"]
 
-    # Step 1: Generate base images (no arrows) for xx category
-    base_images = {}  # Store base images to reuse for arrow overlays
+    # Step 1: Generate and save base images to xx category (no arrows)
+    # Store filenames to reuse for arrow overlay generation
+    base_image_files = []
 
     # Generate images for each piece on dark and light squares
     for piece_class in piece_classes:
         if piece_class == "xx":
             continue
 
-        # Dark square
+        # Dark square with piece
         img_dark = render_square_with_piece(board, piece_set, piece_class, DARK_SQUARE)
-        filename = f"{board}_{piece_set}_dark.png"
-        base_images[f"{piece_class}_dark"] = img_dark
-        # Save to xx category
-        output_path = split_dir / "xx" / filename
-        img_dark.save(output_path)
+        filename_dark = f"{board}_{piece_set}_{piece_class}_dark.png"
+        output_path_dark = split_dir / "xx" / filename_dark
+        img_dark.save(output_path_dark)
+        base_image_files.append((piece_class, "dark", output_path_dark))
 
-        # Light square
+        # Light square with piece
         img_light = render_square_with_piece(board, piece_set, piece_class, LIGHT_SQUARE)
-        filename = f"{board}_{piece_set}_light.png"
-        base_images[f"{piece_class}_light"] = img_light
-        # Save to xx category
-        output_path = split_dir / "xx" / filename
-        img_light.save(output_path)
+        filename_light = f"{board}_{piece_set}_{piece_class}_light.png"
+        output_path_light = split_dir / "xx" / filename_light
+        img_light.save(output_path_light)
+        base_image_files.append((piece_class, "light", output_path_light))
 
     # Generate empty square images
-    # Dark square
+    # Dark empty square
     img_dark = render_empty_square(board, DARK_SQUARE)
-    filename = f"{board}_{piece_set}_dark.png"
-    base_images["xx_dark"] = img_dark
-    output_path = split_dir / "xx" / filename
-    img_dark.save(output_path)
+    filename_dark = f"{board}_{piece_set}_xx_dark.png"
+    output_path_dark = split_dir / "xx" / filename_dark
+    img_dark.save(output_path_dark)
+    base_image_files.append(("xx", "dark", output_path_dark))
 
-    # Light square
+    # Light empty square
     img_light = render_empty_square(board, LIGHT_SQUARE)
-    filename = f"{board}_{piece_set}_light.png"
-    base_images["xx_light"] = img_light
-    output_path = split_dir / "xx" / filename
-    img_light.save(output_path)
+    filename_light = f"{board}_{piece_set}_xx_light.png"
+    output_path_light = split_dir / "xx" / filename_light
+    img_light.save(output_path_light)
+    base_image_files.append(("xx", "light", output_path_light))
 
-    # Step 2: Generate arrow overlay versions for each arrow type
+    # Step 2: For each arrow category, apply arrow overlays to all base images
     for arrow_type in arrow_types:
         if arrow_type == "xx":
-            continue  # Already generated
+            continue  # Already generated in Step 1
 
-        # For each base image, create an arrow overlay version
-        for base_key, base_img in base_images.items():
-            # Extract square_type from base_key
-            # base_key format: "{piece_class}_{square_type}"
-            parts = base_key.rsplit("_", 1)
-            square_type = parts[-1]  # "dark" or "light"
+        # Apply arrow overlay to each base image
+        for piece_class, square_type, base_image_path in base_image_files:
+            # Load the base image
+            base_img = Image.open(base_image_path)
 
-            # Create arrow overlay and get the overlay name
-            arrow_img, overlay_name = overlay_arrow(base_img.copy(), arrow_type)
+            # Apply arrow overlay and get the overlay name
+            arrow_img, overlay_name = overlay_arrow(base_img, arrow_type)
 
-            # Save with filename including overlay name
-            # Format: {board}_{piece_set}_{square_type}-{overlay_name}.png
-            filename = f"{board}_{piece_set}_{square_type}-{overlay_name}.png"
+            # Save with filename including piece class and overlay name
+            # Format: {board}_{piece_set}_{piece_class}_{square_type}-{overlay_name}.png
+            filename = f"{board}_{piece_set}_{piece_class}_{square_type}-{overlay_name}.png"
             output_path = split_dir / arrow_type / filename
             arrow_img.save(output_path)
 
-    # Total images = 26 base images for xx + (26 base images * 48 arrow types) = 1274 images
-    total_images = 26 + (26 * (len(arrow_types) - 1))  # -1 to exclude "xx"
+    # Total images = 26 for xx + (26 * 48 arrow types) = 26 * 49 = 1274 images
+    total_images = len(base_image_files) * len(arrow_types)
     return {"split": split_name, "count": total_images}
 
 
