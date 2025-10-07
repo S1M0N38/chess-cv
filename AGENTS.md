@@ -173,18 +173,18 @@ chess-cv/
 │   ├── wandb_utils.py     # W&B integration
 │   └── constants.py       # Configuration
 ├── data/                  # Data directory
-│   ├── boards/           # Board images (256×256px)
-│   ├── pieces/           # Piece sets (32×32px)
-│   └── splits/           # Generated training/validation/test splits
-│       └── pieces/       # Piece classification data
-│           ├── train/    # Training data
-│           ├── validate/ # Validation data
-│           └── test/     # Test data
-├── checkpoints/          # Model checkpoints
-├── outputs/              # Training outputs
-├── evals/                # Evaluation results
-├── docs/                 # MkDocs documentation
-└── tests/                # Pytest tests
+│   ├── boards/            # Board images (256×256px)
+│   ├── pieces/            # Piece sets (32×32px)
+│   └── splits/            # Generated training/validation/test splits
+│       └── pieces/        # Piece classification data
+│           ├── train/     # Training data
+│           ├── validate/  # Validation data
+│           └── test/      # Test data
+├── checkpoints/           # Model checkpoints
+├── outputs/               # Training outputs
+├── evals/                 # Evaluation results
+├── docs/                  # MkDocs documentation
+└── tests/                 # Pytest tests
 ```
 
 ## Important Conventions
