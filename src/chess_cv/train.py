@@ -1,16 +1,13 @@
 """Training script for chess piece classification."""
 
-import os
 from pathlib import Path
 
 __all__ = ["train"]
 
-import matplotlib.pyplot as plt
 import mlx.core as mx
 import mlx.nn as nn
 import mlx.optimizers as optim
 from mlx.utils import tree_flatten
-from PIL import Image
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
@@ -177,31 +174,13 @@ def train(
     # Initialize wandb logger
     wandb_logger = WandbLogger(enabled=use_wandb)
     if use_wandb:
-        # Only log essential hyperparameters to config
-        # Avoid logging parameters that are already tracked by sweep
         config = {
             "model_id": model_id,
             "num_classes": num_classes,
-            "architecture": "SimpleCNN",
-            "total_train_samples": 0,  # Will update after loading data
-            "total_val_samples": 0,  # Will update after loading data
+            "batch_size": batch_size,
+            "learning_rate": learning_rate,
+            "weight_decay": weight_decay,
         }
-
-        # Add hyperparameters only if not running a sweep
-        # (sweeps automatically log these from command line)
-        import os
-
-        if not os.environ.get("WANDB_SWEEP_ID"):
-            config.update(
-                {
-                    "batch_size": batch_size,
-                    "learning_rate": learning_rate,
-                    "weight_decay": weight_decay,
-                    "num_epochs": num_epochs,
-                    "patience": patience,
-                    "image_size": image_size,
-                }
-            )
 
         wandb_logger.init(
             project=f"chess-cv-{model_id}",
@@ -316,82 +295,6 @@ def train(
     print(f"Training batches:   {len(train_loader)}")
     print(f"Validation batches: {len(val_loader)}")
 
-    # Update wandb config with actual dataset sizes
-    if use_wandb:
-        wandb_logger.update_config(
-            {
-                "total_train_samples": len(train_dataset),
-                "total_val_samples": len(val_dataset),
-                "train_batches": len(train_loader),
-                "val_batches": len(val_loader),
-            }
-        )
-
-    # Visualization of augmentation
-    if train_files and len(train_files) >= 8:
-        num_examples = 8
-        import numpy as np
-
-        if use_wandb:
-            # Log augmentation examples to wandb
-            for i in range(num_examples):
-                original_image = Image.open(train_files[i]).convert("RGB")
-                resized_original = val_transforms(original_image)
-                augmented_image = train_transforms(original_image)
-
-                # Log original
-                wandb_logger.log_image(
-                    f"augmentation/original_{i + 1}",
-                    np.array(resized_original),
-                    caption=f"Original {i + 1}",
-                    step=0,
-                    commit=False,
-                )
-
-                # Log augmented version
-                is_last = i == num_examples - 1
-                wandb_logger.log_image(
-                    f"augmentation/augmented_{i + 1}",
-                    np.array(augmented_image),
-                    caption=f"Augmented {i + 1}",
-                    step=0,
-                    commit=is_last,
-                )
-            print(
-                f"\nLogged augmentation examples to wandb ({num_examples} original + {num_examples} augmented)"
-            )
-        else:
-            # Save to file when not using wandb
-            # Create 8x2 grid: 8 rows, each with original and augmented
-            fig, axes = plt.subplots(8, 2, figsize=(8, 24))
-
-            for i in range(num_examples):
-                original_image = Image.open(train_files[i]).convert("RGB")
-                resized_original = val_transforms(original_image)
-                augmented_image = train_transforms(original_image)
-
-                # Show original
-                axes[i, 0].imshow(resized_original)
-                axes[i, 0].set_title(f"Original {i + 1}", fontsize=10)
-                axes[i, 0].axis("off")
-
-                # Show augmented
-                axes[i, 1].imshow(augmented_image)
-                axes[i, 1].set_title(f"Augmented {i + 1}", fontsize=10)
-                axes[i, 1].axis("off")
-
-            plt.tight_layout()
-            from .constants import AUGMENTATION_EXAMPLE_FILENAME
-
-            output_dir = get_output_dir(model_id)
-            os.makedirs(output_dir, exist_ok=True)
-            output_path = os.path.join(output_dir, AUGMENTATION_EXAMPLE_FILENAME)
-            plt.savefig(output_path, dpi=150, bbox_inches="tight")
-            print(
-                f"\nSaved augmentation examples to {output_path} ({num_examples} pairs)"
-            )
-            plt.close(fig)
-
     # Create model
     print("\n" + "=" * 60)
     print("MODEL")
@@ -412,6 +315,9 @@ def train(
     loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
 
     best_val_acc = 0.0
+    best_val_loss = float("inf")
+    best_train_acc = 0.0
+    best_train_loss = float("inf")
     epochs_without_improvement = 0
 
     # Only use TrainingVisualizer when not using wandb
@@ -432,15 +338,17 @@ def train(
 
         # Update visualizer or log to wandb
         if use_wandb:
-            # Log metrics - step will be used as x-axis for all metrics
+            # Log metrics with epoch as both a metric and the step parameter
+            # This ensures proper x-axis alignment
             wandb_logger.log(
                 {
-                    "step": epoch + 1,
-                    "train/loss": train_loss,
-                    "train/accuracy": train_acc,
-                    "val/loss": val_loss,
-                    "val/accuracy": val_acc,
+                    "epoch": epoch + 1,
+                    "loss/train": train_loss,
+                    "loss/val": val_loss,
+                    "accuracy/train": train_acc,
+                    "accuracy/val": val_acc,
                 },
+                step=epoch + 1,
             )
         else:
             visualizer.update(epoch + 1, train_loss, train_acc, val_loss, val_acc)
@@ -453,6 +361,14 @@ def train(
                 "val_acc": f"{val_acc:.4f}",
             }
         )
+
+        # Track best metrics
+        if train_acc > best_train_acc:
+            best_train_acc = train_acc
+        if train_loss < best_train_loss:
+            best_train_loss = train_loss
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
 
         if val_acc > best_val_acc:
             best_val_acc = val_acc
@@ -470,13 +386,14 @@ def train(
             print(f"\nEarly stopping triggered after {epoch + 1} epochs")
             break
 
-    # Save visualizations or log model to wandb
+    # Save visualizations or log summary to wandb
     if use_wandb:
-        # Log the best model as an artifact
-        model_path = checkpoint_dir / BEST_MODEL_FILENAME
-        if model_path.exists():
-            wandb_logger.log_model(model_path, name="chess-cv-model", aliases=["best"])
-            print("\nLogged best model to wandb")
+        wandb_logger.log_summary(
+            {
+                "best_val_accuracy": best_val_acc,
+                "best_val_loss": best_val_loss,
+            }
+        )
     else:
         visualizer.save(TRAINING_CURVES_FILENAME)
         visualizer.close()
@@ -485,6 +402,10 @@ def train(
     print("TRAINING COMPLETE")
     print("=" * 60)
     print(f"Best validation accuracy: {best_val_acc:.4f}")
+    print(f"Best validation loss:     {best_val_loss:.4f}")
+    print(f"Best training accuracy:   {best_train_acc:.4f}")
+    print(f"Best training loss:       {best_train_loss:.4f}")
+    print(f"Total epochs:             {epoch + 1}")
     print(f"Model saved to: {checkpoint_dir / BEST_MODEL_FILENAME}")
 
     # Finish wandb run
