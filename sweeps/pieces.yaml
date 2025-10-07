@@ -1,0 +1,35 @@
+# W&B Sweep Configuration for Chess CV Pieces Model
+# Bayesian optimization with best practices for hyperparameter tuning
+method: bayes
+# Optimize for validation accuracy (higher is better)
+metric:
+  name: val/accuracy
+  goal: maximize
+# Hyperparameters to tune
+parameters:
+  # Batch size - categorical search
+  batch-size:
+    values: [32, 64, 128, 256]
+  # Learning rate - log-uniform distribution for exponential search
+  # Searches from 1e-5 to 1e-3 on logarithmic scale
+  learning-rate:
+    distribution: log_uniform_values
+    min: 0.00001
+    max: 0.001
+  # Weight decay - log-uniform distribution for exponential search
+  # Searches from 1e-5 to 1e-3 on logarithmic scale
+  weight-decay:
+    distribution: log_uniform_values
+    min: 0.00001
+    max: 0.001
+# Early termination to stop poor runs and save compute
+# Hyperband with aggressive pruning for faster convergence
+early_terminate:
+  type: hyperband
+  min_iter: 10 # Minimum iterations before stopping
+  eta: 3 # Bracket multiplier (3x resource reduction per bracket)
+  s: 2 # Number of brackets to explore
+  strict: true # Enable aggressive pruning of underperforming runs
+# Maximum number of runs to execute (optional limit for cost control)
+run_cap: 20
+

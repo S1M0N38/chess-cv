@@ -184,6 +184,11 @@ def preprocessing(
     is_flag=True,
     help="Enable Weights & Biases logging (disables matplotlib visualization)",
 )
+@click.option(
+    "--sweep",
+    is_flag=True,
+    help="Run hyperparameter sweep with W&B (requires --wandb flag)",
+)
 def train(
     model_id: str,
     train_dir: Path | None,
@@ -197,15 +202,29 @@ def train(
     image_size: int,
     num_workers: int,
     wandb: bool,
+    sweep: bool,
 ):
     """Train chess piece classification model.
 
     MODEL_ID: Model identifier (e.g., 'pieces')
     """
-    from .train import train as train_model
-
     # Validate model_id
     _ = get_model_config(model_id)
+
+    # Handle sweep mode
+    if sweep:
+        if not wandb:
+            raise click.UsageError(
+                "--sweep requires --wandb flag. "
+                "Use: chess-cv train MODEL_ID --sweep --wandb"
+            )
+        from .sweep import run_sweep
+
+        run_sweep(model_id=model_id)
+        return  # Exit after sweep completes
+
+    # Normal training mode
+    from .train import train as train_model
 
     # Set defaults based on model_id if not provided
     if train_dir is None:

@@ -1,6 +1,5 @@
-# W&B Sweep Configuration for Chess CV Training
+# W&B Sweep Configuration for Chess CV Arrows Model
 # Bayesian optimization with best practices for hyperparameter tuning
-program: chess_cv.train
 method: bayes
 # Optimize for validation accuracy (higher is better)
 metric:
@@ -8,28 +7,21 @@ metric:
   goal: maximize
 # Hyperparameters to tune
 parameters:
-  # Batch size - categorical search
-  batch_size:
-    values: [32, 64, 128, 256]
+  # Batch size - categorical search (bigger values for arrows)
+  batch-size:
+    values: [64, 128, 256, 512]
   # Learning rate - log-uniform distribution for exponential search
   # Searches from 1e-5 to 1e-3 on logarithmic scale
-  learning_rate:
+  learning-rate:
     distribution: log_uniform_values
     min: 0.00001
     max: 0.001
   # Weight decay - log-uniform distribution for exponential search
   # Searches from 1e-5 to 1e-3 on logarithmic scale
-  weight_decay:
+  weight-decay:
     distribution: log_uniform_values
     min: 0.00001
     max: 0.001
-  # Fixed parameters
-  num_epochs:
-    value: 200
-  train_dir:
-    value: data/train
-  val_dir:
-    value: data/validate
 # Early termination to stop poor runs and save compute
 # Hyperband with aggressive pruning for faster convergence
 early_terminate:
@@ -40,10 +32,4 @@ early_terminate:
   strict: true # Enable aggressive pruning of underperforming runs
 # Maximum number of runs to execute (optional limit for cost control)
 run_cap: 20
-# Command to run (wandb will automatically append parameters)
-command:
-  - python
-  - -m
-  - ${program}
-  - ${args}
-  - --wandb
+
