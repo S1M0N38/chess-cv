@@ -209,15 +209,35 @@ def test(
 
     # Log test results to wandb
     if use_wandb:
+        # Log overall metrics
         wandb_logger.log(
             {
                 "test/accuracy": results["overall_accuracy"],
                 "test/f1_score_macro": results["f1_score_macro"],
             }
         )
-        # Log per-class accuracy
+
+        # Log summary metrics
+        wandb_logger.log_summary(
+            {
+                "test_accuracy": results["overall_accuracy"],
+                "test_f1_score_macro": results["f1_score_macro"],
+            }
+        )
+
+        # Log per-class accuracy as a table for better organization
         per_class_acc = results["per_class_accuracy"]
         if isinstance(per_class_acc, dict):
+            table_data = [
+                [class_name, acc] for class_name, acc in per_class_acc.items()
+            ]
+            wandb_logger.log_table(
+                key="test/per_class_accuracy",
+                columns=["Class", "Accuracy"],
+                data=table_data,
+            )
+
+            # Also log individual metrics for filtering
             for class_name, acc in per_class_acc.items():
                 wandb_logger.log({f"test/class_accuracy/{class_name}": acc})
 
@@ -298,13 +318,50 @@ def test(
                 # For local datasets, use the original file path
                 image_path = Path(test_dataset.image_files[idx])
 
-            wandb_logger.log_image(
-                f"misclassified/{i}",
-                image_path,
-                caption=f"True: {true_label}, Predicted: {predicted_label}",
-            )
+            # Add to table data (collect first, then log as table)
+            if i == 0:
+                # Initialize table data list on first iteration
+                wandb_table_data = []
 
-        print(f"Logged {max_samples} misclassified images to wandb")
+            if image_path.exists():
+                wandb_table_data.append(
+                    [
+                        i,
+                        wandb_logger.wandb.Image(str(image_path))
+                        if wandb_logger.wandb
+                        else str(image_path),
+                        true_label,
+                        predicted_label,
+                    ]
+                )
+
+        # Log as a table for better organization
+        if "wandb_table_data" in locals() and wandb_table_data and wandb_logger.wandb:
+            wandb_logger.log_table(
+                key="test/misclassified_samples",
+                columns=["Index", "Image", "True Label", "Predicted Label"],
+                data=wandb_table_data,
+            )
+            print(f"Logged {len(wandb_table_data)} misclassified images to wandb table")
+
+        # Log evaluation artifacts
+        overall_acc = results["overall_accuracy"]
+        f1_macro = results["f1_score_macro"]
+        assert isinstance(overall_acc, float)
+        assert isinstance(f1_macro, float)
+
+        wandb_logger.log_artifact(
+            artifact_path=output_dir,
+            artifact_type="evaluation",
+            name=f"chess-cv-{model_id}-evaluation",
+            aliases=["latest", "test-results"],
+            metadata={
+                "test_accuracy": overall_acc,
+                "test_f1_score_macro": f1_macro,
+                "num_test_samples": len(test_dataset),
+                "num_misclassified": len(misclassified_indices),
+            },
+        )
 
     print("\n" + "=" * 60)
     print("TESTING COMPLETE")
