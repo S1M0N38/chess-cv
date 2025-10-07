@@ -1,6 +1,6 @@
 """Upload trained models to Hugging Face Hub."""
 
-import argparse
+import json
 import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -8,14 +8,15 @@ from typing import Optional
 
 from huggingface_hub import HfApi, create_repo
 
-from chess_cv.constants import BEST_MODEL_FILENAME, DEFAULT_CHECKPOINT_DIR
+from chess_cv.constants import BEST_MODEL_FILENAME
 
-__all__ = ["upload_to_hub", "main"]
+__all__ = ["upload_to_hub"]
 
 
 def upload_to_hub(
+    model_id: str,
     repo_id: str,
-    checkpoint_dir: Path = DEFAULT_CHECKPOINT_DIR,
+    checkpoint_dir: Path | None = None,
     readme_path: Optional[Path] = None,
     commit_message: str = "Upload trained model",
     private: bool = False,
@@ -24,6 +25,7 @@ def upload_to_hub(
     """Upload trained model and artifacts to Hugging Face Hub.
 
     Args:
+        model_id: Model identifier (e.g., 'pieces')
         repo_id: Repository ID on Hugging Face Hub (format: "username/repo-name")
         checkpoint_dir: Directory containing model checkpoints
         readme_path: Path to model card README (defaults to docs/README_hf.md)
@@ -38,6 +40,15 @@ def upload_to_hub(
         FileNotFoundError: If required files are not found
         ValueError: If repo_id format is invalid
     """
+    from chess_cv.constants import get_checkpoint_dir, get_model_config
+
+    # Get model configuration
+    model_config = get_model_config(model_id)
+
+    # Set default checkpoint_dir if not provided
+    if checkpoint_dir is None:
+        checkpoint_dir = get_checkpoint_dir(model_id)
+
     # Validate repo_id format
     if "/" not in repo_id:
         msg = f"Invalid repo_id format: {repo_id}. Expected 'username/repo-name'"
@@ -90,22 +101,18 @@ def upload_to_hub(
         shutil.copy2(readme_path, tmpdir / "README.md")
 
         # Create a model config file with metadata
-        config_content = """{
-  "architecture": "SimpleCNN",
-  "num_classes": 13,
-  "input_size": [32, 32, 3],
-  "num_parameters": 156000,
-  "framework": "mlx",
-  "task": "image-classification",
-  "classes": [
-    "bB", "bK", "bN", "bP", "bQ", "bR",
-    "wB", "wK", "wN", "wP", "wQ", "wR",
-    "xx"
-  ]
-}
-"""
+        config_data = {
+            "model_id": model_id,
+            "architecture": "SimpleCNN",
+            "num_classes": model_config["num_classes"],
+            "input_size": [32, 32, 3],
+            "num_parameters": 156000,
+            "framework": "mlx",
+            "task": "image-classification",
+            "classes": model_config["class_names"],
+        }
         print("  - Creating config.json")
-        (tmpdir / "config.json").write_text(config_content)
+        (tmpdir / "config.json").write_text(json.dumps(config_data, indent=2))
 
         # Upload all files to the Hub
         print(f"\nUploading to {repo_id}...")
@@ -118,87 +125,3 @@ def upload_to_hub(
 
     print(f"\n✅ Successfully uploaded model to: {repo_url}")
     return repo_url
-
-
-def main() -> None:
-    """Main entry point for the upload script."""
-    parser = argparse.ArgumentParser(
-        description="Upload trained chess-cv model to Hugging Face Hub",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Upload with default settings
-  python -m chess_cv.upload --repo-id username/chess-cv
-
-  # Upload with custom commit message
-  python -m chess_cv.upload --repo-id username/chess-cv --message "feat: improved model v2"
-
-  # Upload to private repository
-  python -m chess_cv.upload --repo-id username/chess-cv --private
-
-  # Specify custom paths
-  python -m chess_cv.upload --repo-id username/chess-cv \\
-    --checkpoint-dir ./my-checkpoints \\
-    --readme docs/custom_README.md
-        """,
-    )
-
-    parser.add_argument(
-        "--repo-id",
-        type=str,
-        required=True,
-        help="Repository ID on Hugging Face Hub (format: 'username/repo-name')",
-    )
-
-    parser.add_argument(
-        "--checkpoint-dir",
-        type=Path,
-        default=DEFAULT_CHECKPOINT_DIR,
-        help=f"Directory containing model checkpoints (default: {DEFAULT_CHECKPOINT_DIR})",
-    )
-
-    parser.add_argument(
-        "--readme",
-        type=Path,
-        default=None,
-        help="Path to model card README (default: docs/README_hf.md)",
-    )
-
-    parser.add_argument(
-        "--message",
-        type=str,
-        default="feat: upload new model version",
-        help="Commit message for the upload (default: 'feat: upload new model version')",
-    )
-
-    parser.add_argument(
-        "--private",
-        action="store_true",
-        help="Create a private repository",
-    )
-
-    parser.add_argument(
-        "--token",
-        type=str,
-        default=None,
-        help="Hugging Face API token (if not provided, uses cached token from 'hf login')",
-    )
-
-    args = parser.parse_args()
-
-    try:
-        upload_to_hub(
-            repo_id=args.repo_id,
-            checkpoint_dir=args.checkpoint_dir,
-            readme_path=args.readme,
-            commit_message=args.message,
-            private=args.private,
-            token=args.token,
-        )
-    except Exception as e:
-        print(f"\n❌ Error: {e}")
-        raise SystemExit(1) from e
-
-
-if __name__ == "__main__":
-    main()

@@ -1,10 +1,9 @@
 """Training script for chess piece classification."""
 
-import argparse
 import os
 from pathlib import Path
 
-__all__ = ["train", "main"]
+__all__ = ["train"]
 
 import matplotlib.pyplot as plt
 import mlx.core as mx
@@ -30,19 +29,16 @@ from .constants import (
     BEST_MODEL_FILENAME,
     DEFAULT_ARROW_DIR,
     DEFAULT_BATCH_SIZE,
-    DEFAULT_CHECKPOINT_DIR,
     DEFAULT_HIGHLIGHT_DIR,
     DEFAULT_IMAGE_SIZE,
     DEFAULT_LEARNING_RATE,
     DEFAULT_NUM_EPOCHS,
     DEFAULT_NUM_WORKERS,
-    DEFAULT_OUTPUT_DIR,
     DEFAULT_PATIENCE,
-    DEFAULT_TRAIN_DIR,
-    DEFAULT_VAL_DIR,
     DEFAULT_WEIGHT_DECAY,
     OPTIMIZER_FILENAME,
     TRAINING_CURVES_FILENAME,
+    get_output_dir,
 )
 from .data import (
     AddGaussianNoise,
@@ -131,9 +127,10 @@ def validate_epoch(model: nn.Module, val_loader: DataLoader) -> tuple[float, flo
 
 
 def train(
-    train_dir: Path | str = DEFAULT_TRAIN_DIR,
-    val_dir: Path | str = DEFAULT_VAL_DIR,
-    checkpoint_dir: Path | str = DEFAULT_CHECKPOINT_DIR,
+    model_id: str,
+    train_dir: Path | str | None = None,
+    val_dir: Path | str | None = None,
+    checkpoint_dir: Path | str | None = None,
     batch_size: int = DEFAULT_BATCH_SIZE,
     learning_rate: float = DEFAULT_LEARNING_RATE,
     weight_decay: float = DEFAULT_WEIGHT_DECAY,
@@ -143,16 +140,57 @@ def train(
     num_workers: int = DEFAULT_NUM_WORKERS,
     use_wandb: bool = False,
 ) -> None:
-    """Train the model."""
+    """Train the model.
+
+    Args:
+        model_id: Model identifier (e.g., 'pieces')
+        train_dir: Training data directory
+        val_dir: Validation data directory
+        checkpoint_dir: Checkpoint directory for saving models
+        batch_size: Batch size for training
+        learning_rate: Learning rate for optimizer
+        weight_decay: Weight decay for optimizer
+        num_epochs: Maximum number of epochs
+        patience: Early stopping patience
+        image_size: Image size for resizing
+        num_workers: Number of data loading workers
+        use_wandb: Enable Weights & Biases logging
+    """
+    from .constants import (
+        get_checkpoint_dir,
+        get_model_config,
+        get_train_dir,
+        get_val_dir,
+    )
+
+    # Get model configuration
+    model_config = get_model_config(model_id)
+    num_classes = model_config["num_classes"]
+
+    # Set default directories if not provided
+    if train_dir is None:
+        train_dir = get_train_dir(model_id)
+    if val_dir is None:
+        val_dir = get_val_dir(model_id)
+    if checkpoint_dir is None:
+        checkpoint_dir = get_checkpoint_dir(model_id)
+
+    # Convert to Path objects
+    train_dir = Path(train_dir)
+    val_dir = Path(val_dir)
     checkpoint_dir = Path(checkpoint_dir)
+
+    # Create checkpoint directory
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     # Initialize wandb logger
     wandb_logger = WandbLogger(enabled=use_wandb)
     if use_wandb:
         wandb_logger.init(
-            project="chess-cv-training",
+            project=f"chess-cv-{model_id}",
             config={
+                "model_id": model_id,
+                "num_classes": num_classes,
                 "batch_size": batch_size,
                 "learning_rate": learning_rate,
                 "weight_decay": weight_decay,
@@ -174,7 +212,6 @@ def train(
     val_files = get_image_files(str(val_dir))
     all_labels = get_all_labels(train_files)
     label_map = get_label_map(all_labels)
-    num_classes = len(label_map)
 
     # Define augmentations
     train_transforms = transforms.Compose(
@@ -291,10 +328,10 @@ def train(
                 axes[i, 1].axis("off")
 
             plt.tight_layout()
-            output_dir = DEFAULT_OUTPUT_DIR
-            os.makedirs(output_dir, exist_ok=True)
             from .constants import AUGMENTATION_EXAMPLE_FILENAME
 
+            output_dir = get_output_dir(model_id)
+            os.makedirs(output_dir, exist_ok=True)
             output_path = os.path.join(output_dir, AUGMENTATION_EXAMPLE_FILENAME)
             plt.savefig(output_path, dpi=150, bbox_inches="tight")
             print(
@@ -326,7 +363,8 @@ def train(
 
     # Only use TrainingVisualizer when not using wandb
     if not use_wandb:
-        visualizer = TrainingVisualizer()
+        output_dir = get_output_dir(model_id)
+        visualizer = TrainingVisualizer(output_dir=output_dir)
 
     print("\n" + "=" * 60)
     print("TRAINING")
@@ -399,95 +437,3 @@ def train(
 
     # Finish wandb run
     wandb_logger.finish()
-
-
-def main() -> None:
-    """Run training script with CLI argument parsing."""
-    parser = argparse.ArgumentParser(
-        description="Train chess piece classification model"
-    )
-    parser.add_argument(
-        "--train-dir",
-        type=Path,
-        default=DEFAULT_TRAIN_DIR,
-        help=f"Training data directory (default: {DEFAULT_TRAIN_DIR})",
-    )
-    parser.add_argument(
-        "--val-dir",
-        type=Path,
-        default=DEFAULT_VAL_DIR,
-        help=f"Validation data directory (default: {DEFAULT_VAL_DIR})",
-    )
-    parser.add_argument(
-        "--checkpoint-dir",
-        type=Path,
-        default=DEFAULT_CHECKPOINT_DIR,
-        help=f"Checkpoint directory (default: {DEFAULT_CHECKPOINT_DIR})",
-    )
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=DEFAULT_BATCH_SIZE,
-        help=f"Batch size (default: {DEFAULT_BATCH_SIZE})",
-    )
-    parser.add_argument(
-        "--learning-rate",
-        type=float,
-        default=DEFAULT_LEARNING_RATE,
-        help=f"Learning rate (default: {DEFAULT_LEARNING_RATE})",
-    )
-    parser.add_argument(
-        "--weight-decay",
-        type=float,
-        default=DEFAULT_WEIGHT_DECAY,
-        help=f"Weight decay (default: {DEFAULT_WEIGHT_DECAY})",
-    )
-    parser.add_argument(
-        "--num-epochs",
-        type=int,
-        default=DEFAULT_NUM_EPOCHS,
-        help=f"Number of epochs (default: {DEFAULT_NUM_EPOCHS})",
-    )
-    parser.add_argument(
-        "--patience",
-        type=int,
-        default=DEFAULT_PATIENCE,
-        help=f"Early stopping patience (default: {DEFAULT_PATIENCE})",
-    )
-    parser.add_argument(
-        "--image-size",
-        type=int,
-        default=DEFAULT_IMAGE_SIZE,
-        help=f"Image size (default: {DEFAULT_IMAGE_SIZE})",
-    )
-    parser.add_argument(
-        "--num-workers",
-        type=int,
-        default=DEFAULT_NUM_WORKERS,
-        help=f"Number of data loading workers (default: {DEFAULT_NUM_WORKERS})",
-    )
-    parser.add_argument(
-        "--wandb",
-        action="store_true",
-        help="Enable Weights & Biases logging (disables matplotlib visualization)",
-    )
-
-    args = parser.parse_args()
-
-    train(
-        train_dir=args.train_dir,
-        val_dir=args.val_dir,
-        checkpoint_dir=args.checkpoint_dir,
-        batch_size=args.batch_size,
-        learning_rate=args.learning_rate,
-        weight_decay=args.weight_decay,
-        num_epochs=args.num_epochs,
-        patience=args.patience,
-        image_size=args.image_size,
-        num_workers=args.num_workers,
-        use_wandb=args.wandb,
-    )
-
-
-if __name__ == "__main__":
-    main()

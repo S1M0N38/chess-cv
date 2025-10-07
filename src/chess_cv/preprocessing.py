@@ -1,10 +1,9 @@
 """Data preprocessing: generate train/validate/test sets from board-piece combinations."""
 
-import argparse
 import multiprocessing
 from pathlib import Path
 
-__all__ = ["generate_split_data", "main"]
+__all__ = ["generate_split_data"]
 
 import numpy as np
 from PIL import Image
@@ -13,11 +12,8 @@ from tqdm import tqdm
 from .constants import (
     DEFAULT_DATA_DIR,
     DEFAULT_RANDOM_SEED,
-    DEFAULT_TEST_DIR,
     DEFAULT_TEST_RATIO,
-    DEFAULT_TRAIN_DIR,
     DEFAULT_TRAIN_RATIO,
-    DEFAULT_VAL_DIR,
     DEFAULT_VAL_RATIO,
 )
 
@@ -26,23 +22,6 @@ BOARD_SIZE = 256  # Full board in pixels
 SQUARE_SIZE = 32  # Each square in pixels (256 / 8)
 BOARDS_DIR = DEFAULT_DATA_DIR / "boards"
 PIECES_DIR = DEFAULT_DATA_DIR / "pieces"
-
-# All piece classes (12 pieces + empty square)
-PIECE_CLASSES = [
-    "bB",
-    "bK",
-    "bN",
-    "bP",
-    "bQ",
-    "bR",
-    "wB",
-    "wK",
-    "wN",
-    "wP",
-    "wQ",
-    "wR",
-    "xx",
-]
 
 # Square coordinates for rendering on dark (a1) and light (a2) squares
 DARK_SQUARE = {"file": 0, "rank": 7, "name": "dark"}
@@ -139,15 +118,15 @@ def _process_combination(args: tuple) -> dict:
     Generates 26 images: 12 pieces × 2 squares + 2 empty squares.
 
     Args:
-        args: Tuple of (board_name, piece_set, split_name, split_dir)
+        args: Tuple of (board_name, piece_set, split_name, split_dir, piece_classes)
 
     Returns:
         Dict with split name and count of images generated
     """
-    board, piece_set, split_name, split_dir = args
+    board, piece_set, split_name, split_dir, piece_classes = args
 
     # Generate images for each piece on dark and light squares
-    for piece_class in PIECE_CLASSES:
+    for piece_class in piece_classes:
         if piece_class == "xx":
             continue  # Handle empty squares separately
 
@@ -174,13 +153,14 @@ def _process_combination(args: tuple) -> dict:
     output_path = split_dir / "xx" / f"{board}_{piece_set}_light.png"
     img_light.save(output_path)
 
-    return {"split": split_name, "count": len(PIECE_CLASSES) * 2}
+    return {"split": split_name, "count": len(piece_classes) * 2}
 
 
 def generate_split_data(
-    train_dir: Path = DEFAULT_TRAIN_DIR,
-    val_dir: Path = DEFAULT_VAL_DIR,
-    test_dir: Path = DEFAULT_TEST_DIR,
+    model_id: str,
+    train_dir: Path | None = None,
+    val_dir: Path | None = None,
+    test_dir: Path | None = None,
     train_ratio: float = DEFAULT_TRAIN_RATIO,
     val_ratio: float = DEFAULT_VAL_RATIO,
     test_ratio: float = DEFAULT_TEST_RATIO,
@@ -189,6 +169,7 @@ def generate_split_data(
     """Generate train/validate/test sets from board-piece combinations.
 
     Args:
+        model_id: Model identifier (e.g., 'pieces')
         train_dir: Destination directory for training data
         val_dir: Destination directory for validation data
         test_dir: Destination directory for test data
@@ -197,6 +178,20 @@ def generate_split_data(
         test_ratio: Proportion of data for testing (default: 0.15)
         seed: Random seed for reproducibility (default: 42)
     """
+    from .constants import get_model_config, get_test_dir, get_train_dir, get_val_dir
+
+    # Get model configuration
+    model_config = get_model_config(model_id)
+    piece_classes = model_config["class_names"]
+
+    # Set default directories if not provided
+    if train_dir is None:
+        train_dir = get_train_dir(model_id)
+    if val_dir is None:
+        val_dir = get_val_dir(model_id)
+    if test_dir is None:
+        test_dir = get_test_dir(model_id)
+
     assert abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-6, (
         "Ratios must sum to 1.0"
     )
@@ -213,7 +208,7 @@ def generate_split_data(
     # Create output directory structure
     for split_dir in [train_dir, val_dir, test_dir]:
         split_dir.mkdir(parents=True, exist_ok=True)
-        for piece_class in PIECE_CLASSES:
+        for piece_class in piece_classes:
             (split_dir / piece_class).mkdir(exist_ok=True)
 
     # Create all combinations and assign to splits
@@ -238,7 +233,7 @@ def generate_split_data(
             split_dir = val_dir
         else:
             split_dir = test_dir
-        tasks.append((board, piece_set, split_name, split_dir))
+        tasks.append((board, piece_set, split_name, split_dir, piece_classes))
 
     # Use all CPU cores
     num_processes = multiprocessing.cpu_count()
@@ -268,69 +263,3 @@ def generate_split_data(
     print(f"  Validation: {val_count:6d} images")
     print(f"  Test:       {test_count:6d} images")
     print(f"  Total:      {train_count + val_count + test_count:6d} images")
-
-
-def main() -> None:
-    """Run data preprocessing with CLI argument parsing."""
-    parser = argparse.ArgumentParser(
-        description="Generate train/validate/test sets from board-piece combinations"
-    )
-    parser.add_argument(
-        "--train-dir",
-        type=Path,
-        default=DEFAULT_TRAIN_DIR,
-        help=f"Training data output directory (default: {DEFAULT_TRAIN_DIR})",
-    )
-    parser.add_argument(
-        "--val-dir",
-        type=Path,
-        default=DEFAULT_VAL_DIR,
-        help=f"Validation data output directory (default: {DEFAULT_VAL_DIR})",
-    )
-    parser.add_argument(
-        "--test-dir",
-        type=Path,
-        default=DEFAULT_TEST_DIR,
-        help=f"Test data output directory (default: {DEFAULT_TEST_DIR})",
-    )
-    parser.add_argument(
-        "--train-ratio",
-        type=float,
-        default=DEFAULT_TRAIN_RATIO,
-        help=f"Training data ratio (default: {DEFAULT_TRAIN_RATIO})",
-    )
-    parser.add_argument(
-        "--val-ratio",
-        type=float,
-        default=DEFAULT_VAL_RATIO,
-        help=f"Validation data ratio (default: {DEFAULT_VAL_RATIO})",
-    )
-    parser.add_argument(
-        "--test-ratio",
-        type=float,
-        default=DEFAULT_TEST_RATIO,
-        help=f"Test data ratio (default: {DEFAULT_TEST_RATIO})",
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=DEFAULT_RANDOM_SEED,
-        help=f"Random seed for reproducibility (default: {DEFAULT_RANDOM_SEED})",
-    )
-
-    args = parser.parse_args()
-
-    generate_split_data(
-        train_dir=args.train_dir,
-        val_dir=args.val_dir,
-        test_dir=args.test_dir,
-        train_ratio=args.train_ratio,
-        val_ratio=args.val_ratio,
-        test_ratio=args.test_ratio,
-        seed=args.seed,
-    )
-    print("\n✓ Data generation complete!")
-
-
-if __name__ == "__main__":
-    main()

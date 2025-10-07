@@ -25,7 +25,9 @@ __all__ = [
     "get_label_map",
 ]
 
-# Class names in alphabetical order (used across multiple modules)
+# Class names for pieces model (alphabetically ordered)
+# Note: This is specific to the 'pieces' model. Other models may have different class names.
+# Use get_model_config(model_id)["class_names"] from constants.py for model-specific classes.
 CLASS_NAMES = [
     "bB",  # black bishop
     "bK",  # black king

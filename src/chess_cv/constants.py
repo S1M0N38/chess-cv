@@ -4,15 +4,38 @@ from pathlib import Path
 
 # Data paths
 DEFAULT_DATA_DIR = Path("data")
-DEFAULT_SPLITS_DIR = DEFAULT_DATA_DIR / "splits" / "pieces"
-DEFAULT_TRAIN_DIR = DEFAULT_SPLITS_DIR / "train"
-DEFAULT_VAL_DIR = DEFAULT_SPLITS_DIR / "validate"
-DEFAULT_TEST_DIR = DEFAULT_SPLITS_DIR / "test"
 DEFAULT_ALL_DIR = DEFAULT_DATA_DIR / "all"
 
-# Output paths
-DEFAULT_CHECKPOINT_DIR = Path("checkpoints")
-DEFAULT_OUTPUT_DIR = Path("outputs")
+
+def get_splits_dir(model_id: str) -> Path:
+    """Get splits directory for a specific model."""
+    return DEFAULT_DATA_DIR / "splits" / model_id
+
+
+def get_train_dir(model_id: str) -> Path:
+    """Get training directory for a specific model."""
+    return get_splits_dir(model_id) / "train"
+
+
+def get_val_dir(model_id: str) -> Path:
+    """Get validation directory for a specific model."""
+    return get_splits_dir(model_id) / "validate"
+
+
+def get_test_dir(model_id: str) -> Path:
+    """Get test directory for a specific model."""
+    return get_splits_dir(model_id) / "test"
+
+
+def get_checkpoint_dir(model_id: str) -> Path:
+    """Get checkpoint directory for a specific model."""
+    return Path("checkpoints") / model_id
+
+
+def get_output_dir(model_id: str) -> Path:
+    """Get output directory for a specific model."""
+    return Path("outputs") / model_id
+
 
 # Model parameters
 DEFAULT_NUM_CLASSES = 13
@@ -65,3 +88,51 @@ TEST_CONFUSION_MATRIX_FILENAME = "test_confusion_matrix.png"
 TEST_PER_CLASS_ACCURACY_FILENAME = "test_per_class_accuracy.png"
 TEST_SUMMARY_FILENAME = "test_summary.json"
 MISCLASSIFIED_DIR = "misclassified_images"
+
+# Model configurations
+MODEL_CONFIGS = {
+    "pieces": {
+        "num_classes": 13,
+        "class_names": [
+            "bB",
+            "bK",
+            "bN",
+            "bP",
+            "bQ",
+            "bR",
+            "wB",
+            "wK",
+            "wN",
+            "wP",
+            "wQ",
+            "wR",
+            "xx",
+        ],
+        "description": "Chess piece classifier (12 pieces + empty square)",
+    },
+    # Future models can be added here:
+    # "board": {
+    #     "num_classes": 64,
+    #     "class_names": [...],
+    #     "description": "Full board state classifier",
+    # },
+}
+
+
+def get_model_config(model_id: str) -> dict:
+    """Get configuration for a specific model.
+
+    Args:
+        model_id: Model identifier (e.g., 'pieces')
+
+    Returns:
+        Model configuration dictionary
+
+    Raises:
+        ValueError: If model_id is not found
+    """
+    if model_id not in MODEL_CONFIGS:
+        available = list(MODEL_CONFIGS.keys())
+        msg = f"Unknown model_id: {model_id}. Available: {available}"
+        raise ValueError(msg)
+    return MODEL_CONFIGS[model_id]

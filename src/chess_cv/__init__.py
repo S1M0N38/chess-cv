@@ -8,4 +8,5 @@ __all__ = ["__version__", "main"]
 def main() -> None:
     """Main entry point for chess-cv CLI."""
     from .cli import cli
+
     cli()

@@ -70,7 +70,7 @@ clean: ## Clean build artifacts
 
 # Evaluation targets
 eval: ## Evaluate model over multiple datasets
-	@echo "$(YELLOW)Evaluating model on test data...$(RESET)"
-	python -m chess_cv.test --test-dir data/test --output-dir evals/test
-	@echo "$(YELLOW)Evaluating model on openboard dataset...$(RESET)"
-	python -m chess_cv.test --hf-test-dir S1M0N38/chess-cv-openboard --output-dir evals/openboard
+	@echo "$(YELLOW)Evaluating pieces model on test data...$(RESET)"
+	chess-cv test pieces --output-dir evals/pieces/test
+	@echo "$(YELLOW)Evaluating pieces model on openboard dataset...$(RESET)"
+	chess-cv test pieces --hf-test-dir S1M0N38/chess-cv-openboard --output-dir evals/pieces/openboard

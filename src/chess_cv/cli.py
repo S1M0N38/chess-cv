@@ -1,26 +1,28 @@
 """Command-line interface for chess-cv."""
 
-import click
 from pathlib import Path
+
+import click
 
 from .constants import (
     BEST_MODEL_FILENAME,
     DEFAULT_BATCH_SIZE,
-    DEFAULT_CHECKPOINT_DIR,
     DEFAULT_IMAGE_SIZE,
+    DEFAULT_LEARNING_RATE,
     DEFAULT_NUM_EPOCHS,
     DEFAULT_NUM_WORKERS,
-    DEFAULT_OUTPUT_DIR,
     DEFAULT_PATIENCE,
     DEFAULT_RANDOM_SEED,
-    DEFAULT_TEST_DIR,
     DEFAULT_TEST_RATIO,
-    DEFAULT_TRAIN_DIR,
     DEFAULT_TRAIN_RATIO,
-    DEFAULT_VAL_DIR,
     DEFAULT_VAL_RATIO,
-    DEFAULT_LEARNING_RATE,
     DEFAULT_WEIGHT_DECAY,
+    get_checkpoint_dir,
+    get_model_config,
+    get_output_dir,
+    get_test_dir,
+    get_train_dir,
+    get_val_dir,
 )
 
 
@@ -32,23 +34,24 @@ def cli():
 
 
 @cli.command()
+@click.argument("model-id", type=str)
 @click.option(
     "--train-dir",
     type=click.Path(path_type=Path),
-    default=DEFAULT_TRAIN_DIR,
-    help=f"Training data output directory (default: {DEFAULT_TRAIN_DIR})",
+    default=None,
+    help="Training data output directory (default: data/splits/{model-id}/train)",
 )
 @click.option(
     "--val-dir",
     type=click.Path(path_type=Path),
-    default=DEFAULT_VAL_DIR,
-    help=f"Validation data output directory (default: {DEFAULT_VAL_DIR})",
+    default=None,
+    help="Validation data output directory (default: data/splits/{model-id}/validate)",
 )
 @click.option(
     "--test-dir",
     type=click.Path(path_type=Path),
-    default=DEFAULT_TEST_DIR,
-    help=f"Test data output directory (default: {DEFAULT_TEST_DIR})",
+    default=None,
+    help="Test data output directory (default: data/splits/{model-id}/test)",
 )
 @click.option(
     "--train-ratio",
@@ -75,18 +78,34 @@ def cli():
     help=f"Random seed for reproducibility (default: {DEFAULT_RANDOM_SEED})",
 )
 def preprocessing(
-    train_dir: Path,
-    val_dir: Path,
-    test_dir: Path,
+    model_id: str,
+    train_dir: Path | None,
+    val_dir: Path | None,
+    test_dir: Path | None,
     train_ratio: float,
     val_ratio: float,
     test_ratio: float,
     seed: int,
 ):
-    """Generate train/validate/test sets from board-piece combinations."""
+    """Generate train/validate/test sets from board-piece combinations.
+
+    MODEL_ID: Model identifier (e.g., 'pieces')
+    """
     from .preprocessing import generate_split_data
 
+    # Validate model_id
+    _ = get_model_config(model_id)
+
+    # Set defaults based on model_id if not provided
+    if train_dir is None:
+        train_dir = get_train_dir(model_id)
+    if val_dir is None:
+        val_dir = get_val_dir(model_id)
+    if test_dir is None:
+        test_dir = get_test_dir(model_id)
+
     generate_split_data(
+        model_id=model_id,
         train_dir=train_dir,
         val_dir=val_dir,
         test_dir=test_dir,
@@ -99,23 +118,24 @@ def preprocessing(
 
 
 @cli.command()
+@click.argument("model-id", type=str)
 @click.option(
     "--train-dir",
     type=click.Path(path_type=Path),
-    default=DEFAULT_TRAIN_DIR,
-    help=f"Training data directory (default: {DEFAULT_TRAIN_DIR})",
+    default=None,
+    help="Training data directory (default: data/splits/{model-id}/train)",
 )
 @click.option(
     "--val-dir",
     type=click.Path(path_type=Path),
-    default=DEFAULT_VAL_DIR,
-    help=f"Validation data directory (default: {DEFAULT_VAL_DIR})",
+    default=None,
+    help="Validation data directory (default: data/splits/{model-id}/validate)",
 )
 @click.option(
     "--checkpoint-dir",
     type=click.Path(path_type=Path),
-    default=DEFAULT_CHECKPOINT_DIR,
-    help=f"Checkpoint directory (default: {DEFAULT_CHECKPOINT_DIR})",
+    default=None,
+    help="Checkpoint directory (default: checkpoints/{model-id})",
 )
 @click.option(
     "--batch-size",
@@ -165,9 +185,10 @@ def preprocessing(
     help="Enable Weights & Biases logging (disables matplotlib visualization)",
 )
 def train(
-    train_dir: Path,
-    val_dir: Path,
-    checkpoint_dir: Path,
+    model_id: str,
+    train_dir: Path | None,
+    val_dir: Path | None,
+    checkpoint_dir: Path | None,
     batch_size: int,
     learning_rate: float,
     weight_decay: float,
@@ -177,10 +198,25 @@ def train(
     num_workers: int,
     wandb: bool,
 ):
-    """Train chess piece classification model."""
+    """Train chess piece classification model.
+
+    MODEL_ID: Model identifier (e.g., 'pieces')
+    """
     from .train import train as train_model
 
+    # Validate model_id
+    _ = get_model_config(model_id)
+
+    # Set defaults based on model_id if not provided
+    if train_dir is None:
+        train_dir = get_train_dir(model_id)
+    if val_dir is None:
+        val_dir = get_val_dir(model_id)
+    if checkpoint_dir is None:
+        checkpoint_dir = get_checkpoint_dir(model_id)
+
     train_model(
+        model_id=model_id,
         train_dir=train_dir,
         val_dir=val_dir,
         checkpoint_dir=checkpoint_dir,
@@ -196,23 +232,24 @@ def train(
 
 
 @cli.command()
+@click.argument("model-id", type=str)
 @click.option(
     "--test-dir",
     type=click.Path(path_type=Path),
-    default=DEFAULT_TEST_DIR,
-    help=f"Test data directory (default: {DEFAULT_TEST_DIR})",
+    default=None,
+    help="Test data directory (default: data/splits/{model-id}/test)",
 )
 @click.option(
     "--train-dir",
     type=click.Path(path_type=Path),
-    default=DEFAULT_TRAIN_DIR,
-    help=f"Training data directory for label map (default: {DEFAULT_TRAIN_DIR})",
+    default=None,
+    help="Training data directory for label map (default: data/splits/{model-id}/train)",
 )
 @click.option(
     "--checkpoint",
     type=click.Path(path_type=Path),
-    default=DEFAULT_CHECKPOINT_DIR / BEST_MODEL_FILENAME,
-    help=f"Model checkpoint path (default: {DEFAULT_CHECKPOINT_DIR / BEST_MODEL_FILENAME})",
+    default=None,
+    help="Model checkpoint path (default: checkpoints/{model-id}/best_model.safetensors)",
 )
 @click.option(
     "--batch-size",
@@ -235,8 +272,8 @@ def train(
 @click.option(
     "--output-dir",
     type=click.Path(path_type=Path),
-    default=DEFAULT_OUTPUT_DIR,
-    help=f"Output directory for results (default: {DEFAULT_OUTPUT_DIR})",
+    default=None,
+    help="Output directory for results (default: outputs/{model-id})",
 )
 @click.option(
     "--wandb",
@@ -250,20 +287,38 @@ def train(
     help="HuggingFace dataset ID (e.g., 'S1M0N38/chess-cv-openboard'). If provided, --test-dir is ignored.",
 )
 def test(
-    test_dir: Path,
-    train_dir: Path,
-    checkpoint: Path,
+    model_id: str,
+    test_dir: Path | None,
+    train_dir: Path | None,
+    checkpoint: Path | None,
     batch_size: int,
     image_size: int,
     num_workers: int,
-    output_dir: Path,
+    output_dir: Path | None,
     wandb: bool,
     hf_test_dir: str | None,
 ):
-    """Test and evaluate trained chess piece classification model."""
+    """Test and evaluate trained chess piece classification model.
+
+    MODEL_ID: Model identifier (e.g., 'pieces')
+    """
     from .test import test as test_model
 
+    # Validate model_id
+    _ = get_model_config(model_id)
+
+    # Set defaults based on model_id if not provided
+    if test_dir is None:
+        test_dir = get_test_dir(model_id)
+    if train_dir is None:
+        train_dir = get_train_dir(model_id)
+    if checkpoint is None:
+        checkpoint = get_checkpoint_dir(model_id) / BEST_MODEL_FILENAME
+    if output_dir is None:
+        output_dir = get_output_dir(model_id)
+
     test_model(
+        model_id=model_id,
         test_dir=test_dir,
         train_dir=train_dir,
         checkpoint_path=checkpoint,
@@ -277,6 +332,7 @@ def test(
 
 
 @cli.command()
+@click.argument("model-id", type=str)
 @click.option(
     "--repo-id",
     type=str,
@@ -286,8 +342,8 @@ def test(
 @click.option(
     "--checkpoint-dir",
     type=click.Path(path_type=Path),
-    default=DEFAULT_CHECKPOINT_DIR,
-    help=f"Directory containing model checkpoints (default: {DEFAULT_CHECKPOINT_DIR})",
+    default=None,
+    help="Directory containing model checkpoints (default: checkpoints/{model-id})",
 )
 @click.option(
     "--readme",
@@ -313,8 +369,9 @@ def test(
     help="Hugging Face API token (if not provided, uses cached token from 'hf login')",
 )
 def upload(
+    model_id: str,
     repo_id: str,
-    checkpoint_dir: Path,
+    checkpoint_dir: Path | None,
     readme: Path | None,
     message: str,
     private: bool,
@@ -322,26 +379,36 @@ def upload(
 ):
     """Upload trained chess-cv model to Hugging Face Hub.
     
+    MODEL_ID: Model identifier (e.g., 'pieces')
+    
     Examples:
     
       # Upload with default settings
-      chess-cv upload --repo-id username/chess-cv
+      chess-cv upload pieces --repo-id username/chess-cv
     
       # Upload with custom commit message
-      chess-cv upload --repo-id username/chess-cv --message "feat: improved model v2"
+      chess-cv upload pieces --repo-id username/chess-cv --message "feat: improved model v2"
     
       # Upload to private repository
-      chess-cv upload --repo-id username/chess-cv --private
+      chess-cv upload pieces --repo-id username/chess-cv --private
     
       # Specify custom paths
-      chess-cv upload --repo-id username/chess-cv \\
+      chess-cv upload pieces --repo-id username/chess-cv \\
         --checkpoint-dir ./my-checkpoints \\
         --readme docs/custom_README.md
     """
     from .upload import upload_to_hub
 
+    # Validate model_id
+    _ = get_model_config(model_id)
+
+    # Set defaults based on model_id if not provided
+    if checkpoint_dir is None:
+        checkpoint_dir = get_checkpoint_dir(model_id)
+
     try:
         upload_to_hub(
+            model_id=model_id,
             repo_id=repo_id,
             checkpoint_dir=checkpoint_dir,
             readme_path=readme,

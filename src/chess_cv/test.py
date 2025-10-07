@@ -1,11 +1,10 @@
 """Test script for evaluating trained model."""
 
-import argparse
 import json
 import shutil
 from pathlib import Path
 
-__all__ = ["test", "main"]
+__all__ = ["test"]
 
 import mlx.core as mx
 import numpy as np
@@ -18,12 +17,8 @@ from tqdm import tqdm
 from .constants import (
     BEST_MODEL_FILENAME,
     DEFAULT_BATCH_SIZE,
-    DEFAULT_CHECKPOINT_DIR,
     DEFAULT_IMAGE_SIZE,
     DEFAULT_NUM_WORKERS,
-    DEFAULT_OUTPUT_DIR,
-    DEFAULT_TEST_DIR,
-    DEFAULT_TRAIN_DIR,
     MISCLASSIFIED_DIR,
     TEST_CONFUSION_MATRIX_FILENAME,
     TEST_PER_CLASS_ACCURACY_FILENAME,
@@ -50,19 +45,21 @@ from .wandb_utils import WandbLogger
 
 
 def test(
-    test_dir: Path | str = DEFAULT_TEST_DIR,
-    train_dir: Path | str = DEFAULT_TRAIN_DIR,  # For label map
-    checkpoint_path: Path | str = DEFAULT_CHECKPOINT_DIR / BEST_MODEL_FILENAME,
+    model_id: str,
+    test_dir: Path | str | None = None,
+    train_dir: Path | str | None = None,
+    checkpoint_path: Path | str | None = None,
     batch_size: int = DEFAULT_BATCH_SIZE,
     image_size: int = DEFAULT_IMAGE_SIZE,
     num_workers: int = DEFAULT_NUM_WORKERS,
-    output_dir: Path | str = DEFAULT_OUTPUT_DIR,
+    output_dir: Path | str | None = None,
     use_wandb: bool = False,
     hf_test_dir: str | None = None,
 ) -> None:
     """Test the trained model.
 
     Args:
+        model_id: Model identifier (e.g., 'pieces')
         test_dir: Local test data directory
         train_dir: Training data directory for label map
         checkpoint_path: Path to model checkpoint
@@ -74,6 +71,28 @@ def test(
         hf_test_dir: HuggingFace dataset ID (e.g., "S1M0N38/chess-cv-openboard").
                      If provided, test_dir is ignored.
     """
+    from .constants import (
+        get_checkpoint_dir,
+        get_model_config,
+        get_output_dir,
+        get_test_dir,
+        get_train_dir,
+    )
+
+    # Get model configuration
+    model_config = get_model_config(model_id)
+    num_classes = model_config["num_classes"]
+
+    # Set default directories if not provided
+    if test_dir is None:
+        test_dir = get_test_dir(model_id)
+    if train_dir is None:
+        train_dir = get_train_dir(model_id)
+    if checkpoint_path is None:
+        checkpoint_path = get_checkpoint_dir(model_id) / BEST_MODEL_FILENAME
+    if output_dir is None:
+        output_dir = get_output_dir(model_id)
+
     checkpoint_path = Path(checkpoint_path)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -82,8 +101,10 @@ def test(
     wandb_logger = WandbLogger(enabled=use_wandb)
     if use_wandb:
         wandb_logger.init(
-            project="chess-cv-evaluation",
+            project=f"chess-cv-{model_id}-evaluation",
             config={
+                "model_id": model_id,
+                "num_classes": num_classes,
                 "test_dir": str(test_dir) if hf_test_dir is None else hf_test_dir,
                 "checkpoint_path": str(checkpoint_path),
                 "batch_size": batch_size,
@@ -106,7 +127,6 @@ def test(
     train_files = get_image_files(str(train_dir))
     all_train_labels = get_all_labels(train_files)
     label_map = get_label_map(all_train_labels)
-    num_classes = len(label_map)
 
     test_transforms = transforms.Compose(
         [transforms.Resize((image_size, image_size), antialias=True)]
@@ -294,81 +314,3 @@ def test(
 
     # Finish wandb run
     wandb_logger.finish()
-
-
-def main() -> None:
-    """Run test script with CLI argument parsing."""
-    parser = argparse.ArgumentParser(
-        description="Test and evaluate trained chess piece classification model"
-    )
-    parser.add_argument(
-        "--test-dir",
-        type=Path,
-        default=DEFAULT_TEST_DIR,
-        help=f"Test data directory (default: {DEFAULT_TEST_DIR})",
-    )
-    parser.add_argument(
-        "--train-dir",
-        type=Path,
-        default=DEFAULT_TRAIN_DIR,
-        help=f"Training data directory for label map (default: {DEFAULT_TRAIN_DIR})",
-    )
-    parser.add_argument(
-        "--checkpoint",
-        type=Path,
-        default=DEFAULT_CHECKPOINT_DIR / BEST_MODEL_FILENAME,
-        help=f"Model checkpoint path (default: {DEFAULT_CHECKPOINT_DIR / BEST_MODEL_FILENAME})",
-    )
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=DEFAULT_BATCH_SIZE,
-        help=f"Batch size (default: {DEFAULT_BATCH_SIZE})",
-    )
-    parser.add_argument(
-        "--image-size",
-        type=int,
-        default=DEFAULT_IMAGE_SIZE,
-        help=f"Image size (default: {DEFAULT_IMAGE_SIZE})",
-    )
-    parser.add_argument(
-        "--num-workers",
-        type=int,
-        default=DEFAULT_NUM_WORKERS,
-        help=f"Number of data loading workers (default: {DEFAULT_NUM_WORKERS})",
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=DEFAULT_OUTPUT_DIR,
-        help=f"Output directory for results (default: {DEFAULT_OUTPUT_DIR})",
-    )
-    parser.add_argument(
-        "--wandb",
-        action="store_true",
-        help="Enable Weights & Biases logging (disables matplotlib visualization)",
-    )
-    parser.add_argument(
-        "--hf-test-dir",
-        type=str,
-        default=None,
-        help="HuggingFace dataset ID (e.g., 'S1M0N38/chess-cv-openboard'). If provided, --test-dir is ignored.",
-    )
-
-    args = parser.parse_args()
-
-    test(
-        test_dir=args.test_dir,
-        train_dir=args.train_dir,
-        checkpoint_path=args.checkpoint,
-        batch_size=args.batch_size,
-        image_size=args.image_size,
-        num_workers=args.num_workers,
-        output_dir=args.output_dir,
-        use_wandb=args.wandb,
-        hf_test_dir=args.hf_test_dir,
-    )
-
-
-if __name__ == "__main__":
-    main()

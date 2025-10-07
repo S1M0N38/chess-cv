@@ -58,18 +58,18 @@ make docs        # Serve at http://127.0.0.1:8000
 
 ```bash
 # 1. Generate synthetic training data (boards + pieces → square images in data/splits/pieces/)
-chess-cv preprocessing
+chess-cv preprocessing pieces
 
 # 2. Train model
-chess-cv train
-chess-cv train --wandb  # with W&B logging
+chess-cv train pieces
+chess-cv train pieces --wandb  # with W&B logging
 
 # 3. Evaluate model
-chess-cv test
+chess-cv test pieces
 make eval  # Run full evaluation suite
 
 # 4. Upload to Hugging Face Hub
-chess-cv upload --repo-id username/chess-cv
+chess-cv upload pieces --repo-id username/chess-cv
 ```
 
 ### CLI Help
@@ -83,6 +83,12 @@ chess-cv preprocessing --help
 chess-cv train --help
 chess-cv test --help
 chess-cv upload --help
+
+# Example usage with model-id
+chess-cv preprocessing pieces --help
+chess-cv train pieces --help
+chess-cv test pieces --help
+chess-cv upload pieces --repo-id username/chess-cv --help
 ```
 
 ### Run Single Test
@@ -189,18 +195,32 @@ chess-cv/
 │   ├── boards/            # Board images (256×256px)
 │   ├── pieces/            # Piece sets (32×32px)
 │   └── splits/            # Generated training/validation/test splits
-│       └── pieces/        # Piece classification data
+│       └── {model-id}/    # Model-specific data (e.g., pieces/)
 │           ├── train/     # Training data
 │           ├── validate/  # Validation data
 │           └── test/      # Test data
 ├── checkpoints/           # Model checkpoints
+│   └── {model-id}/        # Model-specific checkpoints (e.g., pieces/)
+│       ├── best_model.safetensors
+│       └── optimizer.safetensors
 ├── outputs/               # Training outputs
+│   └── {model-id}/        # Model-specific outputs (e.g., pieces/)
 ├── evals/                 # Evaluation results
+│   └── {model-id}/        # Model-specific evals (e.g., pieces/)
 ├── docs/                  # MkDocs documentation
 └── tests/                 # Pytest tests
 ```
 
 ## Important Conventions
+
+### Model Configuration
+
+- **Model IDs**: Used to organize data, checkpoints, and outputs
+- **Current model**: `pieces` (chess piece classifier with 13 classes)
+- **Adding models**: Add to `MODEL_CONFIGS` in `constants.py`
+- **Model-specific settings**: Each model has `num_classes`, `class_names`, `description`
+- **Architecture**: SimpleCNN architecture is shared across all models
+- **Input size**: 32×32×3 RGB images for all models
 
 ### Release Process
 
@@ -224,6 +244,6 @@ chess-cv/
 ### Label Mapping
 
 - Labels are **alphabetically sorted** class names
-- Empty square is "xx"
+- Empty square is "xx" (for pieces model)
 - Use `get_label_map()` to create label→index mapping
-- CLASS_NAMES in data.py maintains canonical order
+- Use `get_model_config(model_id)["class_names"]` for model-specific class names
