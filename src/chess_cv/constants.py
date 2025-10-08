@@ -82,17 +82,17 @@ AUGMENTATION_CONFIGS = {
         "noise_std": 0.05,
     },
     "arrows": {
-        "arrow_probability": 0.0,  # No arrow overlay for arrows model
+        "arrow_probability": 0.0,
         "highlight_probability": 0.25,
-        "scale_min": 0.8,
+        "scale_min": 0.75,
         "scale_max": 1.0,
-        "horizontal_flip": False,  # No horizontal flip
-        "brightness": 0.15,  # Tame color jitter
-        "contrast": 0.15,
-        "saturation": 0.15,
-        "rotation_degrees": 0,  # No rotation
+        "horizontal_flip": False,
+        "brightness": 0.20,
+        "contrast": 0.20,
+        "saturation": 0.20,
+        "rotation_degrees": 2,
         "noise_mean": 0.0,
-        "noise_std": 0.05,
+        "noise_std": 0.10,
     },
 }
 
