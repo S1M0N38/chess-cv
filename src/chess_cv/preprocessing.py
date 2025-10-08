@@ -315,7 +315,7 @@ def _process_arrow_class(arrow_class: str) -> int:
     arrow_set = ARROWS[arrow_class]
     count = 0
 
-    for _piece_class, piece_set in PIECES.items():
+    for piece_class, piece_set in PIECES.items():
         for piece_name, piece in piece_set.items():
             for square_name, square in SQUARES.items():
                 arrow_name, arrow_img = random.choice(list(arrow_set.items()))
@@ -325,7 +325,7 @@ def _process_arrow_class(arrow_class: str) -> int:
                 image.save(
                     split_dir
                     / arrow_class
-                    / f"{square_name}_{piece_name}_{arrow_name}.png"
+                    / f"{square_name}_{piece_class}_{piece_name}_{arrow_name}.png"
                 )
                 count += 1
 
