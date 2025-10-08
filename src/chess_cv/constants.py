@@ -120,6 +120,7 @@ TEST_CONFUSION_MATRIX_FILENAME = "test_confusion_matrix.png"
 TEST_PER_CLASS_ACCURACY_FILENAME = "test_per_class_accuracy.png"
 TEST_SUMMARY_FILENAME = "test_summary.json"
 MISCLASSIFIED_DIR = "misclassified_images"
+MAX_MISCLASSIFIED_IMAGES = 512
 
 # Model configurations
 MODEL_CONFIGS = {

@@ -18,6 +18,7 @@ from .constants import (
     DEFAULT_BATCH_SIZE,
     DEFAULT_IMAGE_SIZE,
     DEFAULT_NUM_WORKERS,
+    MAX_MISCLASSIFIED_IMAGES,
     MISCLASSIFIED_DIR,
     TEST_CONFUSION_MATRIX_FILENAME,
     TEST_PER_CLASS_ACCURACY_FILENAME,
@@ -314,7 +315,11 @@ def test(
     misclassified_array = np.array(misclassified_mask)  # type: ignore[arg-type]
     misclassified_indices = np.nonzero(misclassified_array)[0]
 
-    for idx in misclassified_indices.tolist():
+    # Limit the number of misclassified images to save
+    num_to_save = min(len(misclassified_indices), MAX_MISCLASSIFIED_IMAGES)
+    print(f"Saving {num_to_save} of {len(misclassified_indices)} misclassified images...")
+
+    for idx in misclassified_indices[:num_to_save].tolist():
         true_label_idx = int(labels_array[idx].item())  # type: ignore[union-attr]
         pred_label_idx = int(predictions[idx].item())  # type: ignore[union-attr]
         true_label = class_names[true_label_idx]
