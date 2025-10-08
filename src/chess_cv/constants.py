@@ -83,12 +83,12 @@ AUGMENTATION_CONFIGS = {
         "scale_min": 0.8,
         "scale_max": 1.0,
         "horizontal_flip": False,  # No horizontal flip
-        "brightness": 0.05,  # Tame color jitter
-        "contrast": 0.05,
-        "saturation": 0.05,
+        "brightness": 0.15,  # Tame color jitter
+        "contrast": 0.15,
+        "saturation": 0.15,
         "rotation_degrees": 0,  # No rotation
         "noise_mean": 0.0,
-        "noise_std": 0.01,  # Tame gaussian noise
+        "noise_std": 0.05,
     },
 }
 
