@@ -1,8 +1,8 @@
 """Evaluation utilities for model performance."""
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 from sklearn.metrics import confusion_matrix, f1_score
 from torch.utils.data import DataLoader
 
