@@ -3,6 +3,7 @@
 import mlx.core as mx
 import mlx.nn as nn
 import numpy as np
+from sklearn.metrics import confusion_matrix, f1_score
 from torch.utils.data import DataLoader
 
 __all__ = [
@@ -77,33 +78,33 @@ def compute_per_class_accuracy(
 
 
 def compute_confusion_matrix(
-    model: nn.Module, images: mx.array, labels: mx.array, num_classes: int = 13
+    model: nn.Module, data_loader: DataLoader, num_classes: int = 13
 ) -> np.ndarray:
-    """Compute confusion matrix.
+    """Compute confusion matrix using scikit-learn.
 
     Args:
         model: Trained model
-        images: Images array of shape (N, H, W, C)
-        labels: Labels array of shape (N,)
+        data_loader: DataLoader for test data
         num_classes: Number of classes
 
     Returns:
         Confusion matrix as numpy array of shape (num_classes, num_classes)
     """
-    logits = model(images)
-    predictions = mx.argmax(logits, axis=1)
+    from tqdm import tqdm
 
-    # Initialize confusion matrix
-    confusion_matrix = np.zeros((num_classes, num_classes), dtype=np.int32)
+    all_predictions = []
+    all_labels = []
 
-    # Populate confusion matrix
-    pred_np = np.array(predictions)
-    labels_np = np.array(labels)
+    for batch_images, batch_labels in tqdm(data_loader, desc="Computing predictions"):
+        logits = model(batch_images)
+        predictions = mx.argmax(logits, axis=1)
 
-    for true_label, pred_label in zip(labels_np, pred_np):
-        confusion_matrix[true_label, pred_label] += 1
+        all_predictions.extend(np.array(predictions).tolist())
+        all_labels.extend(np.array(batch_labels).tolist())
 
-    return confusion_matrix
+    return confusion_matrix(
+        all_labels, all_predictions, labels=list(range(num_classes))
+    )
 
 
 def evaluate_model(
@@ -111,55 +112,51 @@ def evaluate_model(
     data_loader: DataLoader,
     class_names: list[str],
     batch_size: int = 256,
-) -> dict[str, float | dict[str, float]]:
+) -> dict[str, float | dict[str, float] | list[int]]:
     """Evaluate model on a dataset.
 
     Args:
         model: Trained model
         data_loader: Data loader
         class_names: List of class names
-        batch_size: Batch size for evaluation
+        batch_size: Batch size for evaluation (unused, kept for compatibility)
 
     Returns:
-        Dictionary containing overall accuracy and per-class accuracies
+        Dictionary containing overall accuracy, per-class accuracies, predictions, and labels
     """
     all_predictions = []
     all_labels = []
 
-    # Collect predictions in batches
     for batch_images, batch_labels in data_loader:
         logits = model(batch_images)
         predictions = mx.argmax(logits, axis=1)
 
-        all_predictions.append(predictions)
-        all_labels.append(batch_labels)
+        all_predictions.extend(np.array(predictions).tolist())
+        all_labels.extend(np.array(batch_labels).tolist())
 
-    # Concatenate all predictions and labels
-    all_predictions = mx.concatenate(all_predictions)
-    all_labels = mx.concatenate(all_labels)
+    # Overall accuracy
+    correct = sum(pred == label for pred, label in zip(all_predictions, all_labels))
+    overall_accuracy = correct / len(all_labels)
 
-    # Compute overall accuracy
-    correct = mx.sum(all_predictions == all_labels)  # type: ignore[arg-type]
-    overall_accuracy = (correct / len(all_labels)).item()
-
-    # Compute per-class accuracy
+    # Per-class accuracy using scikit-learn
     per_class_acc = {}
     for class_idx, class_name in enumerate(class_names):
-        # Find samples belonging to this class
-        class_mask = all_labels == class_idx  # type: ignore[assignment]
-        class_samples = mx.sum(class_mask)  # type: ignore[arg-type]
-
-        if class_samples > 0:
-            # Compute accuracy for this class
-            class_correct = mx.sum((all_predictions == all_labels) & class_mask)  # type: ignore[arg-type,operator]
-            class_accuracy = (class_correct / class_samples).item()
-            per_class_acc[class_name] = class_accuracy
+        class_mask = [label == class_idx for label in all_labels]
+        if sum(class_mask) > 0:
+            class_correct = sum(
+                pred == label
+                for pred, label, mask in zip(all_predictions, all_labels, class_mask)
+                if mask
+            )
+            per_class_acc[class_name] = class_correct / sum(class_mask)
         else:
             per_class_acc[class_name] = 0.0
 
     return {
         "overall_accuracy": overall_accuracy,
         "per_class_accuracy": per_class_acc,
+        "predictions": all_predictions,
+        "labels": all_labels,
     }
 
 
@@ -196,34 +193,17 @@ def print_evaluation_results(
     print("=" * 60 + "\n")
 
 
-def compute_f1_score(confusion_matrix: np.ndarray) -> float:
-    """Compute macro F1-score from a confusion matrix.
+def compute_f1_score(y_true: list[int], y_pred: list[int]) -> float:
+    """Compute macro F1-score using scikit-learn.
 
     Args:
-        confusion_matrix: Confusion matrix as numpy array
+        y_true: True labels
+        y_pred: Predicted labels
 
     Returns:
         Macro F1-score
     """
-    num_classes = confusion_matrix.shape[0]
-    f1_scores = []
-
-    for i in range(num_classes):
-        tp = confusion_matrix[i, i]
-        fp = np.sum(confusion_matrix[:, i]) - tp
-        fn = np.sum(confusion_matrix[i, :]) - tp
-
-        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-
-        if precision + recall > 0:
-            f1 = 2 * (precision * recall) / (precision + recall)
-            f1_scores.append(f1)
-        else:
-            f1_scores.append(0)
-
-    macro_f1 = np.mean(f1_scores)
-    return float(macro_f1)
+    return float(f1_score(y_true, y_pred, average="macro", zero_division="warn"))
 
 
 def benchmark_inference_speed(
