@@ -74,7 +74,7 @@ from huggingface_hub import hf_hub_download
 from chess_cv.model import SimpleCNN
 
 # Load model
-model_path = hf_hub_download(repo_id="S1M0N38/chess-cv", filename="best_model.safetensors")
+model_path = hf_hub_download(repo_id="S1M0N38/chess-cv", filename="pieces.safetensors")
 model = SimpleCNN(num_classes=13)
 model.load_weights(model_path)
 model.eval()
@@ -87,6 +87,57 @@ pred_idx = mx.argmax(model(img_array), axis=-1).item()
 classes = ['bB', 'bK', 'bN', 'bP', 'bQ', 'bR', 'wB', 'wK', 'wN', 'wP', 'wQ', 'wR', 'xx']
 print(f"Predicted: {classes[pred_idx]}")
 ```
+
+## Models
+
+This repository contains two specialized models for chess board analysis:
+
+### Pieces Model (`pieces.safetensors`)
+
+**Overview:**
+
+The pieces model classifies chess square images into 13 classes: 6 white pieces (wP, wN, wB, wR, wQ, wK), 6 black pieces (bP, bN, bB, bR, bQ, bK), and empty squares (xx). This model is designed for board state recognition and FEN generation from chess board images.
+
+**Training:**
+
+- **Architecture**: SimpleCNN (156k parameters)
+- **Input**: 32×32px RGB square images
+- **Data**: ~93,000 synthetic images from 55 board styles × 64 piece sets
+- **Augmentation**: Aggressive augmentation with arrow overlays (80%), highlight overlays (25%), random crops, horizontal flips, color jitter, rotation (±5°), and Gaussian noise
+- **Optimizer**: AdamW (lr=0.0003, weight_decay=0.0003)
+- **Training**: 200 epochs, batch size 64
+
+**Performance:**
+
+| Dataset | Accuracy | F1-Score (Macro) |
+|---------|----------|------------------|
+| Test Data (synthetic) | 99.85% | 99.89% |
+| [chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) | - | 95.78% |
+
+The model achieves near-perfect accuracy on synthetic data and maintains strong performance on real board images from OpenBoard dataset.
+
+### Arrows Model (`arrows.safetensors`)
+
+**Overview:**
+
+The arrows model classifies chess square images into 49 classes representing different arrow overlay patterns: 20 arrow heads (N, NE, E, SE, S, SW, W, NW, and intermediate directions), 12 arrow tails, 8 middle segments, 4 corner pieces, and empty squares (xx). This model enables detection and reconstruction of arrow annotations commonly used in chess analysis interfaces.
+
+**Training:**
+
+- **Architecture**: SimpleCNN (156k parameters, same as pieces model)
+- **Input**: 32×32px RGB square images
+- **Data**: ~93,000 synthetic images from 55 board styles × arrow overlays
+- **Augmentation**: Conservative augmentation with highlight overlays (25%), random crops, and minimal color jitter/noise. No horizontal flips or rotation to preserve arrow directionality
+- **Optimizer**: AdamW (lr=0.0003, weight_decay=0.0003)
+- **Training**: 200 epochs, batch size 64
+
+**Performance:**
+
+| Dataset | Accuracy | F1-Score (Macro) |
+|---------|----------|------------------|
+| Test Data (synthetic) | ~99% | ~99% |
+
+The arrows model is optimized for detecting directional annotations while maintaining spatial consistency across the board.
 
 ## Training Your Own Model
 

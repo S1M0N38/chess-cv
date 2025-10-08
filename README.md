@@ -56,7 +56,7 @@ from chess_cv.model import SimpleCNN
 from huggingface_hub import hf_hub_download
 
 # Load pre-trained model
-model_path = hf_hub_download(repo_id="S1M0N38/chess-cv", filename="best_model.safetensors")
+model_path = hf_hub_download(repo_id="S1M0N38/chess-cv", filename="pieces.safetensors")
 model = SimpleCNN(num_classes=13)
 model.load_weights(model_path)
 
@@ -80,6 +80,28 @@ predictions = model(image_tensor)
 - Comprehensive evaluation with confusion matrices
 - Optional Weights & Biases integration for experiment tracking
 - Hugging Face Hub deployment for model sharing
+
+## 🎯 Models
+
+This project includes two specialized models for chess board analysis:
+
+### Pieces Model (`pieces.safetensors`)
+
+Classifies chess square images into **13 classes**: 6 white pieces (wP, wN, wB, wR, wQ, wK), 6 black pieces (bP, bN, bB, bR, bQ, bK), and empty squares (xx). Designed for board state recognition and FEN generation.
+
+**Training:** ~93,000 synthetic images with aggressive augmentation (arrow overlays, flips, rotation, color jitter)
+
+**Performance:** 99.85% accuracy on test data, 95.78% F1-score on real board images
+
+### Arrows Model (`arrows.safetensors`)
+
+Classifies chess square images into **49 classes** representing arrow overlay patterns: 20 arrow heads, 12 tails, 8 middle segments, 4 corners, and empty squares. Enables detection and reconstruction of arrow annotations in chess interfaces.
+
+**Training:** ~93,000 synthetic images with conservative augmentation (no flips/rotation to preserve directionality)
+
+**Performance:** ~99% accuracy on synthetic test data
+
+Both models use the same SimpleCNN architecture (156k parameters) and are trained for 200 epochs using AdamW optimizer.
 
 ## 📚 Documentation
 
