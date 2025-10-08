@@ -34,9 +34,8 @@ from .data import (
     RandomArrowOverlay,
     RandomHighlightOverlay,
     collate_fn,
-    get_all_labels,
     get_image_files,
-    get_label_map,
+    get_label_map_from_class_names,
 )
 from .model import create_model
 from .visualize import TrainingVisualizer
@@ -154,6 +153,7 @@ def train(
     # Get model configuration
     model_config = get_model_config(model_id)
     num_classes = model_config["num_classes"]
+    class_names = model_config["class_names"]
 
     # Set default directories if not provided
     if train_dir is None:
@@ -194,11 +194,13 @@ def train(
     print("LOADING DATA")
     print("=" * 60)
 
-    # Get image files and create label map from training data
+    # Create label map from model configuration (not from scanning directories)
+    # This ensures consistency across all splits and avoids directory parsing issues
+    label_map = get_label_map_from_class_names(class_names)
+
+    # Get image files
     train_files = get_image_files(str(train_dir))
     val_files = get_image_files(str(val_dir))
-    all_labels = get_all_labels(train_files)
-    label_map = get_label_map(all_labels)
 
     # Define augmentations using model-specific configuration
     aug_config = AUGMENTATION_CONFIGS[model_id]
