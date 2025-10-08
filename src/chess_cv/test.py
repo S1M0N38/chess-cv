@@ -15,7 +15,6 @@ from torchvision import transforms
 from tqdm import tqdm
 
 from .constants import (
-    BEST_MODEL_FILENAME,
     DEFAULT_BATCH_SIZE,
     DEFAULT_IMAGE_SIZE,
     DEFAULT_NUM_WORKERS,
@@ -34,6 +33,7 @@ from .data import (
     get_label_map,
 )
 from .evaluate import (
+    benchmark_inference_speed,
     compute_confusion_matrix,
     compute_f1_score,
     evaluate_model,
@@ -195,8 +195,37 @@ def test(
     )
     results["f1_score_macro"] = compute_f1_score(confusion_matrix)
 
+    # Benchmark inference speed
+    print("\n" + "=" * 60)
+    print("BENCHMARKING INFERENCE SPEED")
+    print("=" * 60)
+    print("Testing inference speed for batch sizes: 1, 64, 512, 1024")
+    print("Running warmup and measurement iterations...")
+
+    benchmark_results = benchmark_inference_speed(
+        model=model,
+        image_size=image_size,
+        batch_sizes=[1, 64, 512, 1024],
+        num_warmup=10,
+        num_iterations=50,
+    )
+
+    # Print benchmark results
+    print("\nBenchmark Results:")
+    print("-" * 60)
+    print(f"{'Batch Size':<12} {'Images/sec':<15} {'ms/batch':<15} {'ms/image':<15}")
+    print("-" * 60)
+    for batch_size_str, metrics in benchmark_results.items():
+        print(
+            f"{batch_size_str:<12} "
+            f"{metrics['images_per_second']:<15.2f} "
+            f"{metrics['ms_per_batch']:<15.4f} "
+            f"{metrics['ms_per_image']:<15.4f}"
+        )
+    print("-" * 60)
+
     # Save summary to JSON
-    print(f"Saving test summary to: {output_dir / TEST_SUMMARY_FILENAME}")
+    print(f"\nSaving test summary to: {output_dir / TEST_SUMMARY_FILENAME}")
     summary = {
         "overall_accuracy": results["overall_accuracy"],
         "f1_score_macro": results["f1_score_macro"],
@@ -204,6 +233,7 @@ def test(
         "checkpoint_path": str(checkpoint_path),
         "test_dir": str(test_dir) if hf_test_dir is None else hf_test_dir,
         "num_test_samples": len(test_dataset),
+        "inference_benchmark": benchmark_results,
     }
     with open(output_dir / TEST_SUMMARY_FILENAME, "w") as f:
         json.dump(summary, f, indent=2)
@@ -218,11 +248,30 @@ def test(
             }
         )
 
+        # Log benchmark results to wandb
+        for batch_size_str, metrics in benchmark_results.items():
+            wandb_logger.log(
+                {
+                    f"benchmark/batch_size_{batch_size_str}/images_per_second": metrics[
+                        "images_per_second"
+                    ],
+                    f"benchmark/batch_size_{batch_size_str}/ms_per_batch": metrics[
+                        "ms_per_batch"
+                    ],
+                    f"benchmark/batch_size_{batch_size_str}/ms_per_image": metrics[
+                        "ms_per_image"
+                    ],
+                }
+            )
+
         # Log summary metrics
         wandb_logger.log_summary(
             {
                 "test_accuracy": results["overall_accuracy"],
                 "test_f1_score_macro": results["f1_score_macro"],
+                "benchmark_images_per_second_batch_64": benchmark_results["64"][
+                    "images_per_second"
+                ],
             }
         )
 

@@ -12,6 +12,7 @@ __all__ = [
     "evaluate_model",
     "print_evaluation_results",
     "compute_f1_score",
+    "benchmark_inference_speed",
 ]
 
 
@@ -223,3 +224,73 @@ def compute_f1_score(confusion_matrix: np.ndarray) -> float:
 
     macro_f1 = np.mean(f1_scores)
     return float(macro_f1)
+
+
+def benchmark_inference_speed(
+    model: nn.Module,
+    image_size: int = 32,
+    batch_sizes: list[int] | None = None,
+    num_warmup: int = 10,
+    num_iterations: int = 50,
+) -> dict[str, dict[str, float]]:
+    """Benchmark model inference speed for various batch sizes.
+
+    Args:
+        model: Trained model to benchmark
+        image_size: Size of input images (default: 32)
+        batch_sizes: List of batch sizes to test (default: [1, 64, 512, 1024])
+        num_warmup: Number of warmup iterations (default: 10)
+        num_iterations: Number of iterations for measurement (default: 50)
+
+    Returns:
+        Dictionary mapping batch size to performance metrics:
+        {
+            "1": {
+                "images_per_second": 1234.56,
+                "ms_per_batch": 0.81,
+                "ms_per_image": 0.81
+            },
+            ...
+        }
+    """
+    import time
+
+    if batch_sizes is None:
+        batch_sizes = [1, 64, 512, 1024]
+
+    results = {}
+
+    for batch_size in batch_sizes:
+        # Create dummy input data (batch_size, height, width, channels)
+        # MLX uses NHWC format
+        dummy_input = mx.random.uniform(
+            shape=(batch_size, image_size, image_size, 3), dtype=mx.float32
+        )
+
+        # Warmup phase - ensure model is compiled and caches are warm
+        for _ in range(num_warmup):
+            _ = model(dummy_input)
+            mx.eval(dummy_input)  # Force evaluation
+
+        # Measurement phase
+        times = []
+        for _ in range(num_iterations):
+            start_time = time.perf_counter()
+            logits = model(dummy_input)
+            mx.eval(logits)  # Force evaluation to ensure computation is complete
+            end_time = time.perf_counter()
+            times.append(end_time - start_time)
+
+        # Calculate statistics
+        avg_time = sum(times) / len(times)
+        ms_per_batch = avg_time * 1000
+        ms_per_image = ms_per_batch / batch_size
+        images_per_second = batch_size / avg_time
+
+        results[str(batch_size)] = {
+            "images_per_second": round(images_per_second, 2),
+            "ms_per_batch": round(ms_per_batch, 4),
+            "ms_per_image": round(ms_per_image, 4),
+        }
+
+    return results
