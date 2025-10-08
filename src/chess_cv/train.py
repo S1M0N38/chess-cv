@@ -14,7 +14,6 @@ from tqdm import tqdm
 
 from .constants import (
     AUGMENTATION_CONFIGS,
-    BEST_MODEL_FILENAME,
     DEFAULT_ARROW_DIR,
     DEFAULT_BATCH_SIZE,
     DEFAULT_HIGHLIGHT_DIR,
