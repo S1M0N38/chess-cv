@@ -268,7 +268,7 @@ def train(
     "--checkpoint",
     type=click.Path(path_type=Path),
     default=None,
-    help="Model checkpoint path (default: checkpoints/{model-id}/best_model.safetensors)",
+    help="Model checkpoint path (default: checkpoints/{model-id}/{model-id}.safetensors)",
 )
 @click.option(
     "--batch-size",

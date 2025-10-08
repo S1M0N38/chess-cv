@@ -23,6 +23,7 @@ from .constants import (
     TEST_CONFUSION_MATRIX_FILENAME,
     TEST_PER_CLASS_ACCURACY_FILENAME,
     TEST_SUMMARY_FILENAME,
+    get_model_filename,
 )
 from .data import (
     ChessPiecesDataset,
@@ -89,7 +90,7 @@ def test(
     if train_dir is None:
         train_dir = get_train_dir(model_id)
     if checkpoint_path is None:
-        checkpoint_path = get_checkpoint_dir(model_id) / BEST_MODEL_FILENAME
+        checkpoint_path = get_checkpoint_dir(model_id) / get_model_filename(model_id)
     if output_dir is None:
         output_dir = get_output_dir(model_id)
 

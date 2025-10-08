@@ -26,6 +26,7 @@ from .constants import (
     DEFAULT_WEIGHT_DECAY,
     OPTIMIZER_FILENAME,
     TRAINING_CURVES_FILENAME,
+    get_model_filename,
     get_output_dir,
 )
 from .data import (
@@ -373,7 +374,7 @@ def train(
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             epochs_without_improvement = 0
-            model_path = checkpoint_dir / BEST_MODEL_FILENAME
+            model_path = checkpoint_dir / get_model_filename(model_id)
             mx.save_safetensors(str(model_path), dict(tree_flatten(model.parameters())))
             optimizer_path = checkpoint_dir / OPTIMIZER_FILENAME
             mx.save_safetensors(
@@ -406,7 +407,7 @@ def train(
     print(f"Best training accuracy:   {best_train_acc:.4f}")
     print(f"Best training loss:       {best_train_loss:.4f}")
     print(f"Total epochs:             {epoch + 1}")
-    print(f"Model saved to: {checkpoint_dir / BEST_MODEL_FILENAME}")
+    print(f"Model saved to: {checkpoint_dir / get_model_filename(model_id)}")
 
     # Finish wandb run
     wandb_logger.finish()

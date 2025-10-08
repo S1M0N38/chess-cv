@@ -99,6 +99,18 @@ IMAGE_PATTERN = "**/*.png"
 BEST_MODEL_FILENAME = "best_model.safetensors"
 OPTIMIZER_FILENAME = "optimizer.safetensors"
 
+
+def get_model_filename(model_id: str) -> str:
+    """Get model checkpoint filename for a specific model.
+
+    Args:
+        model_id: Model identifier (e.g., 'pieces', 'arrows')
+
+    Returns:
+        Model filename (e.g., 'pieces.safetensors', 'arrows.safetensors')
+    """
+    return f"{model_id}.safetensors"
+
 # Output filenames
 TRAINING_CURVES_FILENAME = "training_curves.png"
 AUGMENTATION_EXAMPLE_FILENAME = "augmentation_example.png"
