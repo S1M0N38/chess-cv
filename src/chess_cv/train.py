@@ -81,7 +81,7 @@ def train_epoch(
 
         # Mixed precision training
         if scaler is not None:
-            with torch.amp.autocast('cuda'):
+            with torch.amp.autocast("cuda"):
                 logits = model(batch_images)
                 loss = criterion(logits, batch_labels)
 
