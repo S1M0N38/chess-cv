@@ -9,7 +9,7 @@ metric:
 parameters:
   # Batch size - categorical search (bigger values for arrows)
   batch-size:
-    values: [64, 128, 256, 512]
+    values: [128, 256, 512, 1024]
   # Learning rate - log-uniform distribution for exponential search
   # Searches from 1e-5 to 1e-3 on logarithmic scale
   learning-rate:
@@ -32,4 +32,3 @@ early_terminate:
   strict: true # Enable aggressive pruning of underperforming runs
 # Maximum number of runs to execute (optional limit for cost control)
 run_cap: 20
-
