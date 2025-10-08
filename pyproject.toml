@@ -39,6 +39,7 @@ lint.task-tags = ["FIX", "TODO", "HACK", "WARN", "PERF", "NOTE", "TEST"]
 
 [tool.pyright]
 typeCheckingMode = "basic"
+exclude = ["data"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -66,4 +67,5 @@ dev = [
   "torch>=2.8.0",
   "torchvision>=0.23.0",
   "datasets>=4.1.1",
+  "scikit-learn>=1.7.2",
 ]
