@@ -80,14 +80,14 @@ class WandbLogger:
 
         # Define global_step as the primary x-axis for step-based metrics
         self.run.define_metric("global_step")
-        
+
         # Define epoch as the x-axis for epoch-based metrics
         self.run.define_metric("epoch")
 
         # Step-based training metrics (logged during epoch)
         self.run.define_metric("loss/train_step", step_metric="global_step")
         self.run.define_metric("accuracy/train_step", step_metric="global_step")
-        
+
         # Epoch-based metrics (logged at end of epoch)
         self.run.define_metric("loss/train", step_metric="epoch", summary="min")
         self.run.define_metric("loss/val", step_metric="epoch", summary="min")

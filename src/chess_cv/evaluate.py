@@ -269,7 +269,7 @@ def benchmark_inference_speed(
             # Warmup phase - ensure model is compiled and caches are warm
             for _ in range(num_warmup):
                 _ = model(dummy_input)
-            
+
             if use_cuda:
                 torch.cuda.synchronize()
 
@@ -279,16 +279,19 @@ def benchmark_inference_speed(
                 if use_cuda:
                     start_event = torch.cuda.Event(enable_timing=True)
                     end_event = torch.cuda.Event(enable_timing=True)
-                    
+
                     start_event.record()
                     _ = model(dummy_input)
                     end_event.record()
-                    
+
                     torch.cuda.synchronize()
-                    elapsed_time = start_event.elapsed_time(end_event) / 1000.0  # Convert to seconds
+                    elapsed_time = (
+                        start_event.elapsed_time(end_event) / 1000.0
+                    )  # Convert to seconds
                     times.append(elapsed_time)
                 else:
                     import time
+
                     start_time = time.perf_counter()
                     _ = model(dummy_input)
                     end_time = time.perf_counter()

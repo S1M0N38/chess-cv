@@ -136,6 +136,7 @@ def _load_model(config: TestConfig) -> nn.Module:
     # Load checkpoint using safetensors if possible
     try:
         from safetensors.torch import load_model
+
         load_model(model, str(config.checkpoint_path))
     except ImportError:
         # Fallback to regular PyTorch loading

@@ -304,18 +304,18 @@ def collate_fn(batch: list) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Custom collate function to convert a batch of numpy arrays from the dataset
     into PyTorch tensors for images and labels.
-    
+
     Converts from HWC (numpy) to CHW (PyTorch) format.
     """
     images, labels = zip(*batch)
     images = np.stack(images)
     labels = np.array(labels)
-    
+
     # Convert to PyTorch tensors
     # Images: (B, H, W, C) -> (B, C, H, W)
     images_tensor = torch.from_numpy(images).permute(0, 3, 1, 2)
     labels_tensor = torch.from_numpy(labels).long()
-    
+
     return images_tensor, labels_tensor
 
 

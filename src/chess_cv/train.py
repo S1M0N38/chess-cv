@@ -90,7 +90,7 @@ def train_epoch(
 
         # Mixed precision training
         if scaler is not None:
-            with torch.amp.autocast("cuda"):
+            with torch.amp.autocast("cuda"):  # type: ignore
                 logits = model(batch_images)
                 loss = criterion(logits, batch_labels)
 
@@ -112,12 +112,16 @@ def train_epoch(
         total_loss += loss.item() * batch_size
         total_correct += correct.item()
         total_samples += batch_size
-        
+
         # Increment global step
         global_step += 1
 
         # Log mid-epoch training metrics to wandb
-        if wandb_logger is not None and wandb_logger.enabled and global_step % log_every_n_steps == 0:
+        if (
+            wandb_logger is not None
+            and wandb_logger.enabled
+            and global_step % log_every_n_steps == 0
+        ):
             batch_acc = correct.item() / batch_size
             wandb_logger.log(
                 {
@@ -432,7 +436,7 @@ def train(
     if not use_wandb:
         output_dir = get_output_dir(model_id)
         visualizer = TrainingVisualizer(output_dir=output_dir)
-    
+
     # Initialize global step counter for mid-epoch logging
     global_step = 0
 
@@ -443,8 +447,16 @@ def train(
     epoch_pbar = tqdm(range(num_epochs), desc="Epochs", leave=True)
     for epoch in epoch_pbar:
         train_loss, train_acc, global_step = train_epoch(
-            model, optimizer, train_loader, criterion, device, scaler,
-            wandb_logger, epoch + 1, global_step, LOG_TRAIN_EVERY_N_STEPS
+            model,
+            optimizer,
+            train_loader,
+            criterion,
+            device,
+            scaler,
+            wandb_logger,
+            epoch + 1,
+            global_step,
+            LOG_TRAIN_EVERY_N_STEPS,
         )
         val_loss, val_acc = validate_epoch(model, val_loader, criterion, device)
 

@@ -98,9 +98,9 @@ def create_model(num_classes: int = 13, device: str | None = None) -> SimpleCNN:
 
     model = SimpleCNN(num_classes=num_classes)
     model = model.to(device)
-    
+
     # Apply channels_last memory format for better GPU performance
     if device == "cuda":
-        model = model.to(memory_format=torch.channels_last)
-    
+        model = model.to(memory_format=torch.channels_last)  # type: ignore
+
     return model
