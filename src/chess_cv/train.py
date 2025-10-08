@@ -24,6 +24,7 @@ from .constants import (
     DEFAULT_PATIENCE,
     DEFAULT_WEIGHT_DECAY,
     LOG_TRAIN_EVERY_N_STEPS,
+    LOG_VALIDATE_EVERY_N_STEPS,
     OPTIMIZER_FILENAME,
     TRAINING_CURVES_FILENAME,
     get_model_filename,
@@ -54,26 +55,44 @@ def train_epoch(
     model: nn.Module,
     optimizer: optim.Optimizer,
     train_loader: DataLoader,
+    val_loader: DataLoader,
     loss_and_grad_fn,
     wandb_logger: WandbLogger,
+    visualizer,
     epoch: int,
     global_step: int,
     log_every_n_steps: int,
-) -> tuple[float, float, int]:
-    """Train for one epoch.
+    validate_every_n_steps: int,
+    checkpoint_dir: Path,
+    model_id: str,
+    best_val_acc: float,
+    best_val_loss: float,
+    epochs_without_improvement: int,
+) -> tuple[float, float, int, float, float, int]:
+    """Train for one epoch with mid-epoch validation.
 
     Args:
         model: Model to train
         optimizer: Optimizer
         train_loader: Training data loader
+        val_loader: Validation data loader
         loss_and_grad_fn: Combined loss and gradient function
         wandb_logger: WandB logger instance
+        visualizer: TrainingVisualizer instance or None
         epoch: Current epoch number (1-indexed)
         global_step: Global step counter across all epochs
         log_every_n_steps: Log training metrics every N steps
+        validate_every_n_steps: Run validation every N steps
+        checkpoint_dir: Directory to save checkpoints
+        model_id: Model identifier for checkpoint naming
+        best_val_acc: Best validation accuracy so far
+        best_val_loss: Best validation loss so far
+        epochs_without_improvement: Counter for early stopping
 
     Returns:
-        Tuple of (average_loss, average_accuracy, updated_global_step)
+        Tuple of (average_loss, average_accuracy, updated_global_step,
+                  updated_best_val_acc, updated_best_val_loss,
+                  updated_epochs_without_improvement)
     """
     total_loss = 0.0
     total_correct = 0
@@ -114,6 +133,69 @@ def train_epoch(
                 step=global_step,
             )
 
+        # Mid-epoch validation
+        if global_step % validate_every_n_steps == 0:
+            # Run validation on full validation set
+            val_loss, val_acc = validate_epoch(model, val_loader, leave=True)
+
+            # Log to wandb
+            if wandb_logger is not None and wandb_logger.enabled:
+                wandb_logger.log(
+                    {
+                        "global_step": global_step,
+                        "loss/val_step": val_loss,
+                        "accuracy/val_step": val_acc,
+                        "epoch": epoch,
+                    },
+                    step=global_step,
+                )
+
+            # Log to local visualizer (if not using wandb)
+            if visualizer is not None:
+                # For mid-epoch, use fractional epoch number
+                fractional_epoch = epoch + (batch_idx + 1) / len(train_loader)
+                # Get current training metrics (running average)
+                current_train_loss = (
+                    total_loss / total_samples if total_samples > 0 else 0.0
+                )
+                current_train_acc = (
+                    total_correct / total_samples if total_samples > 0 else 0.0
+                )
+                visualizer.update(
+                    fractional_epoch,
+                    current_train_loss,
+                    current_train_acc,
+                    val_loss,
+                    val_acc,
+                )
+
+            # Update best validation loss
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+
+            # Check if this is the best validation accuracy
+            if val_acc > best_val_acc:
+                best_val_acc = val_acc
+                epochs_without_improvement = 0
+
+                # Save model checkpoint
+                from mlx.utils import tree_flatten
+
+                model_path = checkpoint_dir / get_model_filename(model_id)
+                mx.save_safetensors(
+                    str(model_path), dict(tree_flatten(model.parameters()))
+                )
+                optimizer_path = checkpoint_dir / OPTIMIZER_FILENAME
+                mx.save_safetensors(
+                    str(optimizer_path), dict(tree_flatten(optimizer.state))
+                )
+
+                print(
+                    f"\n[Step {global_step}] New best validation accuracy: {val_acc:.4f} - Model saved"
+                )
+            else:
+                epochs_without_improvement += 1
+
         pbar.set_postfix(
             {
                 "loss": f"{loss.item():.4f}",
@@ -121,16 +203,34 @@ def train_epoch(
             }
         )
 
-    return total_loss / total_samples, total_correct / total_samples, global_step
+    return (
+        total_loss / total_samples,
+        total_correct / total_samples,
+        global_step,
+        best_val_acc,
+        best_val_loss,
+        epochs_without_improvement,
+    )
 
 
-def validate_epoch(model: nn.Module, val_loader: DataLoader) -> tuple[float, float]:
-    """Validate for one epoch."""
+def validate_epoch(
+    model: nn.Module, val_loader: DataLoader, leave: bool = False
+) -> tuple[float, float]:
+    """Validate for one epoch.
+
+    Args:
+        model: Model to validate
+        val_loader: Validation data loader
+        leave: Whether to leave the progress bar visible after completion
+
+    Returns:
+        Tuple of (average_loss, average_accuracy)
+    """
     total_loss = 0.0
     total_correct = 0
     total_samples = 0
 
-    pbar = tqdm(val_loader, desc="Validation", leave=False)
+    pbar = tqdm(val_loader, desc="Validation", leave=leave)
     for batch_images, batch_labels in pbar:
         loss = loss_fn(model, batch_images, batch_labels)
         logits = model(batch_images)
@@ -375,22 +475,37 @@ def train(
 
     epoch_pbar = tqdm(range(num_epochs), desc="Epochs", leave=True)
     for epoch in epoch_pbar:
-        train_loss, train_acc, global_step = train_epoch(
+        (
+            train_loss,
+            train_acc,
+            global_step,
+            best_val_acc,
+            best_val_loss,
+            epochs_without_improvement,
+        ) = train_epoch(
             model,
             optimizer,
             train_loader,
+            val_loader,
             loss_and_grad_fn,
             wandb_logger,
+            visualizer if not use_wandb else None,
             epoch + 1,
             global_step,
             LOG_TRAIN_EVERY_N_STEPS,
+            LOG_VALIDATE_EVERY_N_STEPS,
+            checkpoint_dir,
+            model_id,
+            best_val_acc,
+            best_val_loss,
+            epochs_without_improvement,
         )
-        val_loss, val_acc = validate_epoch(model, val_loader)
+        val_loss, val_acc = validate_epoch(model, val_loader, leave=False)
 
         # Update visualizer or log to wandb
         if use_wandb:
-            # Log metrics with epoch as both a metric and the step parameter
-            # This ensures proper x-axis alignment
+            # Log epoch-level metrics
+            # Don't pass step parameter - let define_metric handle x-axis assignment
             wandb_logger.log(
                 {
                     "epoch": epoch + 1,
@@ -398,8 +513,7 @@ def train(
                     "loss/val": val_loss,
                     "accuracy/train": train_acc,
                     "accuracy/val": val_acc,
-                },
-                step=epoch + 1,
+                }
             )
         else:
             visualizer.update(epoch + 1, train_loss, train_acc, val_loss, val_acc)
@@ -413,11 +527,13 @@ def train(
             }
         )
 
-        # Track best metrics
+        # Track best metrics (training only - validation is tracked in train_epoch)
         if train_acc > best_train_acc:
             best_train_acc = train_acc
         if train_loss < best_train_loss:
             best_train_loss = train_loss
+
+        # Check end-of-epoch validation results
         if val_loss < best_val_loss:
             best_val_loss = val_loss
 
@@ -433,6 +549,7 @@ def train(
         else:
             epochs_without_improvement += 1
 
+        # Check early stopping
         if epochs_without_improvement >= patience:
             print(f"\nEarly stopping triggered after {epoch + 1} epochs")
             break
