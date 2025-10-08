@@ -26,6 +26,7 @@ from .constants import (
 )
 from .data import (
     ChessPiecesDataset,
+    ConcatenatedHuggingFaceDataset,
     HuggingFaceChessPiecesDataset,
     collate_fn,
     get_all_labels,
@@ -55,6 +56,7 @@ def test(
     output_dir: Path | str | None = None,
     use_wandb: bool = False,
     hf_test_dir: str | None = None,
+    concat_splits: bool = False,
 ) -> None:
     """Test the trained model.
 
@@ -70,6 +72,8 @@ def test(
         use_wandb: Enable Weights & Biases logging
         hf_test_dir: HuggingFace dataset ID (e.g., "S1M0N38/chess-cv-openboard").
                      If provided, test_dir is ignored.
+        concat_splits: If True, concatenate all splits from HuggingFace dataset.
+                       Only applicable when hf_test_dir is provided.
     """
     from .constants import (
         get_checkpoint_dir,
@@ -112,6 +116,7 @@ def test(
                 "image_size": image_size,
                 "num_workers": num_workers,
                 "hf_test_dir": hf_test_dir,
+                "concat_splits": concat_splits,
             },
         )
 
@@ -135,10 +140,16 @@ def test(
 
     # Load test dataset from HuggingFace or local directory
     if hf_test_dir is not None:
-        print(f"Loading test data from HuggingFace dataset: {hf_test_dir}")
-        test_dataset = HuggingFaceChessPiecesDataset(
-            hf_test_dir, label_map, split="train", transform=test_transforms
-        )
+        if concat_splits:
+            print(f"Loading test data from HuggingFace dataset (all splits): {hf_test_dir}")
+            test_dataset = ConcatenatedHuggingFaceDataset(
+                hf_test_dir, label_map, splits=None, transform=test_transforms
+            )
+        else:
+            print(f"Loading test data from HuggingFace dataset: {hf_test_dir}")
+            test_dataset = HuggingFaceChessPiecesDataset(
+                hf_test_dir, label_map, split="train", transform=test_transforms
+            )
     else:
         print(f"Loading test data from local directory: {test_dir}")
         test_files = get_image_files(str(test_dir))
@@ -310,7 +321,7 @@ def test(
         predicted_label = class_names[pred_label_idx]
 
         # Get the original image based on dataset type
-        if isinstance(test_dataset, HuggingFaceChessPiecesDataset):
+        if isinstance(test_dataset, (HuggingFaceChessPiecesDataset, ConcatenatedHuggingFaceDataset)):
             # For HuggingFace datasets, get image from the dataset directly
             item = test_dataset.dataset[idx]  # type: ignore[index]
             img = item["image"]
@@ -359,7 +370,7 @@ def test(
             predicted_label = class_names[pred_label_idx]
 
             # Get image path based on dataset type
-            if isinstance(test_dataset, HuggingFaceChessPiecesDataset):
+            if isinstance(test_dataset, (HuggingFaceChessPiecesDataset, ConcatenatedHuggingFaceDataset)):
                 # For HuggingFace datasets, use the saved misclassified image
                 image_name = f"{idx}.png"
                 new_filename = f"true_{true_label}_pred_{predicted_label}_{image_name}"

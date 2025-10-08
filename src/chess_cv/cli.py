@@ -305,6 +305,11 @@ def train(
     default=None,
     help="HuggingFace dataset ID (e.g., 'S1M0N38/chess-cv-openboard'). If provided, --test-dir is ignored.",
 )
+@click.option(
+    "--concat-splits",
+    is_flag=True,
+    help="Concatenate all splits from HuggingFace dataset (only applicable with --hf-test-dir)",
+)
 def test(
     model_id: str,
     test_dir: Path | None,
@@ -316,6 +321,7 @@ def test(
     output_dir: Path | None,
     wandb: bool,
     hf_test_dir: str | None,
+    concat_splits: bool,
 ):
     """Test and evaluate trained chess piece classification model.
 
@@ -347,6 +353,7 @@ def test(
         output_dir=output_dir,
         use_wandb=wandb,
         hf_test_dir=hf_test_dir,
+        concat_splits=concat_splits,
     )
 
 

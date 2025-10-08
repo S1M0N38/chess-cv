@@ -18,6 +18,7 @@ __all__ = [
     "RandomHighlightOverlay",
     "ChessPiecesDataset",
     "HuggingFaceChessPiecesDataset",
+    "ConcatenatedHuggingFaceDataset",
     "collate_fn",
     "get_all_labels",
     "get_image_files",
@@ -340,6 +341,75 @@ class HuggingFaceChessPiecesDataset(Dataset):
         # Get label from the dataset
         # HuggingFace imagefolder datasets store labels in a 'label' column (as integers)
         # but we need to map them correctly
+        label_idx = item["label"]
+
+        return img_array, label_idx
+
+
+class ConcatenatedHuggingFaceDataset(Dataset):
+    """A PyTorch Dataset for loading chess piece images from multiple HuggingFace dataset splits."""
+
+    def __init__(
+        self,
+        dataset_id: str,
+        label_map: dict[str, int],
+        splits: list[str] | None = None,
+        transform: Callable | None = None,
+    ):
+        """
+        Args:
+            dataset_id: HuggingFace dataset ID (e.g., "S1M0N38/chess-cv-chessvision")
+            label_map: Dictionary mapping label names to integers
+            splits: List of dataset splits to concatenate (default: None, will use all available splits)
+            transform: Optional transform to apply to images
+        """
+        try:
+            from datasets import concatenate_datasets, load_dataset
+        except ImportError as e:
+            msg = "datasets library is required for HuggingFace dataset loading. Install it with: pip install datasets"
+            raise ImportError(msg) from e
+
+        # Load all splits or specified splits
+        if splits is None:
+            # Load the full dataset to get all available splits
+            full_dataset = load_dataset(dataset_id)
+            splits = list(full_dataset.keys())
+
+        print(f"Loading and concatenating splits: {splits}")
+        datasets_to_concat = []
+        for split in splits:
+            ds = load_dataset(dataset_id, split=split)
+            datasets_to_concat.append(ds)
+
+        # Concatenate all datasets
+        self.dataset = concatenate_datasets(datasets_to_concat)
+        self.label_map = label_map
+        self.transform = transform
+        print(f"Total samples after concatenation: {len(self.dataset)}")
+
+    def __len__(self) -> int:
+        return len(self.dataset)
+
+    def __getitem__(self, idx: int) -> tuple:
+        item = self.dataset[idx]
+
+        try:
+            img = item["image"]
+            if not isinstance(img, Image.Image):
+                img = Image.open(img).convert("RGB")  # type: ignore[arg-type]
+            else:
+                img = img.convert("RGB")
+        except Exception as e:
+            print(f"Error loading image at index {idx}: {e}")
+            return self.__getitem__((idx + 1) % len(self))
+
+        if self.transform:
+            img = self.transform(img)
+
+        img_array = np.array(img, dtype=np.float32) / 255.0
+
+        # Get label from the dataset
+        # HuggingFace imagefolder datasets store labels in a 'label' column (as integers)
         label_idx = item["label"]
 
         return img_array, label_idx
