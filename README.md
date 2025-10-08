@@ -34,15 +34,15 @@ By rendering pieces onto different board backgrounds and extracting individual s
 
 <div align="center">
 
-| Dataset                                                                                           | Accuracy | F1-Score (Macro) |
-| ------------------------------------------------------------------------------------------------- | :------: | :--------------: |
-| Test Data                                                                                         |  99.84%  |      99.86%      |
-| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) *       |    -     |      97.25%      |
-| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) *   |    -     |      83.83%      |
+| Dataset                                                                                         | Accuracy | F1-Score (Macro) |
+| ----------------------------------------------------------------------------------------------- | :------: | :--------------: |
+| Test Data                                                                                       |  99.84%  |      99.86%      |
+| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \*     |    -     |      97.25%      |
+| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) \* |    -     |      83.83%      |
 
 </div>
 
-* *Dataset with unbalanced class distribution (e.g. many more samples for empty square class), so accuracy is not representative.*
+- *Dataset with unbalanced class distribution (e.g. many more samples for empty square class), so accuracy is not representative.*
 
 ## ⚡️ Quick Start
 

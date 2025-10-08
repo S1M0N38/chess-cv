@@ -106,19 +106,20 @@ Inference performance on **Apple M4** (MacBook Air, 2025):
 **Benchmark Results:**
 
 | Batch Size | Images/sec | ms/batch | ms/image |
-|------------|------------|----------|----------|
+| ---------- | ---------- | -------- | -------- |
 | 1          | TBD        | TBD      | TBD      |
 | 64         | TBD        | TBD      | TBD      |
 | 512        | TBD        | TBD      | TBD      |
 | 1024       | TBD        | TBD      | TBD      |
 
 !!! tip "Running Benchmarks"
-    
+
     To benchmark inference speed on your machine, run:
+
     ```bash
     chess-cv test pieces
     ```
-    
+
     The benchmark results will be included in the test summary at `outputs/pieces/test_summary.json`.
 
 ### Per-Class Performance

@@ -364,7 +364,7 @@ class ConcatenatedHuggingFaceDataset(Dataset):
             transform: Optional transform to apply to images
         """
         try:
-            from datasets import concatenate_datasets, load_dataset
+            from datasets import DatasetDict, concatenate_datasets, load_dataset
         except ImportError as e:
             msg = "datasets library is required for HuggingFace dataset loading. Install it with: pip install datasets"
             raise ImportError(msg) from e
@@ -372,8 +372,8 @@ class ConcatenatedHuggingFaceDataset(Dataset):
         # Load all splits or specified splits
         if splits is None:
             # Load the full dataset to get all available splits
-            full_dataset = load_dataset(dataset_id)
-            splits = list(full_dataset.keys())
+            full_dataset: DatasetDict = load_dataset(dataset_id)  # type: ignore[assignment]
+            splits = [str(key) for key in full_dataset.keys()]
 
         print(f"Loading and concatenating splits: {splits}")
         datasets_to_concat = []

@@ -111,6 +111,7 @@ def get_model_filename(model_id: str) -> str:
     """
     return f"{model_id}.safetensors"
 
+
 # Output filenames
 TRAINING_CURVES_FILENAME = "training_curves.png"
 AUGMENTATION_EXAMPLE_FILENAME = "augmentation_example.png"

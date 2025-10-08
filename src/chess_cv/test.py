@@ -12,7 +12,6 @@ from mlx.utils import tree_unflatten
 from PIL import Image
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from tqdm import tqdm
 
 from .constants import (
     DEFAULT_BATCH_SIZE,
@@ -142,7 +141,9 @@ def test(
     # Load test dataset from HuggingFace or local directory
     if hf_test_dir is not None:
         if concat_splits:
-            print(f"Loading test data from HuggingFace dataset (all splits): {hf_test_dir}")
+            print(
+                f"Loading test data from HuggingFace dataset (all splits): {hf_test_dir}"
+            )
             test_dataset = ConcatenatedHuggingFaceDataset(
                 hf_test_dir, label_map, splits=None, transform=test_transforms
             )
@@ -189,23 +190,30 @@ def test(
     results = evaluate_model(
         model, test_loader, class_names=class_names, batch_size=batch_size
     )
-    print_evaluation_results(results, class_names=class_names)
 
-    # Gather all data for confusion matrix
-    print("\nGathering all test data for confusion matrix...")
-    all_images = []
-    all_labels = []
-    for images, labels in tqdm(test_loader, desc="Gathering Data"):
-        all_images.append(images)
-        all_labels.append(labels)
-    images_array = mx.concatenate(all_images, axis=0)
-    labels_array = mx.concatenate(all_labels, axis=0)
+    # Extract predictions and labels from results
+    predictions = results["predictions"]
+    labels = results["labels"]
+    assert isinstance(predictions, list)
+    assert isinstance(labels, list)
 
-    print("Computing confusion matrix...")
+    # Print evaluation results (without predictions/labels)
+    overall_acc = results["overall_accuracy"]
+    per_class = results["per_class_accuracy"]
+    assert isinstance(overall_acc, float)
+    assert isinstance(per_class, dict)
+    eval_results: dict[str, float | dict[str, float]] = {
+        "overall_accuracy": overall_acc,
+        "per_class_accuracy": per_class,
+    }
+    print_evaluation_results(eval_results, class_names=class_names)
+
+    # Compute confusion matrix
+    print("\nComputing confusion matrix and F1 score...")
     confusion_matrix = compute_confusion_matrix(
-        model, images_array, labels_array, num_classes=num_classes
+        model, test_loader, num_classes=num_classes
     )
-    results["f1_score_macro"] = compute_f1_score(confusion_matrix)
+    results["f1_score_macro"] = compute_f1_score(labels, predictions)
 
     # Benchmark inference speed
     print("\n" + "=" * 60)
@@ -304,29 +312,34 @@ def test(
                 wandb_logger.log({f"test/class_accuracy/{class_name}": acc})
 
     # Save misclassified images
-    print("Saving misclassified images...")
+    print("\nSaving misclassified images...")
     misclassified_dir = output_dir / MISCLASSIFIED_DIR
     if misclassified_dir.exists():
         shutil.rmtree(misclassified_dir)
     misclassified_dir.mkdir(parents=True)
 
-    predictions = mx.argmax(model(images_array), axis=1)
-    misclassified_mask = predictions != labels_array  # type: ignore[assignment]
-    misclassified_array = np.array(misclassified_mask)  # type: ignore[arg-type]
-    misclassified_indices = np.nonzero(misclassified_array)[0]
+    # Find misclassified samples
+    predictions_array = np.array(predictions)
+    labels_array = np.array(labels)
+    misclassified_indices = np.where(predictions_array != labels_array)[0]
 
     # Limit the number of misclassified images to save
     num_to_save = min(len(misclassified_indices), MAX_MISCLASSIFIED_IMAGES)
-    print(f"Saving {num_to_save} of {len(misclassified_indices)} misclassified images...")
+    print(
+        f"Saving {num_to_save} of {len(misclassified_indices)} misclassified images..."
+    )
 
-    for idx in misclassified_indices[:num_to_save].tolist():
-        true_label_idx = int(labels_array[idx].item())  # type: ignore[union-attr]
-        pred_label_idx = int(predictions[idx].item())  # type: ignore[union-attr]
+    for idx in misclassified_indices[:num_to_save]:
+        true_label_idx = int(labels_array[idx])
+        pred_label_idx = int(predictions_array[idx])
         true_label = class_names[true_label_idx]
         predicted_label = class_names[pred_label_idx]
 
         # Get the original image based on dataset type
-        if isinstance(test_dataset, (HuggingFaceChessPiecesDataset, ConcatenatedHuggingFaceDataset)):
+        if isinstance(
+            test_dataset,
+            (HuggingFaceChessPiecesDataset, ConcatenatedHuggingFaceDataset),
+        ):
             # For HuggingFace datasets, get image from the dataset directly
             item = test_dataset.dataset[idx]  # type: ignore[index]
             img = item["image"]
@@ -368,14 +381,17 @@ def test(
         # Log sample misclassified images to wandb
         print("Logging sample misclassified images to wandb...")
         max_samples = min(20, len(misclassified_indices))  # Log up to 20 samples
-        for i, idx in enumerate(misclassified_indices[:max_samples].tolist()):
-            true_label_idx = int(labels_array[idx].item())  # type: ignore[union-attr]
-            pred_label_idx = int(predictions[idx].item())  # type: ignore[union-attr]
+        for i, idx in enumerate(misclassified_indices[:max_samples]):
+            true_label_idx = int(labels_array[idx])
+            pred_label_idx = int(predictions_array[idx])
             true_label = class_names[true_label_idx]
             predicted_label = class_names[pred_label_idx]
 
             # Get image path based on dataset type
-            if isinstance(test_dataset, (HuggingFaceChessPiecesDataset, ConcatenatedHuggingFaceDataset)):
+            if isinstance(
+                test_dataset,
+                (HuggingFaceChessPiecesDataset, ConcatenatedHuggingFaceDataset),
+            ):
                 # For HuggingFace datasets, use the saved misclassified image
                 image_name = f"{idx}.png"
                 new_filename = f"true_{true_label}_pred_{predicted_label}_{image_name}"
