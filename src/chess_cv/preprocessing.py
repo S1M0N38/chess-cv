@@ -195,6 +195,8 @@ def load_arrows() -> None:
             for arrow_type in arrow_class.glob("*.png"):
                 arrow_img = Image.open(arrow_type).convert("RGBA")
                 ARROWS[arrow_class.stem][arrow_type.stem] = arrow_img
+    xx_image = Image.new("RGBA", (SQUARE_SIZE, SQUARE_SIZE), (0, 0, 0, 0))
+    ARROWS["xx"]["no-arrows"] = xx_image
 
 
 ################################################################################
