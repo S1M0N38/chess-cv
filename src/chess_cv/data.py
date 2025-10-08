@@ -24,6 +24,7 @@ __all__ = [
     "get_image_files",
     "get_label_from_path",
     "get_label_map",
+    "get_label_map_from_class_names",
 ]
 
 # Class names for pieces model (alphabetically ordered)
@@ -220,11 +221,12 @@ def get_image_files(data_dir: str) -> list[str]:
 def get_label_from_path(image_path: str) -> str:
     """Get the label from the image path.
 
-    Note: Images are stored in subdirectories for performance:
-    e.g., data/splits/pieces/train/bB/aa/image.png
-    So we extract [-3] (the class name), not [-2] (the hashed subdir).
+    Images are stored in a standard ImageFolder format:
+    e.g., data/splits/pieces/train/bB/image.png
+
+    This extracts the parent directory name, which is the class label.
     """
-    return image_path.split(os.sep)[-3]
+    return Path(image_path).parent.name
 
 
 def get_all_labels(image_files: list[str]) -> list[str]:
@@ -233,9 +235,31 @@ def get_all_labels(image_files: list[str]) -> list[str]:
 
 
 def get_label_map(labels: list[str]) -> dict[str, int]:
-    """Get a map from labels to integers."""
+    """Get a map from labels to integers.
+
+    Args:
+        labels: List of label names
+
+    Returns:
+        Dictionary mapping label names to integer indices (alphabetically sorted)
+    """
     unique_labels = sorted(list(set(labels)))
     return {label: i for i, label in enumerate(unique_labels)}
+
+
+def get_label_map_from_class_names(class_names: list[str]) -> dict[str, int]:
+    """Create a label map directly from class names.
+
+    This is the preferred method as it ensures consistency across all splits
+    and doesn't depend on scanning actual data directories.
+
+    Args:
+        class_names: List of class names from model configuration
+
+    Returns:
+        Dictionary mapping class names to integer indices
+    """
+    return {label: i for i, label in enumerate(class_names)}
 
 
 class ChessPiecesDataset(Dataset):
