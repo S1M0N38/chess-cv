@@ -114,6 +114,7 @@ The evaluation JSON files have this structure:
 
 - This command should be run after `make eval` completes successfully
 - The command updates metrics for the "pieces" model only (current model)
+- ChessVision evaluation concatenates all splits into a single score
 - All numeric formatting must preserve decimal precision for accuracy
 - Table alignment should be preserved using markdown table syntax
 - YAML frontmatter must remain valid (proper indentation and structure)

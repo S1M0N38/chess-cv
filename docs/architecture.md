@@ -86,8 +86,8 @@ The model classifies chess squares into 13 categories:
 
 With the default configuration:
 
-- **Test Accuracy**: ~99.86%
-- **F1 Score (Macro)**: ~99.84%
+- **Test Accuracy**: ~99.84%
+- **F1 Score (Macro)**: ~99.86%
 - **Training Time**: ~90 minutes (varies by hardware)
 - **Inference Speed**: 0.05 ms per image (batch size 8192, varying by hardware)
 
@@ -127,13 +127,13 @@ Actual accuracy by piece type (Test Dataset):
 
 | Class | Accuracy | Class | Accuracy |
 | ----- | -------- | ----- | -------- |
-| bB    | 99.91%   | wB    | 99.72%   |
-| bK    | 99.91%   | wK    | 99.81%   |
-| bN    | 100%     | wN    | 99.81%   |
-| bP    | 99.81%   | wP    | 99.91%   |
-| bQ    | 99.91%   | wQ    | 99.54%   |
-| bR    | 99.91%   | wR    | 100%     |
-| xx    | 100%     |       |          |
+| bB    | 99.81%   | wB    | 99.63%   |
+| bK    | 99.81%   | wK    | 99.81%   |
+| bN    | 99.91%   | wN    | 99.63%   |
+| bP    | 99.72%   | wP    | 100.00%  |
+| bQ    | 99.81%   | wQ    | 99.81%   |
+| bR    | 99.91%   | wR    | 100.00%  |
+| xx    | 100.00%  |       |          |
 
 ### Evaluation on External Datasets
 
@@ -144,23 +144,46 @@ The model has been evaluated on external datasets to assess generalization:
 - **Dataset**: [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard)
 - **Number of samples**: 6,016
 - **Overall Accuracy**: 98.89%
-- **F1 Score (Macro)**: 97.38%
+- **F1 Score (Macro)**: 97.25%
 
 Per-class performance on OpenBoard:
 
 | Class | Accuracy | Class | Accuracy |
 | ----- | -------- | ----- | -------- |
-| bB    | 100%     | wB    | 100%     |
-| bK    | 100%     | wK    | 100%     |
-| bN    | 100%     | wN    | 98.97%   |
-| bP    | 99.44%   | wP    | 99.80%   |
-| bQ    | 97.10%   | wQ    | 98.48%   |
-| bR    | 100%     | wR    | 97.37%   |
-| xx    | 98.60%   |       |          |
+| bB    | 100.00%  | wB    | 100.00%  |
+| bK    | 100.00%  | wK    | 98.94%   |
+| bN    | 100.00%  | wN    | 98.97%   |
+| bP    | 99.81%   | wP    | 99.61%   |
+| bQ    | 97.10%   | wQ    | 100.00%  |
+| bR    | 100.00%  | wR    | 98.03%   |
+| xx    | 98.55%   |       |          |
+
+#### ChessVision
+
+- **Dataset**: [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision)
+- **Number of samples**: 3,186
+- **Overall Accuracy**: 86.85%
+- **F1 Score (Macro)**: 83.83%
+
+Per-class performance on ChessVision:
+
+| Class | Accuracy | Class | Accuracy |
+| ----- | -------- | ----- | -------- |
+| bB    | 93.08%   | wB    | 89.26%   |
+| bK    | 76.23%   | wK    | 93.64%   |
+| bN    | 96.88%   | wN    | 99.09%   |
+| bP    | 80.20%   | wP    | 78.99%   |
+| bQ    | 96.77%   | wQ    | 89.66%   |
+| bR    | 88.71%   | wR    | 84.53%   |
+| xx    | 93.95%   |       |          |
+
+!!! note "Multi-Split Dataset"
+
+    The ChessVision dataset contains multiple splits. All splits are concatenated during evaluation to produce a single comprehensive score.
 
 !!! note "Out of Sample Performance"
 
-    The lower performance on OpenBoard compared to the test set (98.89% vs 99.86%) indicates some domain gap between the synthetic training data and this external dataset.
+    The lower performance on OpenBoard (98.89% accuracy, 97.25% F1) and ChessVision (86.85% accuracy, 83.83% F1) compared to the test set (99.84% accuracy, 99.86% F1) indicates some domain gap between the synthetic training data and these external datasets. ChessVision shows significantly lower performance, particularly on specific piece types like black kings (76.23%) and pawns (~79-80%).
 
 ## Dataset Characteristics
 

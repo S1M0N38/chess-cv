@@ -20,11 +20,11 @@ model-index:
           type: chess-cv-test
         metrics:
           - type: accuracy
-            value: 0.9986
+            value: 0.9984
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.9984
+            value: 0.9986
             name: F1 Score (Macro)
             verified: false
       - task:
@@ -39,7 +39,22 @@ model-index:
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.9738
+            value: 0.9725
+            name: F1 Score (Macro)
+            verified: false
+      - task:
+          type: image-classification
+          name: Image Classification
+        dataset:
+          name: Chess CV ChessVision Dataset
+          type: chess-cv-chessvision
+        metrics:
+          - type: accuracy
+            value: 0.8685
+            name: Accuracy
+            verified: false
+          - type: f1
+            value: 0.8383
             name: F1 Score (Macro)
             verified: false
 pipeline_tag: image-classification
@@ -53,12 +68,13 @@ pipeline_tag: image-classification
 
 Lightweight CNN (156k parameters) that classifies chess pieces from 32×32 pixel square images into 13 classes (6 white pieces, 6 black pieces, empty square). Trained on synthetic data from chess.com/lichess boards and piece sets.
 
-| Dataset                                                                                     | Accuracy | F1-Score (Macro) |
-| ------------------------------------------------------------------------------------------- | :------: | :--------------: |
-| Test Data                                                                                   |  99.86%  |      99.84%      |
-| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \* |    -     |      97.38%      |
+| Dataset                                                                                           | Accuracy | F1-Score (Macro) |
+| ------------------------------------------------------------------------------------------------- | :------: | :--------------: |
+| Test Data                                                                                         |  99.84%  |      99.86%      |
+| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) *       |    -     |      97.25%      |
+| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) *   |    -     |      83.83%      |
 
-\* *Dataset with unbalanced class distribution (e.g. many more samples for empty square class), so accuracy is not representative.*
+* *Dataset with unbalanced class distribution (e.g. many more samples for empty square class), so accuracy is not representative.*
 
 ## Quick Start
 
@@ -111,8 +127,8 @@ The pieces model classifies chess square images into 13 classes: 6 white pieces 
 
 | Dataset | Accuracy | F1-Score (Macro) |
 |---------|----------|------------------|
-| Test Data (synthetic) | 99.86% | 99.84% |
-| [chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) | - | 97.38% |
+| Test Data (synthetic) | 99.84% | 99.86% |
+| [chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) | - | 97.25% |
 
 The model achieves near-perfect accuracy on synthetic data and maintains strong performance on real board images from OpenBoard dataset.
 
