@@ -6,8 +6,8 @@ import random
 from pathlib import Path
 from typing import Callable
 
-import mlx.core as mx
 import numpy as np
+import torch
 from PIL import Image
 from torch.utils.data import Dataset
 
@@ -300,15 +300,23 @@ class ChessPiecesDataset(Dataset):
         return img_array, label
 
 
-def collate_fn(batch: list) -> tuple[mx.array, mx.array]:
+def collate_fn(batch: list) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Custom collate function to convert a batch of numpy arrays from the dataset
-    into a single MLX array for images and an MLX array for labels.
+    into PyTorch tensors for images and labels.
+    
+    Converts from HWC (numpy) to CHW (PyTorch) format.
     """
     images, labels = zip(*batch)
     images = np.stack(images)
     labels = np.array(labels)
-    return mx.array(images), mx.array(labels)
+    
+    # Convert to PyTorch tensors
+    # Images: (B, H, W, C) -> (B, C, H, W)
+    images_tensor = torch.from_numpy(images).permute(0, 3, 1, 2)
+    labels_tensor = torch.from_numpy(labels).long()
+    
+    return images_tensor, labels_tensor
 
 
 class HuggingFaceChessPiecesDataset(Dataset):

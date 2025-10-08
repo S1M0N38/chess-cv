@@ -1,7 +1,7 @@
 """Evaluation utilities for model performance."""
 
-import mlx.core as mx
-import mlx.nn as nn
+import torch
+import torch.nn as nn
 import numpy as np
 from sklearn.metrics import confusion_matrix, f1_score
 from torch.utils.data import DataLoader
@@ -17,28 +17,31 @@ __all__ = [
 ]
 
 
-def compute_accuracy(model: nn.Module, images: mx.array, labels: mx.array) -> float:
+def compute_accuracy(
+    model: nn.Module, images: torch.Tensor, labels: torch.Tensor
+) -> float:
     """Compute accuracy on a dataset.
 
     Args:
         model: Trained model
-        images: Images array of shape (N, H, W, C)
-        labels: Labels array of shape (N,)
+        images: Images tensor of shape (N, C, H, W)
+        labels: Labels tensor of shape (N,)
 
     Returns:
         Accuracy as a float between 0 and 1
     """
-    logits = model(images)
-    predictions = mx.argmax(logits, axis=1)
-    correct = mx.sum(predictions == labels)  # type: ignore[arg-type]
-    accuracy = correct / len(labels)
+    with torch.inference_mode():
+        logits = model(images)
+        predictions = torch.argmax(logits, dim=1)
+        correct = torch.sum(predictions == labels)
+        accuracy = correct / len(labels)
     return accuracy.item()
 
 
 def compute_per_class_accuracy(
     model: nn.Module,
-    images: mx.array,
-    labels: mx.array,
+    images: torch.Tensor,
+    labels: torch.Tensor,
     class_names: list[str],
     num_classes: int | None = None,
 ) -> dict[str, float]:
@@ -46,8 +49,8 @@ def compute_per_class_accuracy(
 
     Args:
         model: Trained model
-        images: Images array of shape (N, H, W, C)
-        labels: Labels array of shape (N,)
+        images: Images tensor of shape (N, C, H, W)
+        labels: Labels tensor of shape (N,)
         class_names: List of class names
         num_classes: Number of classes (if None, inferred from class_names)
 
@@ -57,22 +60,23 @@ def compute_per_class_accuracy(
     if num_classes is None:
         num_classes = len(class_names)
 
-    logits = model(images)
-    predictions = mx.argmax(logits, axis=1)
+    with torch.inference_mode():
+        logits = model(images)
+        predictions = torch.argmax(logits, dim=1)
 
-    per_class_acc = {}
-    for class_idx in range(num_classes):
-        # Find samples belonging to this class
-        class_mask = labels == class_idx  # type: ignore[assignment]
-        class_samples = mx.sum(class_mask)  # type: ignore[arg-type]
+        per_class_acc = {}
+        for class_idx in range(num_classes):
+            # Find samples belonging to this class
+            class_mask = labels == class_idx
+            class_samples = torch.sum(class_mask)
 
-        if class_samples > 0:
-            # Compute accuracy for this class
-            class_correct = mx.sum((predictions == labels) & class_mask)  # type: ignore[arg-type,operator]
-            class_accuracy = class_correct / class_samples
-            per_class_acc[class_names[class_idx]] = class_accuracy.item()
-        else:
-            per_class_acc[class_names[class_idx]] = 0.0
+            if class_samples > 0:
+                # Compute accuracy for this class
+                class_correct = torch.sum((predictions == labels) & class_mask)
+                class_accuracy = class_correct / class_samples
+                per_class_acc[class_names[class_idx]] = class_accuracy.item()
+            else:
+                per_class_acc[class_names[class_idx]] = 0.0
 
     return per_class_acc
 
@@ -95,12 +99,18 @@ def compute_confusion_matrix(
     all_predictions = []
     all_labels = []
 
-    for batch_images, batch_labels in tqdm(data_loader, desc="Computing predictions"):
-        logits = model(batch_images)
-        predictions = mx.argmax(logits, axis=1)
+    device = next(model.parameters()).device
 
-        all_predictions.extend(np.array(predictions).tolist())
-        all_labels.extend(np.array(batch_labels).tolist())
+    with torch.inference_mode():
+        for batch_images, batch_labels in tqdm(
+            data_loader, desc="Computing predictions"
+        ):
+            batch_images = batch_images.to(device, non_blocking=True)
+            logits = model(batch_images)
+            predictions = torch.argmax(logits, dim=1)
+
+            all_predictions.extend(predictions.cpu().numpy().tolist())
+            all_labels.extend(batch_labels.numpy().tolist())
 
     return confusion_matrix(
         all_labels, all_predictions, labels=list(range(num_classes))
@@ -127,12 +137,16 @@ def evaluate_model(
     all_predictions = []
     all_labels = []
 
-    for batch_images, batch_labels in data_loader:
-        logits = model(batch_images)
-        predictions = mx.argmax(logits, axis=1)
+    device = next(model.parameters()).device
 
-        all_predictions.extend(np.array(predictions).tolist())
-        all_labels.extend(np.array(batch_labels).tolist())
+    with torch.inference_mode():
+        for batch_images, batch_labels in data_loader:
+            batch_images = batch_images.to(device, non_blocking=True)
+            logits = model(batch_images)
+            predictions = torch.argmax(logits, dim=1)
+
+            all_predictions.extend(predictions.cpu().numpy().tolist())
+            all_labels.extend(batch_labels.numpy().tolist())
 
     # Overall accuracy
     correct = sum(pred == label for pred, label in zip(all_predictions, all_labels))
@@ -233,33 +247,52 @@ def benchmark_inference_speed(
             ...
         }
     """
-    import time
-
     if batch_sizes is None:
         batch_sizes = [1, 64, 512, 1024]
 
     results = {}
+    device = next(model.parameters()).device
+    use_cuda = device.type == "cuda"
 
     for batch_size in batch_sizes:
-        # Create dummy input data (batch_size, height, width, channels)
-        # MLX uses NHWC format
-        dummy_input = mx.random.uniform(
-            shape=(batch_size, image_size, image_size, 3), dtype=mx.float32
+        # Create dummy input data (batch_size, channels, height, width)
+        # PyTorch uses NCHW format
+        dummy_input = torch.randn(
+            batch_size, 3, image_size, image_size, device=device, dtype=torch.float32
         )
 
-        # Warmup phase - ensure model is compiled and caches are warm
-        for _ in range(num_warmup):
-            _ = model(dummy_input)
-            mx.eval(dummy_input)  # Force evaluation
+        # Apply channels_last memory format if model uses it
+        if use_cuda:
+            dummy_input = dummy_input.to(memory_format=torch.channels_last)
 
-        # Measurement phase
-        times = []
-        for _ in range(num_iterations):
-            start_time = time.perf_counter()
-            logits = model(dummy_input)
-            mx.eval(logits)  # Force evaluation to ensure computation is complete
-            end_time = time.perf_counter()
-            times.append(end_time - start_time)
+        with torch.inference_mode():
+            # Warmup phase - ensure model is compiled and caches are warm
+            for _ in range(num_warmup):
+                _ = model(dummy_input)
+            
+            if use_cuda:
+                torch.cuda.synchronize()
+
+            # Measurement phase
+            times = []
+            for _ in range(num_iterations):
+                if use_cuda:
+                    start_event = torch.cuda.Event(enable_timing=True)
+                    end_event = torch.cuda.Event(enable_timing=True)
+                    
+                    start_event.record()
+                    _ = model(dummy_input)
+                    end_event.record()
+                    
+                    torch.cuda.synchronize()
+                    elapsed_time = start_event.elapsed_time(end_event) / 1000.0  # Convert to seconds
+                    times.append(elapsed_time)
+                else:
+                    import time
+                    start_time = time.perf_counter()
+                    _ = model(dummy_input)
+                    end_time = time.perf_counter()
+                    times.append(end_time - start_time)
 
         # Calculate statistics
         avg_time = sum(times) / len(times)

@@ -4,10 +4,9 @@ from pathlib import Path
 
 __all__ = ["train"]
 
-import mlx.core as mx
-import mlx.nn as nn
-import mlx.optimizers as optim
-from mlx.utils import tree_flatten
+import torch
+import torch.nn as nn
+import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
@@ -42,33 +41,63 @@ from .visualize import TrainingVisualizer
 from .wandb_utils import WandbLogger
 
 
-def loss_fn(model: nn.Module, images: mx.array, labels: mx.array) -> mx.array:
-    """Compute cross-entropy loss."""
-    logits = model(images)
-    loss = nn.losses.cross_entropy(logits, labels, reduction="mean")
-    return loss
-
-
 def train_epoch(
     model: nn.Module,
     optimizer: optim.Optimizer,
     train_loader: DataLoader,
-    loss_and_grad_fn,
+    criterion: nn.Module,
+    device: torch.device,
+    scaler: torch.cuda.amp.GradScaler | None = None,
 ) -> tuple[float, float]:
-    """Train for one epoch."""
+    """Train for one epoch.
+
+    Args:
+        model: Model to train
+        optimizer: Optimizer
+        train_loader: Training data loader
+        criterion: Loss function
+        device: Device to train on
+        scaler: Gradient scaler for mixed precision (None if not using AMP)
+
+    Returns:
+        Tuple of (average_loss, accuracy)
+    """
+    model.train()
     total_loss = 0.0
     total_correct = 0
     total_samples = 0
 
     pbar = tqdm(train_loader, desc="Training", leave=False)
     for batch_images, batch_labels in pbar:
-        loss, grads = loss_and_grad_fn(model, batch_images, batch_labels)
-        optimizer.update(model, grads)
-        mx.eval(model.parameters(), optimizer.state, loss)
+        # Move to device with non-blocking transfer
+        batch_images = batch_images.to(device, non_blocking=True)
+        batch_labels = batch_labels.to(device, non_blocking=True)
 
-        logits = model(batch_images)
-        predictions = mx.argmax(logits, axis=1)
-        correct = mx.sum(predictions == batch_labels)
+        # Apply channels_last memory format for CUDA optimization
+        if device.type == "cuda":
+            batch_images = batch_images.to(memory_format=torch.channels_last)
+
+        optimizer.zero_grad()
+
+        # Mixed precision training
+        if scaler is not None:
+            with torch.cuda.amp.autocast():
+                logits = model(batch_images)
+                loss = criterion(logits, batch_labels)
+
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            logits = model(batch_images)
+            loss = criterion(logits, batch_labels)
+            loss.backward()
+            optimizer.step()
+
+        # Compute accuracy
+        with torch.no_grad():
+            predictions = torch.argmax(logits, dim=1)
+            correct = torch.sum(predictions == batch_labels)
 
         batch_size = len(batch_labels)
         total_loss += loss.item() * batch_size
@@ -85,30 +114,55 @@ def train_epoch(
     return total_loss / total_samples, total_correct / total_samples
 
 
-def validate_epoch(model: nn.Module, val_loader: DataLoader) -> tuple[float, float]:
-    """Validate for one epoch."""
+def validate_epoch(
+    model: nn.Module,
+    val_loader: DataLoader,
+    criterion: nn.Module,
+    device: torch.device,
+) -> tuple[float, float]:
+    """Validate for one epoch.
+
+    Args:
+        model: Model to validate
+        val_loader: Validation data loader
+        criterion: Loss function
+        device: Device to validate on
+
+    Returns:
+        Tuple of (average_loss, accuracy)
+    """
+    model.eval()
     total_loss = 0.0
     total_correct = 0
     total_samples = 0
 
     pbar = tqdm(val_loader, desc="Validation", leave=False)
-    for batch_images, batch_labels in pbar:
-        loss = loss_fn(model, batch_images, batch_labels)
-        logits = model(batch_images)
-        predictions = mx.argmax(logits, axis=1)
-        correct = mx.sum(predictions == batch_labels)
+    with torch.inference_mode():
+        for batch_images, batch_labels in pbar:
+            # Move to device with non-blocking transfer
+            batch_images = batch_images.to(device, non_blocking=True)
+            batch_labels = batch_labels.to(device, non_blocking=True)
 
-        batch_size = len(batch_labels)
-        total_loss += loss.item() * batch_size
-        total_correct += correct.item()
-        total_samples += batch_size
+            # Apply channels_last memory format for CUDA optimization
+            if device.type == "cuda":
+                batch_images = batch_images.to(memory_format=torch.channels_last)
 
-        pbar.set_postfix(
-            {
-                "loss": f"{loss.item():.4f}",
-                "acc": f"{correct.item() / batch_size:.4f}",
-            }
-        )
+            logits = model(batch_images)
+            loss = criterion(logits, batch_labels)
+            predictions = torch.argmax(logits, dim=1)
+            correct = torch.sum(predictions == batch_labels)
+
+            batch_size = len(batch_labels)
+            total_loss += loss.item() * batch_size
+            total_correct += correct.item()
+            total_samples += batch_size
+
+            pbar.set_postfix(
+                {
+                    "loss": f"{loss.item():.4f}",
+                    "acc": f"{correct.item() / batch_size:.4f}",
+                }
+            )
 
     return total_loss / total_samples, total_correct / total_samples
 
@@ -171,6 +225,18 @@ def train(
     # Create checkpoint directory
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
+    # Setup device and CUDA optimizations
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    if device.type == "cuda":
+        # Enable cuDNN benchmark for optimal conv performance
+        torch.backends.cudnn.benchmark = True
+        print("CUDA optimizations enabled:")
+        print("  - cuDNN benchmark: True")
+        print("  - Channels last memory format: True")
+        print("  - Mixed precision training (AMP): True")
+
     # Initialize wandb logger
     wandb_logger = WandbLogger(enabled=use_wandb)
     if use_wandb:
@@ -180,6 +246,7 @@ def train(
             "batch_size": batch_size,
             "learning_rate": learning_rate,
             "weight_decay": weight_decay,
+            "device": str(device),
         }
 
         wandb_logger.init(
@@ -274,13 +341,15 @@ def train(
     )
     val_dataset = ChessPiecesDataset(val_files, label_map, transform=val_transforms)
 
-    # Create DataLoaders
+    # Create DataLoaders with CUDA optimizations
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
         num_workers=num_workers,
         collate_fn=collate_fn,
+        pin_memory=(device.type == "cuda"),
+        persistent_workers=(num_workers > 0),
     )
     val_loader = DataLoader(
         val_dataset,
@@ -288,6 +357,8 @@ def train(
         shuffle=False,
         num_workers=num_workers,
         collate_fn=collate_fn,
+        pin_memory=(device.type == "cuda"),
+        persistent_workers=(num_workers > 0),
     )
 
     print(f"\nTraining samples:   {len(train_dataset)}")
@@ -301,20 +372,30 @@ def train(
     print("\n" + "=" * 60)
     print("MODEL")
     print("=" * 60)
-    model = create_model(num_classes=num_classes)
+    model = create_model(num_classes=num_classes, device=str(device))
     print(model)
 
     # Calculate total parameters
-    param_list = tree_flatten(model.parameters())
-    num_params = sum(v.size for _, v in param_list)  # type: ignore[attr-defined]
+    num_params = sum(p.numel() for p in model.parameters())
     print(f"\nTotal parameters: {num_params:,}")
 
-    optimizer = optim.AdamW(learning_rate=learning_rate, weight_decay=weight_decay)
+    # Create optimizer and loss function
+    optimizer = optim.AdamW(
+        model.parameters(),
+        lr=learning_rate,
+        weight_decay=weight_decay,
+    )
+    criterion = nn.CrossEntropyLoss()
+
     print("\nOptimizer: AdamW")
     print(f"  Learning rate: {learning_rate}")
     print(f"  Weight decay:  {weight_decay}")
+    print("\nLoss function: CrossEntropyLoss")
 
-    loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
+    # Setup mixed precision training for CUDA
+    scaler = None
+    if device.type == "cuda":
+        scaler = torch.cuda.amp.GradScaler()
 
     best_val_acc = 0.0
     best_val_loss = float("inf")
@@ -334,9 +415,9 @@ def train(
     epoch_pbar = tqdm(range(num_epochs), desc="Epochs", leave=True)
     for epoch in epoch_pbar:
         train_loss, train_acc = train_epoch(
-            model, optimizer, train_loader, loss_and_grad_fn
+            model, optimizer, train_loader, criterion, device, scaler
         )
-        val_loss, val_acc = validate_epoch(model, val_loader)
+        val_loss, val_acc = validate_epoch(model, val_loader, criterion, device)
 
         # Update visualizer or log to wandb
         if use_wandb:
@@ -375,12 +456,20 @@ def train(
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             epochs_without_improvement = 0
+
+            # Save model using safetensors
             model_path = checkpoint_dir / get_model_filename(model_id)
-            mx.save_safetensors(str(model_path), dict(tree_flatten(model.parameters())))
+            try:
+                from safetensors.torch import save_model
+
+                save_model(model, str(model_path))
+            except ImportError:
+                # Fallback to regular torch.save if safetensors not available
+                torch.save(model.state_dict(), str(model_path))
+
+            # Save optimizer state
             optimizer_path = checkpoint_dir / OPTIMIZER_FILENAME
-            mx.save_safetensors(
-                str(optimizer_path), dict(tree_flatten(optimizer.state))
-            )
+            torch.save(optimizer.state_dict(), str(optimizer_path))
         else:
             epochs_without_improvement += 1
 

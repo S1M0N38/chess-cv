@@ -7,10 +7,9 @@ from pathlib import Path
 
 __all__ = ["test"]
 
-import mlx.core as mx
-import mlx.nn as nn
 import numpy as np
-from mlx.utils import tree_unflatten
+import torch
+import torch.nn as nn
 from PIL import Image
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -112,7 +111,7 @@ def _load_model(config: TestConfig) -> nn.Module:
         config: Test configuration
 
     Returns:
-        Loaded MLX model
+        Loaded PyTorch model
 
     Raises:
         FileNotFoundError: If checkpoint doesn't exist
@@ -127,14 +126,27 @@ def _load_model(config: TestConfig) -> nn.Module:
     print("LOADING MODEL")
     print("=" * 60)
 
-    model = create_model(num_classes=config.num_classes)
+    # Detect device
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Using device: {device}")
+
+    model = create_model(num_classes=config.num_classes, device=device)
     print(f"Loading checkpoint from: {config.checkpoint_path}")
 
-    checkpoint = mx.load(str(config.checkpoint_path))
-    checkpoint_items = list(checkpoint.items())  # type: ignore[attr-defined]
-    model.update(tree_unflatten(checkpoint_items))
-    mx.eval(model.parameters())
+    # Load checkpoint using safetensors if possible
+    try:
+        from safetensors.torch import load_model
+        load_model(model, str(config.checkpoint_path))
+    except ImportError:
+        # Fallback to regular PyTorch loading
+        state_dict = torch.load(
+            str(config.checkpoint_path),
+            map_location=device,
+            weights_only=True,
+        )
+        model.load_state_dict(state_dict)
 
+    model.eval()
     print("✓ Model loaded successfully")
     return model
 

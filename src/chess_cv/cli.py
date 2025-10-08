@@ -23,7 +23,7 @@ from .constants import (
 @click.group()
 @click.version_option()
 def cli():
-    """Chess-CV: CNN-based chess piece classifier using MLX."""
+    """Chess-CV: CNN-based chess piece classifier using PyTorch/CUDA."""
     pass
 
 

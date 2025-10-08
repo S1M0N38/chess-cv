@@ -4,12 +4,13 @@ This file provides guidance to AI tools (e.g. Claude Code, Codex, Gemini CLI, ..
 
 ## Project Overview
 
-Chess-CV is a CNN-based chess piece classifier that uses MLX (Apple's ML framework) to train a lightweight 156k parameter model. The model classifies 32×32px square images into 13 classes (6 white pieces, 6 black pieces, 1 empty square) with ~99.85% accuracy.
+Chess-CV is a CNN-based chess piece classifier that uses PyTorch with CUDA support to train a lightweight 156k parameter model. The model classifies 32×32px square images into 13 classes (6 white pieces, 6 black pieces, 1 empty square) with ~99.85% accuracy.
 
 **Key Technologies:**
 
-- MLX for model training (Apple Silicon optimized)
-- PyTorch DataLoader for data loading
+- PyTorch for model training (with CUDA GPU acceleration)
+- Mixed precision training (AMP) for faster training on CUDA
+- Channels-last memory format for optimal GPU performance
 - NumPy/PIL for image processing
 - Weights & Biases (optional) for experiment tracking
 - Hugging Face Hub for model/dataset distribution
@@ -112,7 +113,8 @@ pytest tests/test_example.py::test_specific_function -v
 
 - `ChessPiecesDataset`: PyTorch Dataset for local image files
 - `HuggingFaceChessPiecesDataset`: Dataset for HF datasets
-- `collate_fn`: Converts batches to MLX arrays
+- `collate_fn`: Converts batches to PyTorch tensors (HWC → NCHW format)
+- Supports `pin_memory=True` for faster GPU transfers
 - `CLASS_NAMES`: 13 classes in alphabetical order (bB, bK, bN, bP, bQ, bR, wB, wK, wN, wP, wQ, wR, xx)
 
 ### Model (src/chess_cv/model.py)
@@ -129,19 +131,33 @@ Linear(128→num_classes)
 
 **Important Notes:**
 
-- MLX uses NHWC format (batch, height, width, channels)
+- PyTorch uses NCHW format (batch, channels, height, width)
+- Model uses channels_last memory format for optimal CUDA performance
 - Model weights use safetensors format
-- Create with `create_model()` to properly initialize parameters
+- Create with `create_model()` to properly initialize and move to device
+- Automatically detects and uses CUDA if available
 
 ### Training (src/chess_cv/train.py)
 
 **Key Features:**
 
 - AdamW optimizer with configurable learning rate/weight decay
+- Mixed precision training (AMP) for faster CUDA training
+- Channels-last memory format for optimal GPU performance
+- Pin memory and persistent workers for efficient data loading
+- cuDNN benchmark mode for optimized convolutions
 - Aggressive data augmentation: random crop, flip, color jitter, rotation, Gaussian noise
 - Early stopping based on validation accuracy
 - Saves best model to `checkpoints/{model-id}/{model-id}.safetensors`
 - Optional W&B integration (pass `--wandb` flag)
+
+**CUDA Optimizations:**
+
+- Mixed precision (FP16/FP32) with gradient scaling
+- Channels-last memory format
+- Pin memory for faster host-to-GPU transfer
+- Non-blocking GPU transfers
+- cuDNN benchmark for optimal conv algorithms
 
 **Default Hyperparameters:**
 
@@ -159,13 +175,16 @@ Linear(128→num_classes)
 - Per-class accuracy
 - Confusion matrix
 - Macro F1-score
+- Inference speed benchmarking with CUDA event timing
+- Uses `torch.inference_mode()` for optimal performance
 
 **test.py** - Full evaluation script:
 
 - Supports local directories or HuggingFace datasets
+- Automatically uses CUDA if available
 - Generates confusion matrix and per-class accuracy plots
 - Saves misclassified images for analysis
-- Outputs JSON summary
+- Outputs JSON summary with performance metrics
 
 ### Constants (src/chess_cv/constants.py)
 
@@ -229,17 +248,19 @@ chess-cv/
 - Release Please PR automatically updates versions and changelog
 - Merging Release Please PR triggers PyPI publication
 
-### MLX vs PyTorch
+### PyTorch with CUDA
 
-- **Data loading**: PyTorch DataLoader (for efficient I/O)
-- **Training/inference**: MLX arrays and models
-- **Conversion**: `collate_fn` converts PyTorch batches → MLX arrays
+- **Framework**: Pure PyTorch (CPU/CUDA support)
+- **Data loading**: PyTorch DataLoader with pin_memory for GPU
+- **Training/inference**: PyTorch tensors and models
+- **Optimization**: Mixed precision, channels_last, cuDNN benchmark
 
 ### Image Format
 
 - Input: 32×32px RGB images
 - Normalization: Divide by 255.0 to [0, 1] range
-- MLX format: NHWC (batch, height, width, channels)
+- PyTorch format: NCHW (batch, channels, height, width)
+- Memory format: channels_last for CUDA optimization
 
 ### Label Mapping
 
