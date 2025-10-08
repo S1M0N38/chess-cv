@@ -48,7 +48,7 @@ def train_epoch(
     train_loader: DataLoader,
     criterion: nn.Module,
     device: torch.device,
-    scaler: torch.cuda.amp.GradScaler | None = None,
+    scaler: torch.amp.GradScaler | None = None,  # type: ignore
     wandb_logger: WandbLogger | None = None,
     epoch: int = 0,
     global_step: int = 0,
@@ -424,7 +424,7 @@ def train(
     # Setup mixed precision training for CUDA
     scaler = None
     if device.type == "cuda":
-        scaler = torch.cuda.amp.GradScaler()
+        scaler = torch.amp.GradScaler("cuda")  # type: ignore
 
     best_val_acc = 0.0
     best_val_loss = float("inf")
