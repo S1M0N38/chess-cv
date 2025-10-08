@@ -7,7 +7,8 @@ Read the latest evaluation results from `make eval` and update all documentation
 1. **Read Evaluation Results**
    - Read `evals/pieces/test/test_summary.json` for test dataset results
    - Read `evals/pieces/openboard/test_summary.json` for OpenBoard dataset results
-   - Extract overall_accuracy, f1_score_macro, and per_class_accuracy for both datasets
+   - Read `evals/pieces/chessvision/test_summary.json` for ChessVision dataset results
+   - Extract overall_accuracy, f1_score_macro, and per_class_accuracy for all three datasets
 
 2. **Format Metrics**
    - Convert decimal values to percentages (multiply by 100)
@@ -16,44 +17,59 @@ Read the latest evaluation results from `make eval` and update all documentation
    - Handle per-class accuracies for all 13 classes
 
 3. **Update README.md**
-   - Locate the performance table (around lines 36-44)
+   - Locate the performance table (around lines 37-41)
    - Update Test Data row: accuracy and F1-Score columns
    - Update OpenBoard row: keep accuracy as "-" (due to class imbalance), update F1-Score
+   - Update ChessVision row: keep accuracy as "-" (due to class imbalance), update F1-Score
    - Maintain table formatting and alignment
 
 4. **Update docs/README_hf.md**
-   - **YAML Frontmatter (lines 22-44)**:
+   - **YAML Frontmatter (lines 12-59)**:
      - Update first metric block (Test Dataset):
        - Line ~23: `value` for accuracy (4 decimal places)
        - Line ~27: `value` for f1 (4 decimal places)
      - Update second metric block (OpenBoard Dataset):
        - Line ~38: `value` for accuracy (4 decimal places)
        - Line ~42: `value` for f1 (4 decimal places)
-   - **Performance Table (lines 56-61)**:
-     - Same updates as README.md
+     - Update third metric block (ChessVision Dataset):
+       - Line ~52: `value` for accuracy (4 decimal places)
+       - Line ~56: `value` for f1 (4 decimal places)
+   - **Performance Table (lines 71-75)**:
+     - Update Test Data row: accuracy and F1-Score columns
+     - Update OpenBoard row: keep accuracy as "-" (due to class imbalance), update F1-Score
+     - Update ChessVision row: keep accuracy as "-" (due to class imbalance), update F1-Score
 
 5. **Update docs/architecture.md**
    - **Overall Test Performance (lines 89-90)**:
      - Update Test Accuracy value (e.g., "~99.85%")
      - Update F1 Score (Macro) value (e.g., "~99.89%")
-   
-   - **Per-Class Test Performance Table (lines 96-107)**:
+
+   - **Per-Class Test Performance Table (lines 127-138)**:
      - Update accuracy for each class: bB, bK, bN, bP, bQ, bR, wB, wK, wN, wP, wQ, wR, xx
      - Format as percentages with 2 decimal places
      - Maintain table structure with two columns showing black pieces vs white pieces
-   
-   - **Overall OpenBoard Performance (lines 116-117)**:
-     - Update Overall Accuracy value (e.g., "97.57%")
-     - Update F1 Score (Macro) value (e.g., "95.78%")
-   
-   - **Per-Class OpenBoard Performance Table (lines 119-130)**:
+
+   - **Overall OpenBoard Performance (lines 147-148)**:
+     - Update Overall Accuracy value (e.g., "98.89%")
+     - Update F1 Score (Macro) value (e.g., "97.25%")
+
+   - **Per-Class OpenBoard Performance Table (lines 152-160)**:
      - Update accuracy for all 13 classes
      - Format as percentages with 2 decimal places
      - Maintain table structure
-   
-   - **Comparison Note (line 133)**:
-     - Update the accuracy comparison text with current values
-     - Format: "The lower performance on OpenBoard compared to the test set (X.XX% vs Y.YY%)"
+
+   - **Overall ChessVision Performance (lines 166-167)**:
+     - Update Overall Accuracy value (e.g., "86.85%")
+     - Update F1 Score (Macro) value (e.g., "83.83%")
+
+   - **Per-Class ChessVision Performance Table (lines 171-179)**:
+     - Update accuracy for all 13 classes
+     - Format as percentages with 2 decimal places
+     - Maintain table structure
+
+   - **Comparison Note (lines 185-187)**:
+     - Update the performance comparison text with current values for all three datasets
+     - Format: "The lower performance on OpenBoard (X.XX% accuracy, Y.YY% F1) and ChessVision (A.AA% accuracy, B.BB% F1) compared to the test set (C.CC% accuracy, D.DD% F1)..."
 
 6. **Validation**
    - Verify all JSON files exist and are valid
@@ -99,7 +115,7 @@ The evaluation JSON files have this structure:
 
 1. **Percentages in markdown tables/text**: 2 decimal places (99.85%)
 2. **YAML frontmatter values**: 4 decimal places as decimal (0.9985)
-3. **Special case**: OpenBoard accuracy in main table shows "-" (not percentage)
+3. **Special case**: OpenBoard and ChessVision accuracy in main tables show "-" (not percentage) due to unbalanced class distributions
 4. **Tilde prefix**: Use "~" before percentages in architecture.md for approximate values (e.g., "~99.85%")
 5. **Class names**: Maintain exact order as they appear in JSON (alphabetically sorted)
 

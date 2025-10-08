@@ -36,9 +36,9 @@ By rendering pieces onto different board backgrounds and extracting individual s
 
 | Dataset                                                                                         | Accuracy | F1-Score (Macro) |
 | ----------------------------------------------------------------------------------------------- | :------: | :--------------: |
-| Test Data                                                                                       |  99.84%  |      99.86%      |
-| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \*     |    -     |      97.25%      |
-| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) \* |    -     |      83.83%      |
+| Test Data                                                                                       |  99.73%  |      99.73%      |
+| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \*     |    -     |      97.55%      |
+| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) \* |    -     |      83.55%      |
 
 </div>
 
@@ -92,7 +92,7 @@ Classifies chess square images into **13 classes**: 6 white pieces (wP, wN, wB, 
 
 **Training:** ~93,000 synthetic images with aggressive augmentation (arrow overlays, flips, rotation, color jitter)
 
-**Performance:** 99.84% accuracy on test data, 97.25% F1-score on real board images
+**Performance:** 99.73% accuracy on test data, 97.55% F1-score on real board images
 
 ### Arrows Model (`arrows.safetensors`)
 

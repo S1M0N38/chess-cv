@@ -20,11 +20,11 @@ model-index:
           type: chess-cv-test
         metrics:
           - type: accuracy
-            value: 0.9984
+            value: 0.9973
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.9986
+            value: 0.9973
             name: F1 Score (Macro)
             verified: false
       - task:
@@ -35,11 +35,11 @@ model-index:
           type: chess-cv-openboard
         metrics:
           - type: accuracy
-            value: 0.9889
+            value: 0.9884
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.9725
+            value: 0.9755
             name: F1 Score (Macro)
             verified: false
       - task:
@@ -50,11 +50,11 @@ model-index:
           type: chess-cv-chessvision
         metrics:
           - type: accuracy
-            value: 0.8685
+            value: 0.8691
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.8383
+            value: 0.8355
             name: F1 Score (Macro)
             verified: false
 pipeline_tag: image-classification
@@ -70,9 +70,9 @@ Lightweight CNN (156k parameters) that classifies chess pieces from 32×32 pixel
 
 | Dataset                                                                                         | Accuracy | F1-Score (Macro) |
 | ----------------------------------------------------------------------------------------------- | :------: | :--------------: |
-| Test Data                                                                                       |  99.84%  |      99.86%      |
-| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \*     |    -     |      97.25%      |
-| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) \* |    -     |      83.83%      |
+| Test Data                                                                                       |  99.73%  |      99.73%      |
+| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \*     |    -     |      97.55%      |
+| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) \* |    -     |      83.55%      |
 
 - *Dataset with unbalanced class distribution (e.g. many more samples for empty square class), so accuracy is not representative.*
 
