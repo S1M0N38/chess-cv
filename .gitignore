@@ -179,5 +179,4 @@ checkpoints
 wandb
 evals
 scripts
-data/splits/pieces
-data/splits/arrows
+data/splits
