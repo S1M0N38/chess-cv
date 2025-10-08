@@ -98,7 +98,7 @@ def train_epoch(
         global_step += 1
 
         # Log mid-epoch training metrics to wandb
-        if wandb_logger.enabled and global_step % log_every_n_steps == 0:
+        if wandb_logger is not None and wandb_logger.enabled and global_step % log_every_n_steps == 0:
             batch_acc = correct.item() / batch_size
             wandb_logger.log(
                 {
