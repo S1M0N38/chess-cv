@@ -13,18 +13,18 @@ Generate synthetic chess piece images:
 chess-cv preprocessing
 ```
 
-### Custom Configuration
+### Custom Output Directories
+
+If you need to specify custom output directories:
 
 ```bash
-chess-cv preprocessing \
-  --train-dir data/splits/pieces/train \
-  --val-dir data/splits/pieces/validate \
-  --test-dir data/splits/pieces/test \
-  --train-ratio 0.7 \
-  --val-ratio 0.15 \
-  --test-ratio 0.15 \
-  --seed 42
+chess-cv preprocessing pieces \
+  --train-dir custom/train \
+  --val-dir custom/validate \
+  --test-dir custom/test
 ```
+
+Note: The default 70/15/15 train/val/test split with seed 42 is used. These values are defined in `src/chess_cv/constants.py` and provide consistent, reproducible splits.
 
 ### Understanding Data Generation
 
@@ -59,18 +59,18 @@ chess-cv train
 ### Custom Training Configuration
 
 ```bash
-chess-cv train \
+chess-cv train pieces \
   --train-dir data/splits/pieces/train \
   --val-dir data/splits/pieces/validate \
-  --checkpoint-dir checkpoints \
+  --checkpoint-dir checkpoints/pieces \
   --batch-size 64 \
   --learning-rate 0.0003 \
   --weight-decay 0.0003 \
   --num-epochs 200 \
-  --patience 999999 \
-  --image-size 32 \
   --num-workers 8
 ```
+
+Note: Image size is fixed at 32×32 pixels (model architecture requirement).
 
 ### Training Parameters
 
@@ -82,12 +82,10 @@ chess-cv train \
 **Training Control:**
 
 - `--num-epochs`: Maximum number of epochs (default: 200)
-- `--patience`: Early stopping patience (default: 999999, effectively disabled)
 - `--batch-size`: Batch size for training (default: 64)
 
 **Data Settings:**
 
-- `--image-size`: Input image size (default: 32)
 - `--num-workers`: Number of data loading workers (default: 8)
 
 **Directories:**
@@ -108,7 +106,7 @@ chess-cv train \
 
 **Early Stopping:**
 
-Training can automatically stop if validation accuracy doesn't improve for `--patience` epochs. By default, patience is set very high (999999) to effectively disable early stopping, allowing the full training schedule to run.
+Early stopping is disabled by default (patience set to 999999), allowing the full 200-epoch training schedule to run. This default is set in `src/chess_cv/constants.py` and ensures consistent training across runs.
 
 **Automatic Checkpointing:**
 
@@ -189,12 +187,11 @@ chess-cv test
 ### Custom Evaluation
 
 ```bash
-chess-cv test \
+chess-cv test pieces \
   --test-dir data/splits/pieces/test \
   --train-dir data/splits/pieces/train \
   --checkpoint checkpoints/pieces/pieces.safetensors \
   --batch-size 64 \
-  --image-size 32 \
   --num-workers 8 \
   --output-dir outputs
 ```
@@ -254,9 +251,9 @@ chess-cv upload \
 
 **Out of Memory During Training**: Reduce batch size with `--batch-size 64` or reduce number of workers with `--num-workers 2`.
 
-**Poor Model Performance**: Try adjusting hyperparameters, use W&B sweeps for optimization, or review misclassified images to verify data quality. Enable early stopping with lower patience (`--patience 15`) to save time during hyperparameter tuning.
+**Poor Model Performance**: Try adjusting hyperparameters with W&B sweeps for optimization, or review misclassified images to verify data quality. To enable early stopping for faster experimentation, modify `DEFAULT_PATIENCE` in `src/chess_cv/constants.py`.
 
-**Training Too Slow**: Increase batch size if memory allows (`--batch-size 128`), or enable early stopping (`--patience 15`) for faster iteration during experimentation.
+**Training Too Slow**: Increase batch size if memory allows (`--batch-size 128`). For faster experimentation, modify `DEFAULT_PATIENCE` in `src/chess_cv/constants.py` to enable early stopping.
 
 **Evaluation Issues**: Ensure the checkpoint exists, verify the test data directory is populated, and run with appropriate batch size.
 

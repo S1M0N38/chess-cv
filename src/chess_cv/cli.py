@@ -7,15 +7,9 @@ import click
 from .constants import (
     BEST_MODEL_FILENAME,
     DEFAULT_BATCH_SIZE,
-    DEFAULT_IMAGE_SIZE,
     DEFAULT_LEARNING_RATE,
     DEFAULT_NUM_EPOCHS,
     DEFAULT_NUM_WORKERS,
-    DEFAULT_PATIENCE,
-    DEFAULT_RANDOM_SEED,
-    DEFAULT_TEST_RATIO,
-    DEFAULT_TRAIN_RATIO,
-    DEFAULT_VAL_RATIO,
     DEFAULT_WEIGHT_DECAY,
     get_checkpoint_dir,
     get_model_config,
@@ -53,39 +47,11 @@ def cli():
     default=None,
     help="Test data output directory (default: data/splits/{model-id}/test)",
 )
-@click.option(
-    "--train-ratio",
-    type=float,
-    default=DEFAULT_TRAIN_RATIO,
-    help=f"Training data ratio (default: {DEFAULT_TRAIN_RATIO})",
-)
-@click.option(
-    "--val-ratio",
-    type=float,
-    default=DEFAULT_VAL_RATIO,
-    help=f"Validation data ratio (default: {DEFAULT_VAL_RATIO})",
-)
-@click.option(
-    "--test-ratio",
-    type=float,
-    default=DEFAULT_TEST_RATIO,
-    help=f"Test data ratio (default: {DEFAULT_TEST_RATIO})",
-)
-@click.option(
-    "--seed",
-    type=int,
-    default=DEFAULT_RANDOM_SEED,
-    help=f"Random seed for reproducibility (default: {DEFAULT_RANDOM_SEED})",
-)
 def preprocessing(
     model_id: str,
     train_dir: Path | None,
     val_dir: Path | None,
     test_dir: Path | None,
-    train_ratio: float,
-    val_ratio: float,
-    test_ratio: float,
-    seed: int,
 ):
     """Generate train/validate/test sets from board-piece combinations.
 
@@ -109,10 +75,6 @@ def preprocessing(
         train_dir=train_dir,
         val_dir=val_dir,
         test_dir=test_dir,
-        train_ratio=train_ratio,
-        val_ratio=val_ratio,
-        test_ratio=test_ratio,
-        seed=seed,
     )
     click.echo("\n✓ Data generation complete!")
 
@@ -162,18 +124,6 @@ def preprocessing(
     help=f"Number of epochs (default: {DEFAULT_NUM_EPOCHS})",
 )
 @click.option(
-    "--patience",
-    type=int,
-    default=DEFAULT_PATIENCE,
-    help=f"Early stopping patience (default: {DEFAULT_PATIENCE})",
-)
-@click.option(
-    "--image-size",
-    type=int,
-    default=DEFAULT_IMAGE_SIZE,
-    help=f"Image size (default: {DEFAULT_IMAGE_SIZE})",
-)
-@click.option(
     "--num-workers",
     type=int,
     default=DEFAULT_NUM_WORKERS,
@@ -198,8 +148,6 @@ def train(
     learning_rate: float,
     weight_decay: float,
     num_epochs: int,
-    patience: int,
-    image_size: int,
     num_workers: int,
     wandb: bool,
     sweep: bool,
@@ -243,8 +191,6 @@ def train(
         learning_rate=learning_rate,
         weight_decay=weight_decay,
         num_epochs=num_epochs,
-        patience=patience,
-        image_size=image_size,
         num_workers=num_workers,
         use_wandb=wandb,
     )
@@ -275,12 +221,6 @@ def train(
     type=int,
     default=DEFAULT_BATCH_SIZE,
     help=f"Batch size (default: {DEFAULT_BATCH_SIZE})",
-)
-@click.option(
-    "--image-size",
-    type=int,
-    default=DEFAULT_IMAGE_SIZE,
-    help=f"Image size (default: {DEFAULT_IMAGE_SIZE})",
 )
 @click.option(
     "--num-workers",
@@ -316,7 +256,6 @@ def test(
     train_dir: Path | None,
     checkpoint: Path | None,
     batch_size: int,
-    image_size: int,
     num_workers: int,
     output_dir: Path | None,
     wandb: bool,
@@ -348,7 +287,6 @@ def test(
         train_dir=train_dir,
         checkpoint_path=checkpoint,
         batch_size=batch_size,
-        image_size=image_size,
         num_workers=num_workers,
         output_dir=output_dir,
         use_wandb=wandb,
