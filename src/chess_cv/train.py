@@ -23,6 +23,7 @@ from .constants import (
     DEFAULT_NUM_WORKERS,
     DEFAULT_PATIENCE,
     DEFAULT_WEIGHT_DECAY,
+    LOG_TRAIN_EVERY_N_STEPS,
     OPTIMIZER_FILENAME,
     TRAINING_CURVES_FILENAME,
     get_model_filename,
@@ -54,14 +55,32 @@ def train_epoch(
     optimizer: optim.Optimizer,
     train_loader: DataLoader,
     loss_and_grad_fn,
-) -> tuple[float, float]:
-    """Train for one epoch."""
+    wandb_logger: WandbLogger,
+    epoch: int,
+    global_step: int,
+    log_every_n_steps: int,
+) -> tuple[float, float, int]:
+    """Train for one epoch.
+    
+    Args:
+        model: Model to train
+        optimizer: Optimizer
+        train_loader: Training data loader
+        loss_and_grad_fn: Combined loss and gradient function
+        wandb_logger: WandB logger instance
+        epoch: Current epoch number (1-indexed)
+        global_step: Global step counter across all epochs
+        log_every_n_steps: Log training metrics every N steps
+    
+    Returns:
+        Tuple of (average_loss, average_accuracy, updated_global_step)
+    """
     total_loss = 0.0
     total_correct = 0
     total_samples = 0
 
     pbar = tqdm(train_loader, desc="Training", leave=False)
-    for batch_images, batch_labels in pbar:
+    for batch_idx, (batch_images, batch_labels) in enumerate(pbar):
         loss, grads = loss_and_grad_fn(model, batch_images, batch_labels)
         optimizer.update(model, grads)
         mx.eval(model.parameters(), optimizer.state, loss)
@@ -74,6 +93,22 @@ def train_epoch(
         total_loss += loss.item() * batch_size
         total_correct += correct.item()
         total_samples += batch_size
+        
+        # Increment global step
+        global_step += 1
+
+        # Log mid-epoch training metrics to wandb
+        if wandb_logger.enabled and global_step % log_every_n_steps == 0:
+            batch_acc = correct.item() / batch_size
+            wandb_logger.log(
+                {
+                    "global_step": global_step,
+                    "loss/train_step": loss.item(),
+                    "accuracy/train_step": batch_acc,
+                    "epoch": epoch,
+                },
+                step=global_step,
+            )
 
         pbar.set_postfix(
             {
@@ -82,7 +117,7 @@ def train_epoch(
             }
         )
 
-    return total_loss / total_samples, total_correct / total_samples
+    return total_loss / total_samples, total_correct / total_samples, global_step
 
 
 def validate_epoch(model: nn.Module, val_loader: DataLoader) -> tuple[float, float]:
@@ -326,6 +361,9 @@ def train(
     if not use_wandb:
         output_dir = get_output_dir(model_id)
         visualizer = TrainingVisualizer(output_dir=output_dir)
+    
+    # Initialize global step counter for mid-epoch logging
+    global_step = 0
 
     print("\n" + "=" * 60)
     print("TRAINING")
@@ -333,8 +371,9 @@ def train(
 
     epoch_pbar = tqdm(range(num_epochs), desc="Epochs", leave=True)
     for epoch in epoch_pbar:
-        train_loss, train_acc = train_epoch(
-            model, optimizer, train_loader, loss_and_grad_fn
+        train_loss, train_acc, global_step = train_epoch(
+            model, optimizer, train_loader, loss_and_grad_fn,
+            wandb_logger, epoch + 1, global_step, LOG_TRAIN_EVERY_N_STEPS
         )
         val_loss, val_acc = validate_epoch(model, val_loader)
 

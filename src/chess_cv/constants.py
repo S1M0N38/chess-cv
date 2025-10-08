@@ -52,6 +52,9 @@ DEFAULT_PATIENCE = 999999  # Effectively disabled
 # Data loading
 DEFAULT_NUM_WORKERS = 8
 
+# Logging configuration
+LOG_TRAIN_EVERY_N_STEPS = 50  # Log training metrics every N batches
+
 # Data splitting ratios
 DEFAULT_TRAIN_RATIO = 0.7
 DEFAULT_VAL_RATIO = 0.15
