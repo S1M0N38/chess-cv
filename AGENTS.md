@@ -140,7 +140,7 @@ Linear(128→num_classes)
 - AdamW optimizer with configurable learning rate/weight decay
 - Aggressive data augmentation: random crop, flip, color jitter, rotation, Gaussian noise
 - Early stopping based on validation accuracy
-- Saves best model to `checkpoints/best_model.safetensors`
+- Saves best model to `checkpoints/{model-id}/{model-id}.safetensors`
 - Optional W&B integration (pass `--wandb` flag)
 
 **Default Hyperparameters:**
@@ -201,7 +201,7 @@ chess-cv/
 │           └── test/      # Test data
 ├── checkpoints/           # Model checkpoints
 │   └── {model-id}/        # Model-specific checkpoints (e.g., pieces/)
-│       ├── best_model.safetensors
+│       ├── {model-id}.safetensors
 │       └── optimizer.safetensors
 ├── outputs/               # Training outputs
 │   └── {model-id}/        # Model-specific outputs (e.g., pieces/)

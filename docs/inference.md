@@ -16,7 +16,7 @@ from chess_cv.model import SimpleCNN
 # Download model weights from Hugging Face
 model_path = hf_hub_download(
     repo_id="S1M0N38/chess-cv",
-    filename="best_model.safetensors"
+    filename="pieces.safetensors"
 )
 
 # Create model and load weights

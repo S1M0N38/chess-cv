@@ -112,14 +112,14 @@ Training can automatically stop if validation accuracy doesn't improve for `--pa
 
 **Automatic Checkpointing:**
 
-- Best model weights saved to `checkpoints/best_model.safetensors`
+- Best model weights saved to `checkpoints/{model-id}/{model-id}.safetensors`
 - Optimizer state saved to `checkpoints/optimizer.safetensors`
 
 ### Training Output
 
 **Files Generated:**
 
-- `checkpoints/best_model.safetensors` – Best model weights
+- `checkpoints/{model-id}/{model-id}.safetensors` – Best model weights
 - `checkpoints/optimizer.safetensors` – Optimizer state
 - `outputs/training_curves.png` – Loss and accuracy plots
 - `outputs/augmentation_example.png` – Example of data augmentation
@@ -192,7 +192,7 @@ chess-cv test
 chess-cv test \
   --test-dir data/splits/pieces/test \
   --train-dir data/splits/pieces/train \
-  --checkpoint checkpoints/best_model.safetensors \
+  --checkpoint checkpoints/pieces/pieces.safetensors \
   --batch-size 64 \
   --image-size 32 \
   --num-workers 8 \
