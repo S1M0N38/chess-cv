@@ -20,11 +20,11 @@ model-index:
           type: chess-cv-test
         metrics:
           - type: accuracy
-            value: 0.9985
+            value: 0.9986
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.9989
+            value: 0.9984
             name: F1 Score (Macro)
             verified: false
       - task:
@@ -35,11 +35,11 @@ model-index:
           type: chess-cv-openboard
         metrics:
           - type: accuracy
-            value: 0.9757
+            value: 0.9889
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.9578
+            value: 0.9738
             name: F1 Score (Macro)
             verified: false
 pipeline_tag: image-classification
@@ -55,8 +55,8 @@ Lightweight CNN (156k parameters) that classifies chess pieces from 32×32 pixel
 
 | Dataset                                                                                     | Accuracy | F1-Score (Macro) |
 | ------------------------------------------------------------------------------------------- | :------: | :--------------: |
-| Test Data                                                                                   |  99.85%  |      99.89%      |
-| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \* |    -     |      95.78%      |
+| Test Data                                                                                   |  99.86%  |      99.84%      |
+| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \* |    -     |      97.38%      |
 
 \* *Dataset with unbalanced class distribution (e.g. many more samples for empty square class), so accuracy is not representative.*
 
@@ -111,8 +111,8 @@ The pieces model classifies chess square images into 13 classes: 6 white pieces 
 
 | Dataset | Accuracy | F1-Score (Macro) |
 |---------|----------|------------------|
-| Test Data (synthetic) | 99.85% | 99.89% |
-| [chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) | - | 95.78% |
+| Test Data (synthetic) | 99.86% | 99.84% |
+| [chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) | - | 97.38% |
 
 The model achieves near-perfect accuracy on synthetic data and maintains strong performance on real board images from OpenBoard dataset.
 

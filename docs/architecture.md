@@ -86,10 +86,40 @@ The model classifies chess squares into 13 categories:
 
 With the default configuration:
 
-- **Test Accuracy**: ~99.85%
-- **F1 Score (Macro)**: ~99.89%
+- **Test Accuracy**: ~99.86%
+- **F1 Score (Macro)**: ~99.84%
 - **Training Time**: ~90 minutes (varies by hardware)
 - **Inference Speed**: 0.05 ms per image (batch size 8192, varying by hardware)
+
+### Inference Benchmarks
+
+Inference performance on **Apple M4** (MacBook Air, 2025):
+
+**Hardware Specifications:**
+
+- **Chip**: Apple M4
+- **CPU**: 10 cores (4 performance + 6 efficiency)
+- **GPU**: 10 cores with Metal 4 support
+- **Memory**: 16 GB unified memory
+- **macOS**: Version 26.0.1
+
+**Benchmark Results:**
+
+| Batch Size | Images/sec | ms/batch | ms/image |
+|------------|------------|----------|----------|
+| 1          | TBD        | TBD      | TBD      |
+| 64         | TBD        | TBD      | TBD      |
+| 512        | TBD        | TBD      | TBD      |
+| 1024       | TBD        | TBD      | TBD      |
+
+!!! tip "Running Benchmarks"
+    
+    To benchmark inference speed on your machine, run:
+    ```bash
+    chess-cv test pieces
+    ```
+    
+    The benchmark results will be included in the test summary at `outputs/pieces/test_summary.json`.
 
 ### Per-Class Performance
 
@@ -97,12 +127,12 @@ Actual accuracy by piece type (Test Dataset):
 
 | Class | Accuracy | Class | Accuracy |
 | ----- | -------- | ----- | -------- |
-| bB    | 99.82%   | wB    | 99.91%   |
-| bK    | 99.82%   | wK    | 99.54%   |
-| bN    | 99.73%   | wN    | 99.91%   |
-| bP    | 99.82%   | wP    | 100%     |
-| bQ    | 100%     | wQ    | 99.82%   |
-| bR    | 99.64%   | wR    | 100%     |
+| bB    | 99.91%   | wB    | 99.72%   |
+| bK    | 99.91%   | wK    | 99.81%   |
+| bN    | 100%     | wN    | 99.81%   |
+| bP    | 99.81%   | wP    | 99.91%   |
+| bQ    | 99.91%   | wQ    | 99.54%   |
+| bR    | 99.91%   | wR    | 100%     |
 | xx    | 100%     |       |          |
 
 ### Evaluation on External Datasets
@@ -113,24 +143,24 @@ The model has been evaluated on external datasets to assess generalization:
 
 - **Dataset**: [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard)
 - **Number of samples**: 6,016
-- **Overall Accuracy**: 97.57%
-- **F1 Score (Macro)**: 95.78%
+- **Overall Accuracy**: 98.89%
+- **F1 Score (Macro)**: 97.38%
 
 Per-class performance on OpenBoard:
 
 | Class | Accuracy | Class | Accuracy |
 | ----- | -------- | ----- | -------- |
 | bB    | 100%     | wB    | 100%     |
-| bK    | 98.94%   | wK    | 100%     |
+| bK    | 100%     | wK    | 100%     |
 | bN    | 100%     | wN    | 98.97%   |
-| bP    | 99.62%   | wP    | 98.82%   |
-| bQ    | 97.10%   | wQ    | 100%     |
-| bR    | 99.32%   | wR    | 97.37%   |
-| xx    | 96.72%   |       |          |
+| bP    | 99.44%   | wP    | 99.80%   |
+| bQ    | 97.10%   | wQ    | 98.48%   |
+| bR    | 100%     | wR    | 97.37%   |
+| xx    | 98.60%   |       |          |
 
 !!! note "Out of Sample Performance"
 
-    The lower performance on OpenBoard compared to the test set (97.57% vs 99.85%) indicates some domain gap between the synthetic training data and this external dataset.
+    The lower performance on OpenBoard compared to the test set (98.89% vs 99.86%) indicates some domain gap between the synthetic training data and this external dataset.
 
 ## Dataset Characteristics
 
