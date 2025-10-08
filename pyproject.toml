@@ -40,7 +40,7 @@ lint.task-tags = ["FIX", "TODO", "HACK", "WARN", "PERF", "NOTE", "TEST"]
 
 [tool.pyright]
 typeCheckingMode = "basic"
-exclude = ["data", ".venv"]
+exclude = ["data", ".venv", "scripts"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
