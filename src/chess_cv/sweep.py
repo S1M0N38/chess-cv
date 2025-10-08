@@ -60,7 +60,7 @@ def run_sweep(model_id: str, sweep_config_path: Path | str | None = None) -> Non
     # Determine num_epochs based on model_id (not swept, kept constant)
     model_epochs = {
         "pieces": 200,
-        "arrows": 100,
+        "arrows": 5,
     }
     num_epochs = model_epochs.get(model_id, 200)  # Default to 200 if unknown model
 
