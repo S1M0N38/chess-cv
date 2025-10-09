@@ -70,9 +70,13 @@ clean: ## Clean build artifacts
 
 # Evaluation targets
 eval: ## Evaluate model over multiple datasets
+	@echo "$(YELLOW)=================================== PIECES =====================================$(RESET)"
 	@echo "$(YELLOW)Evaluating pieces model on test data...$(RESET)"
 	chess-cv test pieces --output-dir evals/pieces/test
 	@echo "$(YELLOW)Evaluating pieces model on openboard dataset...$(RESET)"
 	chess-cv test pieces --hf-test-dir S1M0N38/chess-cv-openboard --output-dir evals/pieces/openboard
 	@echo "$(YELLOW)Evaluating pieces model on chessvision dataset...$(RESET)"
 	chess-cv test pieces --hf-test-dir S1M0N38/chess-cv-chessvision --concat-splits --output-dir evals/pieces/chessvision
+	@echo "$(YELLOW)=================================== ARROWS =====================================$(RESET)"
+	@echo "$(YELLOW)Evaluating arrow model on test data...$(RESET)"
+	chess-cv test arrows --output-dir evals/arrows/test
