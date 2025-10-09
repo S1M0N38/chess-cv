@@ -57,6 +57,23 @@ model-index:
             value: 0.8347
             name: F1 Score (Macro)
             verified: false
+  - name: chess-cv-arrows
+    results:
+      - task:
+          type: image-classification
+          name: Image Classification
+        dataset:
+          name: Chess CV Arrows Test Dataset
+          type: chess-cv-arrows-test
+        metrics:
+          - type: accuracy
+            value: 0.9997
+            name: Accuracy
+            verified: false
+          - type: f1
+            value: 0.9997
+            name: F1 Score (Macro)
+            verified: false
 pipeline_tag: image-classification
 ---
 
@@ -129,49 +146,28 @@ The pieces model classifies chess square images into 13 classes: 6 white pieces 
 
 ### ↗ Arrows Model (`arrows.safetensors`)
 
-*Training ...*
+**Overview:**
 
-<!---->
+The arrows model classifies chess square images into 49 classes representing different arrow overlay patterns: 20 arrow heads, 12 arrow tails, 8 middle segments (for straight and diagonal arrows), 4 corner pieces (for knight-move arrows), and empty squares (xx). This model enables detection and reconstruction of arrow annotations commonly used in chess analysis interfaces. The NSEW naming convention (North/South/East/West) indicates arrow orientation and direction.
 
-<!-- **Overview:** -->
+**Training:**
 
-<!---->
+- **Architecture**: SimpleCNN (156k parameters, same as pieces model)
+- **Input**: 32×32px RGB square images
+- **Data**: ~4.5M synthetic images from 55 board styles × arrow overlays (~3.14M train, ~672K val, ~672K test)
+- **Augmentation**: Conservative augmentation with highlight overlays (25%), random crops, and minimal color jitter/noise. No horizontal flips to preserve arrow directionality
+- **Optimizer**: AdamW (lr=0.0005, weight_decay=0.00005)
+- **Training**: 20 epochs, batch size 128
 
-<!-- The arrows model classifies chess square images into 49 classes representing different arrow overlay patterns: 20 arrow heads (N, NE, E, SE, S, SW, W, NW, and intermediate directions), 12 arrow tails, 8 middle segments, 4 corner pieces, and empty squares (xx). This model enables detection and reconstruction of arrow annotations commonly used in chess analysis interfaces. -->
+**Performance:**
 
-<!---->
+| Dataset               | Accuracy | F1-Score (Macro) |
+| --------------------- | -------- | ---------------- |
+| Test Data (synthetic) | 99.97%   | 99.97%           |
 
-<!-- **Training:** -->
+The arrows model is optimized for detecting directional annotations while maintaining spatial consistency across the board.
 
-<!---->
-
-<!-- - **Architecture**: SimpleCNN (156k parameters, same as pieces model) -->
-
-<!-- - **Input**: 32×32px RGB square images -->
-
-<!-- - **Data**: ~93,000 synthetic images from 55 board styles × arrow overlays -->
-
-<!-- - **Augmentation**: Conservative augmentation with highlight overlays (25%), random crops, and minimal color jitter/noise. No horizontal flips or rotation to preserve arrow directionality -->
-
-<!-- - **Optimizer**: AdamW (lr=0.0003, weight_decay=0.0003) -->
-
-<!-- - **Training**: 200 epochs, batch size 64 -->
-
-<!---->
-
-<!-- **Performance:** -->
-
-<!---->
-
-<!-- | Dataset               | Accuracy | F1-Score (Macro) | -->
-
-<!-- | --------------------- | -------- | ---------------- | -->
-
-<!-- | Test Data (synthetic) | ~99%     | ~99%             | -->
-
-<!---->
-
-<!-- The arrows model is optimized for detecting directional annotations while maintaining spatial consistency across the board. -->
+**Limitation:** Classification accuracy degrades when multiple arrow components overlap in a single square.
 
 ## Training Your Own Model
 
