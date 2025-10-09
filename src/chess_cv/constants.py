@@ -100,7 +100,6 @@ AUGMENTATION_CONFIGS = {
 IMAGE_PATTERN = "**/*.png"
 
 # Checkpoint filenames
-BEST_MODEL_FILENAME = "best_model.safetensors"
 OPTIMIZER_FILENAME = "optimizer.safetensors"
 
 

@@ -56,9 +56,7 @@ def upload_to_hub(
 
     # Validate required files exist
     checkpoint_dir = Path(checkpoint_dir)
-    from chess_cv.constants import BEST_MODEL_FILENAME
-
-    model_file = checkpoint_dir / BEST_MODEL_FILENAME
+    model_file = checkpoint_dir / get_model_filename(model_id)
 
     if not model_file.exists():
         msg = f"Model file not found: {model_file}"

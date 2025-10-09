@@ -105,7 +105,7 @@ The evaluation JSON files have this structure:
     "wR": 1.0,
     "xx": 1.0
   },
-  "checkpoint_path": "checkpoints/pieces/best_model.safetensors",
+  "checkpoint_path": "checkpoints/pieces/pieces.safetensors",
   "test_dir": "...",
   "num_test_samples": 14014
 }
