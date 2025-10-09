@@ -1,19 +1,19 @@
 # Architecture
 
-Detailed information about the Chess CV model architecture, training strategy, and performance characteristics.
-
-## Model Architecture
-
-### Overview
+Detailed information about the Chess CV model architectures, training strategies, and performance characteristics for both the pieces and arrows models.
 
 <figure markdown>
   ![Model Architecture](assets/model.svg)
   <figcaption>CNN architecture for chess piece classification</figcaption>
 </figure>
 
+## Pieces Model
+
+### Model Architecture
+
 Chess CV uses a lightweight Convolutional Neural Network (CNN) designed for efficient inference while maintaining high accuracy on 32×32 pixel chess square images.
 
-### Network Design
+#### Network Design
 
 ```
 Input: 32×32×3 RGB image
@@ -46,7 +46,7 @@ Fully Connected 2:
 Softmax → 13-class probabilities
 ```
 
-### Model Statistics
+#### Model Statistics
 
 - **Total Parameters**: 156,077
 - **Trainable Parameters**: 156,077
@@ -54,7 +54,7 @@ Softmax → 13-class probabilities
 - **Input Size**: 32×32×3 (RGB)
 - **Output Classes**: 13
 
-### Class Labels
+#### Class Labels
 
 The model classifies chess squares into 13 categories:
 
@@ -80,9 +80,9 @@ The model classifies chess squares into 13 categories:
 
 - `xx` – Empty square
 
-## Performance Characteristics
+### Performance Characteristics
 
-### Expected Results
+#### Expected Results
 
 With the default configuration:
 
@@ -91,38 +91,7 @@ With the default configuration:
 - **Training Time**: ~90 minutes (varies by hardware)
 - **Inference Speed**: 0.05 ms per image (batch size 8192, varying by hardware)
 
-### Inference Benchmarks
-
-Inference performance on **Apple M4** (MacBook Air, 2025):
-
-**Hardware Specifications:**
-
-- **Chip**: Apple M4
-- **CPU**: 10 cores (4 performance + 6 efficiency)
-- **GPU**: 10 cores with Metal 4 support
-- **Memory**: 16 GB unified memory
-- **macOS**: Version 26.0.1
-
-**Benchmark Results:**
-
-| Batch Size | Images/sec | ms/batch | ms/image |
-| ---------- | ---------- | -------- | -------- |
-| 1          | TBD        | TBD      | TBD      |
-| 64         | TBD        | TBD      | TBD      |
-| 512        | TBD        | TBD      | TBD      |
-| 1024       | TBD        | TBD      | TBD      |
-
-!!! tip "Running Benchmarks"
-
-    To benchmark inference speed on your machine, run:
-
-    ```bash
-    chess-cv test pieces
-    ```
-
-    The benchmark results will be included in the test summary at `outputs/pieces/test_summary.json`.
-
-### Per-Class Performance
+#### Per-Class Performance
 
 Actual accuracy by piece type (Test Dataset):
 
@@ -136,11 +105,11 @@ Actual accuracy by piece type (Test Dataset):
 | bR    | 100.00%  | wR    | 100.00%  |
 | xx    | 99.91%   |       |          |
 
-### Evaluation on External Datasets
+#### Evaluation on External Datasets
 
 The model has been evaluated on external datasets to assess generalization:
 
-#### OpenBoard
+##### OpenBoard
 
 - **Dataset**: [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard)
 - **Number of samples**: 6,016
@@ -159,7 +128,7 @@ Per-class performance on OpenBoard:
 | bR    | 99.32%   | wR    | 98.68%   |
 | xx    | 99.24%   |       |          |
 
-#### ChessVision
+##### ChessVision
 
 - **Dataset**: [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision)
 - **Number of samples**: 3,186
@@ -186,9 +155,9 @@ Per-class performance on ChessVision:
 
     The lower performance on OpenBoard (99.30% accuracy, 98.26% F1) and ChessVision (86.38% accuracy, 83.47% F1) compared to the test set (99.94% accuracy, 99.94% F1) indicates some domain gap between the synthetic training data and these external datasets. ChessVision shows significantly lower performance, particularly on specific piece types like black kings (84.43%) and pawns (80-84%).
 
-## Dataset Characteristics
+### Dataset Characteristics
 
-### Synthetic Data Generation
+#### Synthetic Data Generation
 
 The training data is synthetically generated:
 
@@ -214,7 +183,7 @@ The training data is synthetically generated:
 - **Validation Set**: ~13,500 (15%)
 - **Test Set**: ~13,500 (15%)
 
-### Class Balance
+#### Class Balance
 
 The dataset is perfectly balanced:
 
@@ -222,11 +191,162 @@ The dataset is perfectly balanced:
 - Each board-piece combination contributes equally
 - Train/val/test splits maintain class balance
 
-### Diversity
+---
 
-The synthetic approach provides diversity:
+## Arrows Model
 
-- **Visual Styles**: 55 different board appearances
-- **Piece Designs**: 64 different piece set styles
-- **Square Colors**: Both light and dark squares
-- **Augmentation**: Geometric and color transforms
+### Model Architecture
+
+#### Overview
+
+The arrows model uses the same SimpleCNN architecture as the pieces model, but is trained to classify arrow overlay components instead of chess pieces. This enables detection and reconstruction of arrow annotations commonly used in chess analysis interfaces.
+
+#### Network Design
+
+The network architecture is identical to the pieces model (see [Pieces Model Architecture](#network-design) above), with the only difference being the output layer dimension.
+
+```
+[Same architecture as pieces model]
+
+Fully Connected 2:
+└── Linear(128 → 49) → Output logits
+
+Softmax → 49-class probabilities
+```
+
+#### Model Statistics
+
+- **Total Parameters**: 156,077 (same as pieces model)
+- **Trainable Parameters**: 156,077
+- **Model Size**: ~645 KB (safetensors format)
+- **Input Size**: 32×32×3 (RGB)
+- **Output Classes**: 49
+
+#### Class Labels
+
+The model classifies chess squares into 49 categories representing arrow components:
+
+**Arrow Heads (20):**
+
+Directional arrow tips in 8 cardinal/ordinal directions plus intermediate angles:
+
+- `head-N`, `head-NNE`, `head-NE`, `head-ENE`, `head-E`, `head-ESE`, `head-SE`, `head-SSE`
+- `head-S`, `head-SSW`, `head-SW`, `head-WSW`, `head-W`, `head-WNW`, `head-NW`, `head-NNW`
+
+**Arrow Tails (12):**
+
+Directional arrow tails in 8 cardinal/ordinal directions plus intermediate angles:
+
+- `tail-N`, `tail-NNE`, `tail-NE`, `tail-ENE`, `tail-E`, `tail-ESE`, `tail-SE`, `tail-SSE`
+- `tail-S`, `tail-SSW`, `tail-SW`, `tail-W`
+
+**Middle Segments (8):**
+
+Arrow shaft segments for straight and diagonal lines:
+
+- `middle-N-S`, `middle-E-W`, `middle-NE-SW`, `middle-SE-NW`
+- `middle-N-ENE`, `middle-E-SSE`, `middle-S-WSW`, `middle-W-NNW`
+- `middle-N-WNW`, `middle-E-NNE`, `middle-S-ESE`, `middle-W-SSW`
+
+**Corners (4):**
+
+Corner pieces for knight-move arrows (L-shaped patterns):
+
+- `corner-N-E`, `corner-E-S`, `corner-S-W`, `corner-W-N`
+
+**Empty (1):**
+
+- `xx` – Empty square (no arrow)
+
+**Naming Convention:** NSEW refers to compass directions (North/South/East/West), indicating arrow orientation on the board from white's perspective.
+
+### Performance Characteristics
+
+#### Expected Results
+
+With the default configuration:
+
+- **Test Accuracy**: ~99.97%
+- **F1 Score (Macro)**: ~99.97%
+- **Training Time**: ~9 minutes for 20 epochs (varies by hardware)
+- **Inference Speed**: ~0.019 ms per image (batch size 512, varies by hardware)
+
+#### Per-Class Performance
+
+The arrows model achieves near-perfect accuracy across all 49 classes on the synthetic test dataset:
+
+**Summary Statistics:**
+
+- **Highest Accuracy**: 100.00% (13 classes including corner-E-S, head-ESE, middle-E-SSE, etc.)
+- **Lowest Accuracy**: 99.79% (tail-S)
+- **Mean Accuracy**: 99.97%
+- **Classes > 99.9%**: 44 out of 49
+
+**Performance by Component Type:**
+
+| Component Type  | Classes | Avg Accuracy | Range         |
+| --------------- | ------- | ------------ | ------------- |
+| Arrow Heads     | 20      | 99.98%       | 99.96% - 100% |
+| Arrow Tails     | 12      | 99.95%       | 99.79% - 100% |
+| Middle Segments | 12      | 99.98%       | 99.96% - 100% |
+| Corners         | 4       | 99.97%       | 99.85% - 100% |
+| Empty Square    | 1       | 99.82%       | -             |
+
+!!! note "No External Dataset Evaluation"
+
+    Unlike the pieces model, the arrows model has only been evaluated on synthetic test data. No external datasets with annotated arrow components are currently available for out-of-distribution testing.
+
+#### Training Configuration
+
+The arrows model uses different hyperparameters than the pieces model, optimized for the 49-class arrow classification task:
+
+- **Epochs**: 20 (vs 200 for pieces - converges much faster)
+- **Batch Size**: 128 (vs 64 for pieces - larger batches for more stable training)
+- **Learning Rate**: 0.0005 (vs 0.0003 for pieces)
+- **Weight Decay**: 0.00005 (vs 0.0003 for pieces - less regularization needed)
+- **Optimizer**: AdamW
+- **Early Stopping**: Disabled
+
+### Dataset Characteristics
+
+#### Synthetic Data Generation
+
+The arrows training data is synthetically generated using the same board styles as the pieces model:
+
+**Source Materials:**
+
+- 55 board styles (256×256px)
+- Arrow overlay images organized by component type
+- Multiple visual styles from chess.com and lichess
+
+**Generation Process:**
+
+1. Render arrow components onto board backgrounds
+2. Extract 32×32 squares at arrow locations
+3. Extract empty squares from light and dark squares
+4. Split combinations across train/val/test sets
+
+**Data Statistics:**
+
+- **Total Images**: ~4.5 million
+- **Train Set**: ~3,139,633 (70%)
+- **Validation Set**: ~672,253 (15%)
+- **Test Set**: ~672,594 (15%)
+
+The significantly larger dataset compared to pieces (~4.5M vs ~91K) is due to the combination of 55 boards × 49 arrow component types, with multiple arrow variants per component type.
+
+#### Class Balance
+
+The dataset maintains balanced class distribution:
+
+- Each arrow component class has equal representation
+- Each board-arrow combination contributes equally
+- Train/val/test splits maintain class balance
+
+#### Limitations
+
+!!! warning "Single Arrow Component Per Square"
+
+    The model is trained on images containing **at most one arrow component per square**. Classification accuracy degrades significantly when multiple arrow parts overlap in a single square, which can occur with densely annotated boards or crossing arrows.
+
+    **Example failure case**: If a square contains both an arrow head and a perpendicular arrow shaft, the model may only detect one component or produce incorrect predictions.
