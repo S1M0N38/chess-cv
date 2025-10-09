@@ -36,9 +36,9 @@ By rendering pieces onto different board backgrounds and extracting individual s
 
 | Dataset                                                                                         | Accuracy | F1-Score (Macro) |
 | ----------------------------------------------------------------------------------------------- | :------: | :--------------: |
-| Test Data                                                                                       |  99.73%  |      99.73%      |
-| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \*     |    -     |      97.55%      |
-| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) \* |    -     |      83.55%      |
+| Test Data                                                                                       |  99.94%  |      99.94%      |
+| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \*     |    -     |      98.26%      |
+| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) \* |    -     |      83.47%      |
 
 </div>
 
