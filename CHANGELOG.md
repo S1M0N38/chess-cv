@@ -1,5 +1,62 @@
 # Changelog
 
+## [0.3.0](https://github.com/S1M0N38/chess-cv/compare/v0.2.1...v0.3.0) (2025-10-09)
+
+
+### Features
+
+* add arrows and highlights in data ([3c31bb5](https://github.com/S1M0N38/chess-cv/commit/3c31bb575c90e84c4e1d838d2d4d03fa6b1d5fc6))
+* add arrows model to eval target ([1273f7f](https://github.com/S1M0N38/chess-cv/commit/1273f7f7b6f390a082602ce46d07a7b74ab99ca8))
+* add augmentation configurations ([3471120](https://github.com/S1M0N38/chess-cv/commit/347112033d4510c19f075f760fb5ca20c189721c))
+* add hashed subdirs to preprocessing ([6e505cd](https://github.com/S1M0N38/chess-cv/commit/6e505cd409c337386d619cfe6b9417916d7390a1))
+* add inference speed benchmarking ([d002651](https://github.com/S1M0N38/chess-cv/commit/d002651976db3ca12a7bb17bc94df17ad6f94209))
+* add logging mid-epoch ([019de5e](https://github.com/S1M0N38/chess-cv/commit/019de5e777388e89eb0f496bc92ea35bc3abae3e))
+* add multi-split dataset concatenation support ([85a2093](https://github.com/S1M0N38/chess-cv/commit/85a209333a4118969c2914880d7cb2d9de4c21b7))
+* add preprocessing for arrows model ([3944b7d](https://github.com/S1M0N38/chess-cv/commit/3944b7dfe49c8ecdea485a1de27b94f1bc78a60a))
+* add proper CLI for chess-cv ([b6489c2](https://github.com/S1M0N38/chess-cv/commit/b6489c2d069b4d24df10ed7bb9ee6508c6bb0074))
+* add run_cap to sweep.yaml ([e48deec](https://github.com/S1M0N38/chess-cv/commit/e48deeca1ebd3d4e2ef7e6815e8246b08eff2ca7))
+* add val logging mid-epoch ([c3dfec5](https://github.com/S1M0N38/chess-cv/commit/c3dfec5d0dd3c31c32d73933f6983ef56c19a3f9))
+* add W&B hyperparameter sweep functionality ([70e64f8](https://github.com/S1M0N38/chess-cv/commit/70e64f837c8756644fb82c663eb6a89cea3d8366))
+* adjust augmentations for arrows model ([497a6d7](https://github.com/S1M0N38/chess-cv/commit/497a6d7bc131f5ac010003f99faf4d689ae05560))
+* enhance test logging with W&B tables and artifacts ([613c094](https://github.com/S1M0N38/chess-cv/commit/613c0943a01e05f9f3bd1fab04da6ff92c1de6c3))
+* enhance W&B logging capabilities ([49e0814](https://github.com/S1M0N38/chess-cv/commit/49e081475777f6d9602772a25e3f1bfa60622938))
+* update metrics for pieces model ([285fbbd](https://github.com/S1M0N38/chess-cv/commit/285fbbd55e23e8baefb4213633012935cd94769f))
+* update the data augmentations to include arrow and highlight overlays ([1bfcb9a](https://github.com/S1M0N38/chess-cv/commit/1bfcb9a6eabcaf9fd4c2385de81a7fd23ea70d8d))
+
+
+### Bug Fixes
+
+* add defensive null check for wandb_logger ([a03c1fe](https://github.com/S1M0N38/chess-cv/commit/a03c1fe7ae99c47e62ef741b16dd43d28bf3e24d))
+* add no-arrows image to preprocessing arrows ([8f069b3](https://github.com/S1M0N38/chess-cv/commit/8f069b3ce0a4bbef2ae1906e89edb660c26f7cc1))
+* add piece class to arrow image name ([c5670d8](https://github.com/S1M0N38/chess-cv/commit/c5670d8f6e0e67c76c842cc8d75d8ac34a4bd5a5))
+* correct label extraction for hashed subdirectories ([37c9bfd](https://github.com/S1M0N38/chess-cv/commit/37c9bfdef5aa761636a936a5c9658595d8c06d89))
+* limit number of misclassified images to save ([f327b20](https://github.com/S1M0N38/chess-cv/commit/f327b20532807cbbf84a55188be1af8b2e5c2894))
+* make data augmentation more robust for arrow images ([80f2425](https://github.com/S1M0N38/chess-cv/commit/80f24259e2cfeceb883952e33ef2a04a709decd8))
+* make progress bar smoother in preprocessing ([ad796b1](https://github.com/S1M0N38/chess-cv/commit/ad796b1daa90ba6663d6760bb7bf8a0c78a007c2))
+* preprocessing for arrows model ([3ae0384](https://github.com/S1M0N38/chess-cv/commit/3ae03844463d07f79918a1f8471a2505419ed1df))
+* reduce the number of epochs for arrows model ([319f7eb](https://github.com/S1M0N38/chess-cv/commit/319f7ebd88deb197ff02ccf22182e528b675b0ef))
+* remove flags from CLI to make less bloated ([78d6c3b](https://github.com/S1M0N38/chess-cv/commit/78d6c3b47f946f0a6933fcb0b43b41868952e630))
+* remove support for hashed subdirectories ([dfa2de8](https://github.com/S1M0N38/chess-cv/commit/dfa2de8e2756ae93eae1662bfcd849fd50a6dfdb))
+* udpate arrows image with proper rotation (avoid EXIF) ([c592429](https://github.com/S1M0N38/chess-cv/commit/c592429baae117f076d982436536fa6b030d09e0))
+* update batch size for arrows sweep ([bb1e707](https://github.com/S1M0N38/chess-cv/commit/bb1e707439d0f33f4312dd3081594bc16387b4bc))
+* use {model_id}.safetensors instead of best_model.safetensors ([b281111](https://github.com/S1M0N38/chess-cv/commit/b28111130faa0ed9891d88f52faa006919a56985))
+* use BEST_MODEL_FILENAME constant in upload ([9fa346b](https://github.com/S1M0N38/chess-cv/commit/9fa346bf4c908bfed4a720fd8aeecb9a37379580))
+
+
+### Documentation
+
+* add ChessVision evaluation metrics ([e008667](https://github.com/S1M0N38/chess-cv/commit/e0086678e26b4ea36ec744c75c0bba6e2868b630))
+* add inference speed to architecture ([82179b1](https://github.com/S1M0N38/chess-cv/commit/82179b138cffa2abce292dfbe7c2260cc5d07bf7))
+* add llms.txt badge ([fa0cf92](https://github.com/S1M0N38/chess-cv/commit/fa0cf92649bd03df642ea2464cba32d865dd148e))
+* add models section with training details and performance metrics ([67c93b6](https://github.com/S1M0N38/chess-cv/commit/67c93b673643c1136619c8b7a8f5f9b8563415aa))
+* **metrics:** update evaluation results across documentation ([c0ca3d8](https://github.com/S1M0N38/chess-cv/commit/c0ca3d8d1ec010ef030f50c56faa1a8b65d95b55))
+* update architecture with arrows model ([e230df4](https://github.com/S1M0N38/chess-cv/commit/e230df4ed9f4cf497c6c1fb1038faec2a69bc1a2))
+* update checkpoint references to model-specific naming ([fb410fc](https://github.com/S1M0N38/chess-cv/commit/fb410fc9890604b68b00c92c01dd70e65c4d75c8))
+* update model performance metrics ([f3e5323](https://github.com/S1M0N38/chess-cv/commit/f3e5323f7bfe4378dd37139665482c96d166e476))
+* update readme with new arrows model ([1590941](https://github.com/S1M0N38/chess-cv/commit/1590941c553b1c5faa5ab343aadad5903d2edd68))
+* update README_hf.md citation ([0e7cb2d](https://github.com/S1M0N38/chess-cv/commit/0e7cb2d3e6463cd67d69c818ef10ad4dd9dd0205))
+* update README_hf.md with new arrows model ([a44efa7](https://github.com/S1M0N38/chess-cv/commit/a44efa774fe8683d06078ff08fa0e1544ab7fad9))
+
 ## [0.2.1](https://github.com/S1M0N38/chess-cv/compare/v0.2.0...v0.2.1) (2025-10-06)
 
 
