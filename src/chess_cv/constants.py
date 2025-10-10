@@ -80,7 +80,7 @@ AUGMENTATION_CONFIGS = {
         "highlight_probability": 0.25,
         "horizontal_flip": True,
         "horizontal_flip_prob": 0.5,
-        "brightness": 0.2,
+        "brightness": 0.15,
         "contrast": 0.2,
         "saturation": 0.2,
         "hue": 0.2,
