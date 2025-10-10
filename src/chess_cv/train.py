@@ -136,7 +136,7 @@ def train_epoch(
         # Mid-epoch validation
         if global_step % validate_every_n_steps == 0:
             # Run validation on full validation set
-            val_loss, val_acc = validate_epoch(model, val_loader, leave=True)
+            val_loss, val_acc = validate_epoch(model, val_loader, leave=False)
 
             # Log to wandb
             if wandb_logger is not None and wandb_logger.enabled:
