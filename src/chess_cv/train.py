@@ -189,10 +189,6 @@ def train_epoch(
                 mx.save_safetensors(
                     str(optimizer_path), dict(tree_flatten(optimizer.state))
                 )
-
-                print(
-                    f"\n[Step {global_step}] New best validation accuracy: {val_acc:.4f} - Model saved"
-                )
             else:
                 epochs_without_improvement += 1
 
