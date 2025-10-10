@@ -100,8 +100,8 @@ class RandomArrowOverlay:
         # Randomly select an arrow (no rotation needed, all rotations pre-generated)
         arrow = random.choice(self.arrow_images).copy()
 
-        # Composite arrow onto the image
-        img.paste(arrow, (0, 0), arrow)
+        # Composite arrow onto the image using alpha composition
+        img = Image.alpha_composite(img, arrow)
 
         # Convert back to RGB
         return img.convert("RGB")
@@ -173,8 +173,8 @@ class RandomHighlightOverlay:
         # Randomly select a highlight (no rotation needed, all rotations pre-generated)
         highlight = random.choice(self.highlight_images).copy()
 
-        # Composite highlight onto the image
-        img.paste(highlight, (0, 0), highlight)
+        # Composite highlight onto the image using alpha composition
+        img = Image.alpha_composite(img, highlight)
 
         # Convert back to RGB
         return img.convert("RGB")
