@@ -7,9 +7,10 @@ __all__ = ["train"]
 import mlx.core as mx
 import mlx.nn as nn
 import mlx.optimizers as optim
+import torch
 from mlx.utils import tree_flatten
 from torch.utils.data import DataLoader
-from torchvision import transforms
+from torchvision.transforms import v2
 from tqdm import tqdm
 
 from .constants import (
@@ -31,7 +32,6 @@ from .constants import (
     get_output_dir,
 )
 from .data import (
-    AddGaussianNoise,
     ChessPiecesDataset,
     RandomArrowOverlay,
     RandomHighlightOverlay,
@@ -289,6 +289,11 @@ def train(
         get_val_dir,
     )
 
+    # Only support pieces and arrows models
+    if model_id not in ["pieces", "arrows"]:
+        msg = f"Model '{model_id}' is not supported. Only 'pieces' and 'arrows' models are supported."
+        raise ValueError(msg)
+
     # Get model configuration
     model_config = get_model_config(model_id)
     num_classes = model_config["num_classes"]
@@ -346,64 +351,119 @@ def train(
 
     train_transform_list = []
 
-    # Arrow overlay
-    if aug_config["arrow_probability"] > 0:
+    if model_id == "pieces":
+        # Step 1: Expand canvas for rotation space
         train_transform_list.append(
-            RandomArrowOverlay(
-                arrow_dir=DEFAULT_ARROW_DIR,
-                probability=aug_config["arrow_probability"],
+            v2.Pad(
+                padding=aug_config["padding"], padding_mode=aug_config["padding_mode"]
             )
         )
 
-    # Highlight overlay
-    if aug_config["highlight_probability"] > 0:
+        # Step 2: Rotate with black fill (will be cropped out)
         train_transform_list.append(
-            RandomHighlightOverlay(
-                highlight_dir=DEFAULT_HIGHLIGHT_DIR,
-                probability=aug_config["highlight_probability"],
+            v2.RandomRotation(degrees=aug_config["rotation_degrees"], fill=0)
+        )
+
+        # Step 3: Remove black corners from rotation
+        train_transform_list.append(v2.CenterCrop(size=aug_config["center_crop_size"]))
+
+        # Step 4: Random crop + scale variation + resize back to 32×32
+        train_transform_list.append(
+            v2.RandomResizedCrop(
+                size=aug_config["final_size"],
+                scale=aug_config["resized_crop_scale"],
+                ratio=aug_config["resized_crop_ratio"],
+                antialias=True,
             )
         )
 
-    # Random resized crop
-    train_transform_list.append(
-        transforms.RandomResizedCrop(
-            size=(image_size, image_size),
-            scale=(aug_config["scale_min"], aug_config["scale_max"]),
-            antialias=True,
-        )
-    )
+        # Step 5: Arrow overlay (after geometric transforms for crisp graphics)
+        if aug_config["arrow_probability"] > 0:
+            train_transform_list.append(
+                RandomArrowOverlay(
+                    arrow_dir=DEFAULT_ARROW_DIR,
+                    probability=aug_config["arrow_probability"],
+                )
+            )
 
-    # Horizontal flip
-    if aug_config["horizontal_flip"]:
-        train_transform_list.append(transforms.RandomHorizontalFlip())
+        # Step 6: Highlight overlay
+        if aug_config["highlight_probability"] > 0:
+            train_transform_list.append(
+                RandomHighlightOverlay(
+                    highlight_dir=DEFAULT_HIGHLIGHT_DIR,
+                    probability=aug_config["highlight_probability"],
+                )
+            )
 
-    # Color jitter
-    train_transform_list.append(
-        transforms.ColorJitter(
-            brightness=aug_config["brightness"],
-            contrast=aug_config["contrast"],
-            saturation=aug_config["saturation"],
-        )
-    )
+        # Step 7: Horizontal flip
+        if aug_config["horizontal_flip"]:
+            train_transform_list.append(
+                v2.RandomHorizontalFlip(p=aug_config["horizontal_flip_prob"])
+            )
 
-    # Rotation
-    if aug_config["rotation_degrees"] > 0:
+        # Step 8: Color jitter
         train_transform_list.append(
-            transforms.RandomRotation(degrees=aug_config["rotation_degrees"])
+            v2.ColorJitter(
+                brightness=aug_config["brightness"],
+                contrast=aug_config["contrast"],
+                saturation=aug_config["saturation"],
+                hue=aug_config["hue"],
+            )
         )
 
-    # Gaussian noise
-    train_transform_list.append(
-        AddGaussianNoise(
-            mean=aug_config["noise_mean"],
-            std=aug_config["noise_std"],
+        # Step 9: Convert to tensor, apply Gaussian noise
+        # GaussianNoise requires tensor input, not PIL
+        train_transform_list.append(v2.ToImage())
+        train_transform_list.append(v2.ToDtype(dtype=torch.float32, scale=True))
+        train_transform_list.append(
+            v2.GaussianNoise(
+                mean=aug_config["noise_mean"],
+                sigma=aug_config["noise_sigma"],
+            )
         )
-    )
+        train_transform_list.append(v2.ToPILImage())
 
-    train_transforms = transforms.Compose(train_transform_list)
-    val_transforms = transforms.Compose(
+    elif model_id == "arrows":
+        # Step 1: Highlight overlay (applied early, before geometric transforms)
+        if aug_config["highlight_probability"] > 0:
+            train_transform_list.append(
+                RandomHighlightOverlay(
+                    highlight_dir=DEFAULT_HIGHLIGHT_DIR,
+                    probability=aug_config["highlight_probability"],
+                )
+            )
+
+        # Step 2: Color jitter
+        train_transform_list.append(
+            v2.ColorJitter(
+                brightness=aug_config["brightness"],
+                contrast=aug_config["contrast"],
+                saturation=aug_config["saturation"],
+                hue=aug_config["hue"],
+            )
+        )
+
+        # Step 3: Small rotation (±2 degrees)
+        train_transform_list.append(
+            v2.RandomRotation(degrees=aug_config["rotation_degrees"])
+        )
+
+        # Step 4: Convert to tensor, apply Gaussian noise
+        # GaussianNoise requires tensor input, not PIL
+        train_transform_list.append(v2.ToImage())
+        train_transform_list.append(v2.ToDtype(dtype=torch.float32, scale=True))
+        train_transform_list.append(
+            v2.GaussianNoise(
+                mean=aug_config["noise_mean"],
+                sigma=aug_config["noise_sigma"],
+            )
+        )
+        train_transform_list.append(v2.ToPILImage())
+
+    train_transforms = v2.Compose(train_transform_list)
+    val_transforms = v2.Compose(
         [
-            transforms.Resize((image_size, image_size), antialias=True),
+            v2.Resize((image_size, image_size), antialias=True),
         ]
     )
 

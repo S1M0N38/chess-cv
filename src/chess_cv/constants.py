@@ -69,17 +69,23 @@ DEFAULT_HIGHLIGHT_DIR = DEFAULT_DATA_DIR / "highlights"
 # Model-specific augmentation configurations
 AUGMENTATION_CONFIGS = {
     "pieces": {
+        "padding": 8,
+        "padding_mode": "edge",
+        "rotation_degrees": 10,
+        "center_crop_size": 40,
+        "final_size": 32,
+        "resized_crop_scale": (0.8, 1.0),
+        "resized_crop_ratio": (1.0, 1.0),
         "arrow_probability": 0.80,
         "highlight_probability": 0.25,
-        "scale_min": 0.8,
-        "scale_max": 1.0,
         "horizontal_flip": True,
+        "horizontal_flip_prob": 0.5,
         "brightness": 0.2,
         "contrast": 0.2,
         "saturation": 0.2,
-        "rotation_degrees": 5,
+        "hue": 0.2,
         "noise_mean": 0.0,
-        "noise_std": 0.05,
+        "noise_sigma": 0.05,
     },
     "arrows": {
         "arrow_probability": 0.0,
@@ -90,9 +96,10 @@ AUGMENTATION_CONFIGS = {
         "brightness": 0.20,
         "contrast": 0.20,
         "saturation": 0.20,
+        "hue": 0.2,
         "rotation_degrees": 2,
         "noise_mean": 0.0,
-        "noise_std": 0.10,
+        "noise_sigma": 0.10,
     },
 }
 
