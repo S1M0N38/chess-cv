@@ -36,7 +36,7 @@ format: ## Run ruff and mdformat formatters
 	$(RUFF) check --select I --fix .
 	$(RUFF) format .
 	@echo "$(YELLOW)Running mdformat formatter...$(RESET)"
-	$(MDFORMAT) .
+	$(MDFORMAT) ./docs README.md AGENTS.md
 
 typecheck: ## Run type checker
 	@echo "$(YELLOW)Running type checker...$(RESET)"
