@@ -69,13 +69,21 @@ DEFAULT_HIGHLIGHT_DIR = DEFAULT_DATA_DIR / "highlights"
 # Model-specific augmentation configurations
 AUGMENTATION_CONFIGS = {
     "pieces": {
-        "padding": 8,
+        # Step 1: Pad to create rotation space (32 + 16*2 = 64x64)
+        "padding": 16,
         "padding_mode": "edge",
+        # Step 2: Random rotation (±10 degrees)
         "rotation_degrees": 10,
+        # Step 3: Center crop to remove black bands from rotation
+        # Formula: 64 - (ceil(tan(10°) * 64) * 2) = 64 - 24 = 40
         "center_crop_size": 40,
+        # Step 4: Random crop with zoom variation, then resize to final size
+        # Base scale: (32/40)² = 0.64 (area ratio for translation without zoom)
+        # With variation: (0.54, 0.74) adds ±16% zoom range
         "final_size": 32,
-        "resized_crop_scale": (0.8, 1.0),
-        "resized_crop_ratio": (1.0, 1.0),
+        "resized_crop_scale": (0.54, 0.74),  # (32²/40²) ± 0.1 = 0.64 ± 0.1
+        "resized_crop_ratio": (0.9, 1.1),  # (1.0, 1.0) ± 0.1 for slight stretch
+        # Step 5-9: Overlay, flip, color, and noise augmentations
         "arrow_probability": 0.80,
         "highlight_probability": 0.25,
         "horizontal_flip": True,
