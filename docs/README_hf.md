@@ -130,7 +130,7 @@ The pieces model classifies chess square images into 13 classes: 6 white pieces 
 - **Architecture**: SimpleCNN (156k parameters)
 - **Input**: 32×32px RGB square images
 - **Data**: ~93,000 synthetic images from 55 board styles × 64 piece sets
-- **Augmentation**: Aggressive augmentation with arrow overlays (80%), highlight overlays (25%), random crops, horizontal flips, color jitter, rotation (±5°), and Gaussian noise
+- **Augmentation**: Aggressive augmentation with arrow overlays (80%), highlight overlays (25%), random crops, horizontal flips, color jitter, rotation (±10°), and Gaussian noise
 - **Optimizer**: AdamW (lr=0.0003, weight_decay=0.0003)
 - **Training**: 2000 epochs, batch size 64
 
