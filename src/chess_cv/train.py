@@ -16,13 +16,16 @@ from tqdm import tqdm
 from .constants import (
     AUGMENTATION_CONFIGS,
     DEFAULT_ARROW_DIR,
+    DEFAULT_BASE_LR,
     DEFAULT_BATCH_SIZE,
     DEFAULT_HIGHLIGHT_DIR,
     DEFAULT_IMAGE_SIZE,
     DEFAULT_LEARNING_RATE,
+    DEFAULT_MIN_LR,
     DEFAULT_NUM_EPOCHS,
     DEFAULT_NUM_WORKERS,
     DEFAULT_PATIENCE,
+    DEFAULT_WARMUP_RATIO,
     DEFAULT_WEIGHT_DECAY,
     LOG_TRAIN_EVERY_N_STEPS,
     LOG_VALIDATE_EVERY_N_STEPS,
@@ -123,15 +126,16 @@ def train_epoch(
             and global_step % log_every_n_steps == 0
         ):
             batch_acc = correct.item() / batch_size
-            wandb_logger.log(
-                {
-                    "global_step": global_step,
-                    "loss/train_step": loss.item(),
-                    "accuracy/train_step": batch_acc,
-                    "epoch": epoch,
-                },
-                step=global_step,
-            )
+            log_dict = {
+                "global_step": global_step,
+                "loss/train_step": loss.item(),
+                "accuracy/train_step": batch_acc,
+                "epoch": epoch,
+            }
+            # Add learning rate if using scheduler
+            if hasattr(optimizer.learning_rate, "item"):
+                log_dict["learning_rate"] = optimizer.learning_rate.item()
+            wandb_logger.log(log_dict, step=global_step)
 
         # Mid-epoch validation
         if global_step % validate_every_n_steps == 0:
@@ -261,6 +265,10 @@ def train(
     image_size: int = DEFAULT_IMAGE_SIZE,
     num_workers: int = DEFAULT_NUM_WORKERS,
     use_wandb: bool = False,
+    use_scheduler: bool = True,
+    base_lr: float = DEFAULT_BASE_LR,
+    min_lr: float = DEFAULT_MIN_LR,
+    warmup_ratio: float = DEFAULT_WARMUP_RATIO,
 ) -> None:
     """Train the model.
 
@@ -270,13 +278,17 @@ def train(
         val_dir: Validation data directory
         checkpoint_dir: Checkpoint directory for saving models
         batch_size: Batch size for training
-        learning_rate: Learning rate for optimizer
+        learning_rate: Learning rate for optimizer (used only if use_scheduler=False)
         weight_decay: Weight decay for optimizer
         num_epochs: Maximum number of epochs
         patience: Early stopping patience
         image_size: Image size for resizing
         num_workers: Number of data loading workers
         use_wandb: Enable Weights & Biases logging
+        use_scheduler: Use learning rate scheduler (warmup + cosine decay)
+        base_lr: Peak learning rate after warmup (used if use_scheduler=True)
+        min_lr: Minimum learning rate at end of decay (used if use_scheduler=True)
+        warmup_ratio: Fraction of training for warmup phase (used if use_scheduler=True)
     """
     from .constants import (
         get_checkpoint_dir,
@@ -320,7 +332,17 @@ def train(
             "batch_size": batch_size,
             "learning_rate": learning_rate,
             "weight_decay": weight_decay,
+            "use_scheduler": use_scheduler,
         }
+        # Add scheduler-specific config if enabled
+        if use_scheduler:
+            config.update(
+                {
+                    "base_lr": base_lr,
+                    "min_lr": min_lr,
+                    "warmup_ratio": warmup_ratio,
+                }
+            )
 
         wandb_logger.init(
             project=f"chess-cv-{model_id}",
@@ -504,10 +526,44 @@ def train(
     num_params = sum(v.size for _, v in param_list)  # type: ignore[attr-defined]
     print(f"\nTotal parameters: {num_params:,}")
 
-    optimizer = optim.AdamW(learning_rate=learning_rate, weight_decay=weight_decay)
-    print("\nOptimizer: AdamW")
-    print(f"  Learning rate: {learning_rate}")
-    print(f"  Weight decay:  {weight_decay}")
+    # Create optimizer with optional learning rate scheduler
+    print("\n" + "=" * 60)
+    print("OPTIMIZER")
+    print("=" * 60)
+
+    if use_scheduler:
+        # Calculate total training steps
+        total_steps = num_epochs * len(train_loader)
+        warmup_steps = int(warmup_ratio * total_steps)
+        decay_steps = total_steps - warmup_steps
+
+        # Create warmup schedule: 0 → base_lr
+        warmup_sched = optim.linear_schedule(0.0, base_lr, warmup_steps)
+
+        # Create cosine decay schedule: base_lr → min_lr
+        decay_sched = optim.cosine_decay(
+            init=base_lr, decay_steps=decay_steps, end=min_lr
+        )
+
+        # Join schedules: warmup then decay
+        lr_schedule = optim.join_schedules(
+            schedules=[warmup_sched, decay_sched], boundaries=[warmup_steps]
+        )
+
+        optimizer = optim.AdamW(learning_rate=lr_schedule, weight_decay=weight_decay)
+        print("Optimizer: AdamW with LR scheduler")
+        print(f"  Base LR:       {base_lr}")
+        print(f"  Min LR:        {min_lr}")
+        print(
+            f"  Warmup steps:  {warmup_steps} ({warmup_ratio * 100:.1f}% of {total_steps} total steps)"
+        )
+        print(f"  Decay steps:   {decay_steps}")
+        print(f"  Weight decay:  {weight_decay}")
+    else:
+        optimizer = optim.AdamW(learning_rate=learning_rate, weight_decay=weight_decay)
+        print("Optimizer: AdamW (no scheduler)")
+        print(f"  Learning rate: {learning_rate}")
+        print(f"  Weight decay:  {weight_decay}")
 
     loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
 
@@ -562,15 +618,17 @@ def train(
         if use_wandb:
             # Log epoch-level metrics
             # Don't pass step parameter - let define_metric handle x-axis assignment
-            wandb_logger.log(
-                {
-                    "epoch": epoch + 1,
-                    "loss/train": train_loss,
-                    "loss/val": val_loss,
-                    "accuracy/train": train_acc,
-                    "accuracy/val": val_acc,
-                }
-            )
+            epoch_log_dict = {
+                "epoch": epoch + 1,
+                "loss/train": train_loss,
+                "loss/val": val_loss,
+                "accuracy/train": train_acc,
+                "accuracy/val": val_acc,
+            }
+            # Add learning rate if using scheduler
+            if hasattr(optimizer.learning_rate, "item"):
+                epoch_log_dict["learning_rate"] = optimizer.learning_rate.item()
+            wandb_logger.log(epoch_log_dict)
         else:
             visualizer.update(epoch + 1, train_loss, train_acc, val_loss, val_acc)
 

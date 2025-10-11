@@ -44,10 +44,15 @@ DEFAULT_DROPOUT = 0.5
 
 # Training hyperparameters
 DEFAULT_BATCH_SIZE = 64
-DEFAULT_LEARNING_RATE = 0.0003
-DEFAULT_WEIGHT_DECAY = 0.0003
+DEFAULT_LEARNING_RATE = 0.0003  # Used only when scheduler is disabled
+DEFAULT_WEIGHT_DECAY = 0.001
 DEFAULT_NUM_EPOCHS = 200
 DEFAULT_PATIENCE = 999999  # Effectively disabled
+
+# Learning rate scheduler parameters
+DEFAULT_BASE_LR = 0.001  # Peak LR after warmup
+DEFAULT_MIN_LR = 1e-5
+DEFAULT_WARMUP_RATIO = 0.03  # Warmup for 3% of total training steps
 
 # Data loading
 DEFAULT_NUM_WORKERS = 8
