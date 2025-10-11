@@ -43,6 +43,7 @@ plugins:
           - inference.md
           - train-and-eval.md
           - architecture.md
+          - data-augmentations.md
       full_output: llms-full.txt
       autoclean: true
 nav:
@@ -51,6 +52,7 @@ nav:
   - Model Usage: inference.md
   - Train and Evaluate: train-and-eval.md
   - Architecture: architecture.md
+  - Data Augmentation: data-augmentations.md
 markdown_extensions:
   - toc:
       toc_depth: 3
