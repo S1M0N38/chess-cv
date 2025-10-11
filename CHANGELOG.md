@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.4.0](https://github.com/S1M0N38/chess-cv/compare/v0.3.0...v0.4.0) (2025-10-11)
+
+
+### Features
+
+* add data augmentations page to mkdocs ([0647f3d](https://github.com/S1M0N38/chess-cv/commit/0647f3d7d500b1e5f92c87b28b912037ace65b4f))
+* add transparency to lichess arrows and highlights ([e070f5e](https://github.com/S1M0N38/chess-cv/commit/e070f5ed6f0ac6de421ca9513beb6de767a1808c))
+* update data augmentations parameters for model pieces ([9c9b9eb](https://github.com/S1M0N38/chess-cv/commit/9c9b9eb51c26b6a47d7022e897e5545c5989818d))
+* update data augmentations pipelines ([36eaecd](https://github.com/S1M0N38/chess-cv/commit/36eaecd8dbf4377c5c7ce1bf72a4701e39d876e2))
+* use alpha composition for overlays ([15d7402](https://github.com/S1M0N38/chess-cv/commit/15d7402cac5ceefb3059cd7652bafa4431582298))
+
+
+### Bug Fixes
+
+* make validate epoch pbar leave=False ([7396c48](https://github.com/S1M0N38/chess-cv/commit/7396c485a89951f5de210204f14e15b10f616c59))
+* reduce brightness jitter in augmentations for pieces ([1fa4885](https://github.com/S1M0N38/chess-cv/commit/1fa4885b14876d33d7049bd836227703cb33fcd7))
+* remove print statement that was messing up progress bar ([645c0ac](https://github.com/S1M0N38/chess-cv/commit/645c0ac2dde9b66a52cd480fb0c3f5172ec28542))
+
+
+### Documentation
+
+* update `update-metrics.md` command ([7500def](https://github.com/S1M0N38/chess-cv/commit/7500def717947f9479d56ac28a1187e2b09cffba))
+* update data augmentations docs ([abe0caf](https://github.com/S1M0N38/chess-cv/commit/abe0caf3ce024706303dfd082c8e9fc59b5cd6b5))
+
 ## [0.3.0](https://github.com/S1M0N38/chess-cv/compare/v0.2.1...v0.3.0) (2025-10-09)
 
 
