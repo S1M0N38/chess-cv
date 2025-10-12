@@ -178,7 +178,7 @@ def generate_examples(model_id: str, image_paths: list[str], output_dir: Path):
 
         # Load original image
         img = Image.open(img_path).convert("RGB")
-        img = img.resize((image_size, image_size), Image.LANCZOS)
+        img = img.resize((image_size, image_size), Image.Resampling.LANCZOS)
 
         # Save original
         original_output = output_dir / f"{idx:02d}-original.png"

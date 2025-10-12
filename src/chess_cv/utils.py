@@ -66,6 +66,6 @@ def load_bundled_model(model_id: str) -> SimpleCNN:
     # Load bundled weights
     weight_path = get_bundled_weight_path(model_id)
     weights = mx.load(str(weight_path))
-    model.load_weights(list(weights.items()))
+    model.load_weights(list(weights.items()))  # type: ignore[attr-defined]
 
     return model
