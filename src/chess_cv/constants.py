@@ -75,49 +75,119 @@ DEFAULT_RANDOM_SEED = 42
 # Augmentation resource directories
 DEFAULT_ARROW_DIR = DEFAULT_DATA_DIR / "arrows"
 DEFAULT_HIGHLIGHT_DIR = DEFAULT_DATA_DIR / "highlights"
+DEFAULT_MOUSE_DIR = DEFAULT_DATA_DIR / "mouse"
 
 # Model-specific augmentation configurations
 AUGMENTATION_CONFIGS = {
     "pieces": {
-        # Step 1: Pad to create rotation space (32 + 16*2 = 64x64)
+        # ===========================================
+        # GEOMETRIC TRANSFORMATIONS (Steps 1-4)
+        # ===========================================
+        # Step 1: Padding - Create rotation space by expanding the canvas
+        # Original 32x32 → 64x64 (16 pixels padding on each side)
         "padding": 16,
         "padding_mode": "edge",
-        # Step 2: Random rotation (±10 degrees)
+        # Step 2: Rotation - Apply random rotation to the padded image
+        # ±10 degrees provides sufficient variation while preserving piece recognizability
         "rotation_degrees": 10,
-        # Step 3: Center crop to remove black bands from rotation
+        # Step 3: Center Crop - Remove black bands created by rotation
         # Formula: 64 - (ceil(tan(10°) * 64) * 2) = 64 - 24 = 40
+        # This ensures no black borders remain after rotation
         "center_crop_size": 40,
-        # Step 4: Random crop with zoom variation, then resize to final size
-        # Base scale: (32/40)² = 0.64 (area ratio for translation without zoom)
-        # With variation: (0.54, 0.74) adds ±16% zoom range
+        # Step 4: Random Resized Crop - Simulate different distances and positions
+        # Final resize to target model input size (32x32)
         "final_size": 32,
-        "resized_crop_scale": (0.54, 0.74),  # (32²/40²) ± 0.1 = 0.64 ± 0.1
-        "resized_crop_ratio": (0.9, 1.1),  # (1.0, 1.0) ± 0.1 for slight stretch
-        # Step 5-9: Overlay, flip, color, and noise augmentations
+        # Scale range controls zoom: (0.54, 0.74) = 0.64 ± 0.1 (±16% zoom variation)
+        # Base scale 0.64 = (32/40)² = area ratio for translation without zoom
+        "resized_crop_scale": (0.54, 0.74),
+        # Ratio range controls aspect ratio changes: (0.9, 1.1) = ±10% stretch
+        "resized_crop_ratio": (0.9, 1.1),
+        # ===========================================
+        # OVERLAY AUGMENTATIONS (Step 5)
+        # ===========================================
+        # Arrow overlay - Simulate arrow graphics on pieces
         "arrow_probability": 0.80,
+        # Highlight overlay - Simulate square highlighting effects
         "highlight_probability": 0.25,
+        # Mouse cursor overlay - Simulate cursor interaction with pieces
+        "mouse_probability": 0.90,
+        # ===========================================
+        # MOUSE CURSOR SPECIFIC PARAMETERS
+        # ===========================================
+        # Mouse cursor geometric transformations (separate from piece transforms)
+        "mouse_padding": 134,  # Pad to create rotation space: 32 → 300 (x = 134)
+        "mouse_rotation_degrees": 5,  # Smaller rotation for cursor stability
+        # Center crop calculation: x - (ceil(tan(5°) * x) * 2) = 256 - 10 = 246
+        "mouse_center_crop_size": 246,  # Remove rotation artifacts
+        "mouse_final_size": 32,  # Resize to match piece size
+        # Scale range makes cursor appear smaller: 20-30% of canvas area
+        "mouse_scale_range": (0.20, 0.30),
+        # Ratio range allows cursor shape distortion: ±20% stretch
+        "mouse_ratio_range": (0.8, 1.2),
+        # ===========================================
+        # SPATIAL TRANSFORMATIONS (Step 6)
+        # ===========================================
+        # Horizontal flip - Mirror pieces horizontally (valid for chess pieces)
         "horizontal_flip": True,
-        "horizontal_flip_prob": 0.5,
-        "brightness": 0.15,
-        "contrast": 0.2,
-        "saturation": 0.2,
-        "hue": 0.2,
-        "noise_mean": 0.0,
-        "noise_sigma": 0.05,
+        "horizontal_flip_prob": 0.5,  # 50% chance of horizontal flip
+        # ===========================================
+        # COLOR AUGMENTATIONS (Steps 7-8)
+        # ===========================================
+        # Brightness variation - Simulate different lighting conditions
+        "brightness": 0.15,  # ±15% brightness variation
+        # Contrast variation - Simulate different display contrast settings
+        "contrast": 0.2,  # ±20% contrast variation
+        # Saturation variation - Simulate different color saturation levels
+        "saturation": 0.2,  # ±20% saturation variation
+        # Hue variation - Simulate slight color temperature changes
+        "hue": 0.2,  # ±20% hue rotation (affects white/black pieces)
+        # ===========================================
+        # NOISE AUGMENTATION (Step 9)
+        # ===========================================
+        # Gaussian noise - Simulate sensor noise and compression artifacts
+        "noise_mean": 0.0,  # Center noise distribution at 0 (no bias)
+        "noise_sigma": 0.05,  # Low noise level (5% of pixel range)
     },
     "arrows": {
+        # ===========================================
+        # OVERLAY AUGMENTATIONS
+        # ===========================================
+        # Arrow overlay - Disabled for arrow model (arrows are the target, not augmentation)
         "arrow_probability": 0.0,
+        # Highlight overlay - Simulate square highlighting effects
         "highlight_probability": 0.25,
-        "scale_min": 0.75,
-        "scale_max": 1.0,
+        # ===========================================
+        # GEOMETRIC TRANSFORMATIONS
+        # ===========================================
+        # Scale range - Control zoom level for arrow detection
+        # Arrows can appear at different sizes depending on viewing distance
+        "scale_min": 0.75,  # Minimum scale: 75% of original size
+        "scale_max": 1.0,  # Maximum scale: 100% of original size (no enlargement)
+        # Horizontal flip - Disabled for directional arrows
+        # Arrows have specific directions that would be invalidated by flipping
         "horizontal_flip": False,
-        "brightness": 0.20,
-        "contrast": 0.20,
-        "saturation": 0.20,
-        "hue": 0.2,
+        # Rotation - Small rotations to account for slight camera angles
+        # Limited to ±2 degrees to preserve arrow direction semantics
         "rotation_degrees": 2,
-        "noise_mean": 0.0,
-        "noise_sigma": 0.10,
+        # ===========================================
+        # COLOR AUGMENTATIONS
+        # ===========================================
+        # Brightness variation - Simulate different lighting conditions
+        # Slightly higher than pieces model as arrows may be viewed in varied lighting
+        "brightness": 0.20,  # ±20% brightness variation
+        # Contrast variation - Simulate different display contrast settings
+        "contrast": 0.20,  # ±20% contrast variation
+        # Saturation variation - Simulate different color saturation levels
+        "saturation": 0.20,  # ±20% saturation variation
+        # Hue variation - Simulate slight color temperature changes
+        "hue": 0.2,  # ±20% hue rotation
+        # ===========================================
+        # NOISE AUGMENTATION
+        # ===========================================
+        # Gaussian noise - Simulate sensor noise and compression artifacts
+        # Higher noise level than pieces model as arrows may be captured in varied conditions
+        "noise_mean": 0.0,  # Center noise distribution at 0 (no bias)
+        "noise_sigma": 0.10,  # Higher noise level (10% of pixel range)
     },
 }
 
