@@ -247,3 +247,7 @@ chess-cv/
 - Empty square is "xx" (for pieces model)
 - Use `get_label_map()` to create label→index mapping
 - Use `get_model_config(model_id)["class_names"]` for model-specific class names
+
+## Notes
+
+- Never use `python3` but use `python` instead.
