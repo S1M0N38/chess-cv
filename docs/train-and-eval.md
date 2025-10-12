@@ -64,9 +64,8 @@ chess-cv train pieces \
   --val-dir data/splits/pieces/validate \
   --checkpoint-dir checkpoints/pieces \
   --batch-size 64 \
-  --learning-rate 0.0003 \
-  --weight-decay 0.0003 \
-  --num-epochs 200 \
+  --weight-decay 0.001 \
+  --num-epochs 1000 \
   --num-workers 8
 ```
 
@@ -76,12 +75,17 @@ Note: Image size is fixed at 32×32 pixels (model architecture requirement).
 
 **Optimizer Settings:**
 
-- `--learning-rate`: Learning rate for AdamW optimizer (default: 0.0003)
-- `--weight-decay`: Weight decay for regularization (default: 0.0003)
+- `--weight-decay`: Weight decay for regularization (default: 0.001)
+
+**Learning Rate Scheduler (enabled by default):**
+
+- Base LR: 0.001 (peak after warmup)
+- Min LR: 1e-5 (end of cosine decay)
+- Warmup: 3% of total steps (~30 epochs for 1000-epoch training)
 
 **Training Control:**
 
-- `--num-epochs`: Maximum number of epochs (default: 200)
+- `--num-epochs`: Maximum number of epochs (default: 200, recent models use 1000)
 - `--batch-size`: Batch size for training (default: 64)
 
 **Data Settings:**
@@ -96,17 +100,24 @@ Note: Image size is fixed at 32×32 pixels (model architecture requirement).
 
 ### Training Features
 
+**Learning Rate Schedule:**
+
+- Warmup phase: linear increase from 0 to 0.001 over first 3% of steps
+- Cosine decay: gradual decrease from 0.001 to 1e-5 over remaining steps
+
 **Data Augmentation:**
 
-- Random resized crop (scale: 0.8-1.0)
+- Random resized crop (scale: 0.54-0.74)
 - Random horizontal flip
-- Color jitter (brightness, contrast, saturation: ±0.2)
-- Random rotation (±5°)
+- Color jitter (brightness: ±0.15, contrast/saturation/hue: ±0.2)
+- Random rotation (±10°)
 - Gaussian noise (std: 0.05)
+- Arrow overlay (80% probability)
+- Highlight overlay (25% probability)
 
 **Early Stopping:**
 
-Early stopping is disabled by default (patience set to 999999), allowing the full 200-epoch training schedule to run. This default is set in `src/chess_cv/constants.py` and ensures consistent training across runs.
+Early stopping is disabled by default (patience set to 999999), allowing the full training schedule to run. This default is set in `src/chess_cv/constants.py` and ensures consistent training across runs.
 
 **Automatic Checkpointing:**
 

@@ -145,8 +145,8 @@ The pieces model classifies chess square images into 13 classes: 6 white pieces 
 - **Input**: 32×32px RGB square images
 - **Data**: ~93,000 synthetic images from 55 board styles × 64 piece sets
 - **Augmentation**: Aggressive augmentation with arrow overlays (80%), highlight overlays (25%), random crops, horizontal flips, color jitter, rotation (±10°), and Gaussian noise
-- **Optimizer**: AdamW (lr=0.0003, weight_decay=0.0003)
-- **Training**: 2000 epochs, batch size 64
+- **Optimizer**: AdamW (weight_decay=0.001) with LR scheduler (warmup + cosine decay: 0→0.001→1e-5)
+- **Training**: 1000 epochs, batch size 64
 
 **Performance:**
 
