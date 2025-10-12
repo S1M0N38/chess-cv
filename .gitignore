@@ -175,6 +175,7 @@ cython_debug/
 .envrc
 outputs
 checkpoints
+!src/chess_cv/weights/*.safetensors
 .DS_Store
 wandb
 evals
