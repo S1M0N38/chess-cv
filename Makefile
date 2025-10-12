@@ -54,8 +54,10 @@ all: lint format typecheck test ## Run all code quality checks and tests
 
 # Documentation targets
 docs: ## Serve documentation locally
+	@echo "$(YELLOW)Generating the augmentation examples...$(RESET)"
+	@python docs/assets/generate_augmentations_examples.py
 	@echo "$(YELLOW)Serving documentation at http://127.0.0.1:8000$(RESET)"
-	mkdocs serve
+	@mkdocs serve
 
 # Clean targets
 clean: ## Clean build artifacts
