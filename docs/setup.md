@@ -1,25 +1,18 @@
 # Setup Guide
 
-This guide will help you install and configure Chess CV for training chess piece classifiers.
+This guide will help you install and configure Chess CV for inference and training chess piece classifiers.
 
 ## Prerequisites
 
-- **uv**: Fast Python package manager ([installation guide](https://docs.astral.sh/uv/))
-- **Python 3.13+**: Chess CV requires Python 3.13 or later (can be installed with `uv`)
+- **Python 3.13+**: Chess CV requires Python 3.13 or later
+- **uv**: Fast Python package manager (required for training, [installation guide](https://docs.astral.sh/uv/))
 - **MLX**: Apple's machine learning framework (installed with `chess-cv`)
 
 ## Installation
 
-### 1. Clone the Repository
+### For Inference Only
 
-```bash
-git clone https://github.com/S1M0N38/chess-cv.git
-cd chess-cv
-```
-
-### 2. Install Dependencies
-
-For model usage only:
+Install Chess CV directly from PyPI:
 
 ```bash
 pip install chess-cv
@@ -27,35 +20,23 @@ pip install chess-cv
 uv add chess-cv
 ```
 
-For training your own models:
+### For Training and Evaluation
+
+Clone the repository and install all dependencies:
 
 ```bash
+# Clone the repository
+git clone https://github.com/S1M0N38/chess-cv.git
+cd chess-cv
+
 # Copy environment template
 cp .envrc.example .envrc
 
 # Install all dependencies
 uv sync --all-extras
-```
 
-### 3. Verify Installation
-
-```bash
-# Check that chess-cv is installed
-python -c "import chess_cv; print(chess_cv.__version__)"
-```
-
-## Development Setup
-
-For contributing to the project:
-
-```bash
-# Install with development dependencies
+# For contributors: add development tools
 uv sync --all-extras --group dev
-
-# Verify development tools
-ruff --version
-basedpyright --version
-pytest --version
 ```
 
 ## Next Steps
