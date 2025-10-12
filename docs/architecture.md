@@ -86,8 +86,8 @@ The model classifies chess squares into 13 categories:
 
 With the default configuration:
 
-- **Test Accuracy**: ~99.94%
-- **F1 Score (Macro)**: ~99.94%
+- **Test Accuracy**: ~99.95%
+- **F1 Score (Macro)**: ~99.95%
 - **Training Time**: ~90 minutes (varies by hardware)
 - **Inference Speed**: 0.05 ms per image (batch size 8192, varying by hardware)
 
@@ -97,13 +97,13 @@ Actual accuracy by piece type (Test Dataset):
 
 | Class | Accuracy | Class | Accuracy |
 | ----- | -------- | ----- | -------- |
-| bB    | 99.90%   | wB    | 99.90%   |
+| bB    | 100.00%  | wB    | 99.81%   |
 | bK    | 100.00%  | wK    | 99.81%   |
-| bN    | 100.00%  | wN    | 100.00%  |
-| bP    | 99.91%   | wP    | 99.90%   |
-| bQ    | 99.90%   | wQ    | 100.00%  |
+| bN    | 100.00%  | wN    | 99.90%   |
+| bP    | 99.91%   | wP    | 100.00%  |
+| bQ    | 100.00%  | wQ    | 99.91%   |
 | bR    | 100.00%  | wR    | 100.00%  |
-| xx    | 99.91%   |       |          |
+| xx    | 100.00%  |       |          |
 
 #### Evaluation on External Datasets
 
@@ -113,39 +113,39 @@ The model has been evaluated on external datasets to assess generalization:
 
 - **Dataset**: [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard)
 - **Number of samples**: 6,016
-- **Overall Accuracy**: 99.30%
-- **F1 Score (Macro)**: 98.26%
+- **Overall Accuracy**: 99.55%
+- **F1 Score (Macro)**: 98.91%
 
 Per-class performance on OpenBoard:
 
 | Class | Accuracy | Class | Accuracy |
 | ----- | -------- | ----- | -------- |
-| bB    | 100.00%  | wB    | 100.00%  |
+| bB    | 100.00%  | wB    | 99.15%   |
 | bK    | 100.00%  | wK    | 100.00%  |
-| bN    | 98.91%   | wN    | 97.94%   |
+| bN    | 100.00%  | wN    | 98.97%   |
 | bP    | 99.81%   | wP    | 99.61%   |
-| bQ    | 97.10%   | wQ    | 98.48%   |
-| bR    | 99.32%   | wR    | 98.68%   |
-| xx    | 99.24%   |       |          |
+| bQ    | 97.10%   | wQ    | 100.00%  |
+| bR    | 100.00%  | wR    | 99.34%   |
+| xx    | 99.52%   |       |          |
 
 ##### ChessVision
 
 - **Dataset**: [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision)
 - **Number of samples**: 3,186
-- **Overall Accuracy**: 86.38%
-- **F1 Score (Macro)**: 83.47%
+- **Overall Accuracy**: 94.70%
+- **F1 Score (Macro)**: 94.05%
 
 Per-class performance on ChessVision:
 
 | Class | Accuracy | Class | Accuracy |
 | ----- | -------- | ----- | -------- |
-| bB    | 90.00%   | wB    | 95.04%   |
-| bK    | 84.43%   | wK    | 91.82%   |
-| bN    | 100.00%  | wN    | 98.18%   |
-| bP    | 83.83%   | wP    | 80.09%   |
-| bQ    | 95.70%   | wQ    | 89.66%   |
-| bR    | 86.56%   | wR    | 85.08%   |
-| xx    | 86.50%   |       |          |
+| bB    | 100.00%  | wB    | 94.21%   |
+| bK    | 96.72%   | wK    | 100.00%  |
+| bN    | 100.00%  | wN    | 100.00%  |
+| bP    | 94.06%   | wP    | 94.15%   |
+| bQ    | 98.92%   | wQ    | 88.51%   |
+| bR    | 100.00%  | wR    | 95.03%   |
+| xx    | 90.86%   |       |          |
 
 !!! note "Multi-Split Dataset"
 
@@ -153,7 +153,7 @@ Per-class performance on ChessVision:
 
 !!! note "Out of Sample Performance"
 
-    The lower performance on OpenBoard (99.30% accuracy, 98.26% F1) and ChessVision (86.38% accuracy, 83.47% F1) compared to the test set (99.94% accuracy, 99.94% F1) indicates some domain gap between the synthetic training data and these external datasets. ChessVision shows significantly lower performance, particularly on specific piece types like black kings (84.43%) and pawns (80-84%).
+    The lower performance on OpenBoard (99.55% accuracy, 98.91% F1) and ChessVision (94.70% accuracy, 94.05% F1) compared to the test set (99.95% accuracy, 99.95% F1) indicates some domain gap between the synthetic training data and these external datasets. ChessVision shows significantly lower performance, particularly on specific piece types like white queens (88.51%) and empty squares (90.86%).
 
 ### Dataset Characteristics
 
@@ -277,20 +277,20 @@ The arrows model achieves near-perfect accuracy across all 49 classes on the syn
 
 **Summary Statistics:**
 
-- **Highest Accuracy**: 100.00% (13 classes including corner-E-S, head-ESE, middle-E-SSE, etc.)
-- **Lowest Accuracy**: 99.79% (tail-S)
+- **Highest Accuracy**: 100.00% (19 classes)
+- **Lowest Accuracy**: 99.76% (tail-S)
 - **Mean Accuracy**: 99.97%
-- **Classes > 99.9%**: 44 out of 49
+- **Classes > 99.9%**: 45 out of 49
 
 **Performance by Component Type:**
 
 | Component Type  | Classes | Avg Accuracy | Range         |
 | --------------- | ------- | ------------ | ------------- |
-| Arrow Heads     | 20      | 99.98%       | 99.96% - 100% |
-| Arrow Tails     | 12      | 99.95%       | 99.79% - 100% |
-| Middle Segments | 12      | 99.98%       | 99.96% - 100% |
-| Corners         | 4       | 99.97%       | 99.85% - 100% |
-| Empty Square    | 1       | 99.82%       | -             |
+| Arrow Heads     | 20      | 99.98%       | 99.94% - 100% |
+| Arrow Tails     | 16      | 99.95%       | 99.76% - 100% |
+| Middle Segments | 12      | 99.99%       | 99.85% - 100% |
+| Corners         | 4       | 99.95%       | 99.78% - 100% |
+| Empty Square    | 1       | 99.79%       | -             |
 
 !!! note "No External Dataset Evaluation"
 

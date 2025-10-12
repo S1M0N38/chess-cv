@@ -20,11 +20,11 @@ model-index:
           type: chess-cv-test
         metrics:
           - type: accuracy
-            value: 0.9994
+            value: 0.9995
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.9994
+            value: 0.9995
             name: F1 Score (Macro)
             verified: false
       - task:
@@ -35,11 +35,11 @@ model-index:
           type: chess-cv-openboard
         metrics:
           - type: accuracy
-            value: 0.9930
+            value: 0.9955
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.9826
+            value: 0.9891
             name: F1 Score (Macro)
             verified: false
       - task:
@@ -50,11 +50,11 @@ model-index:
           type: chess-cv-chessvision
         metrics:
           - type: accuracy
-            value: 0.8638
+            value: 0.9470
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.8347
+            value: 0.9405
             name: F1 Score (Macro)
             verified: false
   - name: chess-cv-arrows
@@ -97,13 +97,11 @@ pip install chess-cv
 import mlx.core as mx
 import numpy as np
 from PIL import Image
-from huggingface_hub import hf_hub_download
-from chess_cv.model import SimpleCNN
+from chess_cv import load_bundled_model
+from chess_cv.constants import get_model_config
 
-# Load model
-model_path = hf_hub_download(repo_id="S1M0N38/chess-cv", filename="pieces.safetensors")
-model = SimpleCNN(num_classes=13)
-model.load_weights(model_path)
+# Load model with bundled weights (included in package)
+model = load_bundled_model('pieces')
 model.eval()
 
 # Predict
@@ -111,8 +109,24 @@ img = Image.open("square.png").convert('RGB').resize((32, 32))
 img_array = mx.array(np.array(img, dtype=np.float32)[None, ...] / 255.0)
 pred_idx = mx.argmax(model(img_array), axis=-1).item()
 
-classes = ['bB', 'bK', 'bN', 'bP', 'bQ', 'bR', 'wB', 'wK', 'wN', 'wP', 'wQ', 'wR', 'xx']
+# Get class names for the model
+classes = get_model_config('pieces')['class_names']
 print(f"Predicted: {classes[pred_idx]}")
+```
+
+**Alternative: Load latest version from Hugging Face Hub**
+
+```python
+from huggingface_hub import hf_hub_download
+from chess_cv.model import SimpleCNN
+import mlx.core as mx
+
+# Download latest weights from Hugging Face
+model_path = hf_hub_download(repo_id="S1M0N38/chess-cv", filename="pieces.safetensors")
+model = SimpleCNN(num_classes=13)
+weights = mx.load(str(model_path))
+model.load_weights(list(weights.items()))
+model.eval()
 ```
 
 ## Models
@@ -138,9 +152,9 @@ The pieces model classifies chess square images into 13 classes: 6 white pieces 
 
 | Dataset                                                                                         | Accuracy | F1-Score (Macro) |
 | ----------------------------------------------------------------------------------------------- | :------: | :--------------: |
-| Test Data                                                                                       |  99.94%  |      99.94%      |
-| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \*     |    -     |      98.26%      |
-| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) \* |    -     |      83.47%      |
+| Test Data                                                                                       |  99.95%  |      99.95%      |
+| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \*     |    -     |      98.91%      |
+| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) \* |    -     |      94.05%      |
 
 \* *Dataset with unbalanced class distribution (e.g. many more samples for empty square class), so accuracy is not representative.*
 
