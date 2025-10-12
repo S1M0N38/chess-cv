@@ -18,6 +18,7 @@ AUGMENTATION_CONFIGS = {
         "resized_crop_ratio": (0.9, 1.1),
         "arrow_probability": 0.80,
         "highlight_probability": 0.25,
+        "mouse_probability": 0.90,
         "horizontal_flip": True,
         "horizontal_flip_prob": 0.5,
         "brightness": 0.15,
@@ -78,11 +79,13 @@ Applied in order during training:
 
 6. **Highlight Overlay** (25% probability): Overlays semi-transparent highlight from `data/highlights/`.
 
-7. **Horizontal Flip** (50% probability): Flips image left-to-right.
+7. **Mouse Overlay** (90% probability): Overlays random mouse cursor from `data/mouse/` with geometric transformations. Applies padding (134px), small rotation (±5°), center crop (246×246), random resized crop to final size (32×32) with scale 0.20-0.30 and ratio 0.8-1.2, making cursor smaller and positioning it randomly on the piece.
 
-8. **Color Jitter**: Randomly adjusts brightness (±15%), contrast (±20%), saturation (±20%), and hue (±20%).
+8. **Horizontal Flip** (50% probability): Flips image left-to-right.
 
-9. **Gaussian Noise** (σ=0.05): Adds noise to normalized [0,1] pixels.
+9. **Color Jitter**: Randomly adjusts brightness (±15%), contrast (±20%), saturation (±20%), and hue (±20%).
+
+10. **Gaussian Noise** (σ=0.05): Adds noise to normalized [0,1] pixels.
 
 ---
 
@@ -126,6 +129,7 @@ Applied in order during training:
 | Random Resized Crop | Area 0.54-0.74, ratio 0.9-1.1 | ❌          | Translation + ±16% zoom + ±10% stretch        |
 | Arrow Overlay       | 80%                           | ❌          | Pieces must handle arrows                     |
 | Highlight Overlay   | 25%                           | 25%         | Both models handle highlights                 |
+| Mouse Overlay       | 90%                           | ❌          | Pieces must handle mouse cursors on screen    |
 | Horizontal Flip     | 50%                           | ❌          | Arrow direction is semantically important     |
 | Color Jitter        | B±15%, CSH±20%                | ±20% (BCSH) | Pieces use reduced brightness variation       |
 | Gaussian Noise      | σ=0.05                        | σ=0.10      | Arrows use higher noise                       |
@@ -152,15 +156,16 @@ v2.CenterCrop(size=40)
 # Aspect ratio: ±10% stretch → (0.9, 1.1)
 v2.RandomResizedCrop(size=32, scale=(0.54, 0.74), ratio=(0.9, 1.1))
 
-# 5-6. Overlays
+# 5-7. Overlays
 RandomArrowOverlay(probability=0.80)
 RandomHighlightOverlay(probability=0.25)
+RandomMouseOverlay(probability=0.90)
 
-# 7-8. Geometric + color
+# 8-9. Geometric + color
 v2.RandomHorizontalFlip(p=0.5)
 v2.ColorJitter(brightness=0.15, contrast=0.2, saturation=0.2, hue=0.2)
 
-# 9. Noise (requires tensor conversion)
+# 10. Noise (requires tensor conversion)
 v2.ToImage() → v2.ToDtype() → v2.GaussianNoise() → v2.ToPILImage()
 ```
 
