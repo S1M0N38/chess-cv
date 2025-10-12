@@ -28,7 +28,12 @@ def get_test_dir(model_id: str) -> Path:
 
 
 def get_checkpoint_dir(model_id: str) -> Path:
-    """Get checkpoint directory for a specific model."""
+    """Get checkpoint directory for a specific model.
+
+    This is primarily used for training/development checkpoints.
+    For loading bundled pre-trained weights, use get_bundled_weight_path()
+    from the utils module instead.
+    """
     return Path("checkpoints") / model_id
 
 
