@@ -20,10 +20,12 @@ from src.chess_cv.constants import (
     DEFAULT_ARROW_DIR,
     DEFAULT_HIGHLIGHT_DIR,
     DEFAULT_IMAGE_SIZE,
+    DEFAULT_MOUSE_DIR,
 )
 from src.chess_cv.data import (
     RandomArrowOverlay,
     RandomHighlightOverlay,
+    RandomMouseOverlay,
 )
 
 # Hard-coded image paths
@@ -92,13 +94,23 @@ def build_augmentation_pipeline(model_id: str):
                 )
             )
 
-        # Step 7: Horizontal flip
+        # Step 7: Mouse overlay
+        if aug_config["mouse_probability"] > 0:
+            train_transform_list.append(
+                RandomMouseOverlay(
+                    mouse_dir=DEFAULT_MOUSE_DIR,
+                    probability=aug_config["mouse_probability"],
+                    aug_config=aug_config,
+                )
+            )
+
+        # Step 8: Horizontal flip
         if aug_config["horizontal_flip"]:
             train_transform_list.append(
                 v2.RandomHorizontalFlip(p=aug_config["horizontal_flip_prob"])
             )
 
-        # Step 8: Color jitter
+        # Step 9: Color jitter
         train_transform_list.append(
             v2.ColorJitter(
                 brightness=aug_config["brightness"],
@@ -108,7 +120,7 @@ def build_augmentation_pipeline(model_id: str):
             )
         )
 
-        # Step 9: Convert to tensor, apply Gaussian noise
+        # Step 10: Convert to tensor, apply Gaussian noise
         # GaussianNoise requires tensor input, not PIL
         train_transform_list.append(v2.ToImage())
         train_transform_list.append(v2.ToDtype(dtype=torch.float32, scale=True))
