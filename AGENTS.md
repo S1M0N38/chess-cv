@@ -251,3 +251,5 @@ chess-cv/
 ## Notes
 
 - Never use `python3` but use `python` instead.
+- Never update the dependencies using `uv add ...`. If you need to install some dependencies, use `uv pip install ...` instead.
+- If you have to sync the dependencies, never use `uv sync` but use `uv sync --all-extras` instead.
