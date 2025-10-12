@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.4.0](https://github.com/S1M0N38/chess-cv/compare/v0.3.0...v0.4.0) (2025-10-12)
+
+
+### Features
+
+* add data augmentations page to mkdocs ([0647f3d](https://github.com/S1M0N38/chess-cv/commit/0647f3d7d500b1e5f92c87b28b912037ace65b4f))
+* add lr-scheduler ([bc83e03](https://github.com/S1M0N38/chess-cv/commit/bc83e03146b7fc93c9940f7ba869a77604f7e38f))
+* add model weights to src ([33c52f1](https://github.com/S1M0N38/chess-cv/commit/33c52f1b56ff77c91fb4927dac016153340511db))
+* add transparency to lichess arrows and highlights ([e070f5e](https://github.com/S1M0N38/chess-cv/commit/e070f5ed6f0ac6de421ca9513beb6de767a1808c))
+* update __init__.py ([b0b610c](https://github.com/S1M0N38/chess-cv/commit/b0b610ca25ecfbbeb7f82dee5dfc620856ba68a2))
+* update data augmentations parameters for model pieces ([9c9b9eb](https://github.com/S1M0N38/chess-cv/commit/9c9b9eb51c26b6a47d7022e897e5545c5989818d))
+* update data augmentations pipelines ([36eaecd](https://github.com/S1M0N38/chess-cv/commit/36eaecd8dbf4377c5c7ce1bf72a4701e39d876e2))
+* use alpha composition for overlays ([15d7402](https://github.com/S1M0N38/chess-cv/commit/15d7402cac5ceefb3059cd7652bafa4431582298))
+
+
+### Bug Fixes
+
+* make validate epoch pbar leave=False ([7396c48](https://github.com/S1M0N38/chess-cv/commit/7396c485a89951f5de210204f14e15b10f616c59))
+* reduce brightness jitter in augmentations for pieces ([1fa4885](https://github.com/S1M0N38/chess-cv/commit/1fa4885b14876d33d7049bd836227703cb33fcd7))
+* remove print statement that was messing up progress bar ([645c0ac](https://github.com/S1M0N38/chess-cv/commit/645c0ac2dde9b66a52cd480fb0c3f5172ec28542))
+
+
+### Documentation
+
+* update `update-metrics.md` command ([7500def](https://github.com/S1M0N38/chess-cv/commit/7500def717947f9479d56ac28a1187e2b09cffba))
+* update data augmentations docs ([abe0caf](https://github.com/S1M0N38/chess-cv/commit/abe0caf3ce024706303dfd082c8e9fc59b5cd6b5))
+* update hyper-parameters for training pieces model ([d95078a](https://github.com/S1M0N38/chess-cv/commit/d95078ac6ec69a615db358ebcd6d523c7032dd88))
+* update metrics with new pieces model ([24edbb4](https://github.com/S1M0N38/chess-cv/commit/24edbb4ca88bcaeba9dba05a34c3c440eb6271e8))
+* update metrics with new pieces model ([5427389](https://github.com/S1M0N38/chess-cv/commit/5427389cea08c45b2564a3e0a5002e250da4f9c6))
+* update setup instructions ([7889d8a](https://github.com/S1M0N38/chess-cv/commit/7889d8a746d43b920a9f5d14b61f67e7608a1559))
+* update the inference to use bundled models ([b6f753f](https://github.com/S1M0N38/chess-cv/commit/b6f753fe07555927d954cb0c17cb433a32c6662a))
+
 ## [0.3.0](https://github.com/S1M0N38/chess-cv/compare/v0.2.1...v0.3.0) (2025-10-09)
 
 
