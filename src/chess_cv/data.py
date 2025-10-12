@@ -10,11 +10,13 @@ import mlx.core as mx
 import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
+from torchvision.transforms import v2
 
 __all__ = [
     "CLASS_NAMES",
     "RandomArrowOverlay",
     "RandomHighlightOverlay",
+    "RandomMouseOverlay",
     "ChessPiecesDataset",
     "HuggingFaceChessPiecesDataset",
     "ConcatenatedHuggingFaceDataset",
@@ -182,6 +184,112 @@ class RandomHighlightOverlay:
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(num_highlights={len(self.highlight_images)}, "
+            f"probability={self.probability})"
+        )
+
+
+class RandomMouseOverlay:
+    """Randomly overlays mouse cursor images on chess piece images with geometric transformations."""
+
+    def __init__(
+        self,
+        mouse_dir: Path | str,
+        probability: float = 0.3,
+        aug_config: dict | None = None,
+    ):
+        """
+        Args:
+            mouse_dir: Directory containing mouse cursor PNG images
+            probability: Probability of applying mouse overlay (0.0 to 1.0)
+            aug_config: Augmentation configuration for mouse transformations
+        """
+        self.probability = probability
+        self.mouse_images: list[Image.Image] = []
+
+        # Load all mouse images from the directory
+        mouse_dir = Path(mouse_dir)
+        mouse_paths = glob.glob(str(mouse_dir / "*.png"))
+
+        if not mouse_paths:
+            raise FileNotFoundError(f"No mouse images found in {mouse_dir}")
+
+        # Load and cache all mouse images
+        for mouse_path in mouse_paths:
+            try:
+                mouse_img = Image.open(mouse_path).convert("RGBA")
+                self.mouse_images.append(mouse_img)
+            except Exception as e:
+                print(f"Warning: Could not load mouse image {mouse_path}: {e}")
+
+        if not self.mouse_images:
+            raise ValueError("No valid mouse images could be loaded")
+
+        print(f"Loaded {len(self.mouse_images)} mouse images for augmentation")
+
+        # Set up mouse transformation pipeline
+        if aug_config is None:
+            # Default configuration for mouse transformations
+            aug_config = {
+                "mouse_padding": 16,
+                "mouse_rotation_degrees": 5,
+                "mouse_center_crop_size": 40,
+                "mouse_final_size": 32,
+                "mouse_scale_range": (0.10, 0.30),
+                "mouse_ratio_range": (0.8, 1.2),
+            }
+
+        # Create mouse transformation pipeline
+        self.mouse_transform = v2.Compose(
+            [
+                # Step 1: Pad to create rotation space (32x32 → 64x64)
+                v2.Pad(padding=aug_config["mouse_padding"], padding_mode="edge"),
+                # Step 2: Random rotation with small degrees
+                v2.RandomRotation(degrees=aug_config["mouse_rotation_degrees"], fill=0),
+                # Step 3: Remove black corners from rotation
+                v2.CenterCrop(size=aug_config["mouse_center_crop_size"]),
+                # Step 4: Random crop + scale variation + resize back to 32×32
+                # This makes cursor smaller and positions it randomly
+                v2.RandomResizedCrop(
+                    size=aug_config["mouse_final_size"],
+                    scale=aug_config["mouse_scale_range"],
+                    ratio=aug_config["mouse_ratio_range"],
+                    antialias=True,
+                ),
+            ]
+        )
+
+    def __call__(self, img: Image.Image) -> Image.Image:
+        """
+        Args:
+            img (PIL Image): Image to be augmented.
+
+        Returns:
+            PIL Image: Augmented image (with or without mouse overlay).
+        """
+        # Randomly decide whether to apply mouse overlay
+        if random.random() > self.probability:
+            return img
+
+        # Convert to RGBA to support alpha compositing
+        if img.mode != "RGBA":
+            img = img.convert("RGBA")
+
+        # Randomly select a mouse cursor
+        mouse = random.choice(self.mouse_images).copy()
+
+        # Apply geometric transformations to the mouse cursor
+        # This makes the cursor smaller and positions it randomly
+        mouse = self.mouse_transform(mouse)
+
+        # Composite transformed mouse onto the image using alpha composition
+        img = Image.alpha_composite(img, mouse)
+
+        # Convert back to RGB
+        return img.convert("RGB")
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(num_mice={len(self.mouse_images)}, "
             f"probability={self.probability})"
         )
 

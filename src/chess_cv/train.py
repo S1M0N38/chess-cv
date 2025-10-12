@@ -22,6 +22,7 @@ from .constants import (
     DEFAULT_IMAGE_SIZE,
     DEFAULT_LEARNING_RATE,
     DEFAULT_MIN_LR,
+    DEFAULT_MOUSE_DIR,
     DEFAULT_NUM_EPOCHS,
     DEFAULT_NUM_WORKERS,
     DEFAULT_PATIENCE,
@@ -38,6 +39,7 @@ from .data import (
     ChessPiecesDataset,
     RandomArrowOverlay,
     RandomHighlightOverlay,
+    RandomMouseOverlay,
     collate_fn,
     get_image_files,
     get_label_map_from_class_names,
@@ -413,13 +415,23 @@ def train(
                 )
             )
 
-        # Step 7: Horizontal flip
+        # Step 7: Mouse overlay
+        if aug_config["mouse_probability"] > 0:
+            train_transform_list.append(
+                RandomMouseOverlay(
+                    mouse_dir=DEFAULT_MOUSE_DIR,
+                    probability=aug_config["mouse_probability"],
+                    aug_config=aug_config,
+                )
+            )
+
+        # Step 8: Horizontal flip
         if aug_config["horizontal_flip"]:
             train_transform_list.append(
                 v2.RandomHorizontalFlip(p=aug_config["horizontal_flip_prob"])
             )
 
-        # Step 8: Color jitter
+        # Step 9: Color jitter
         train_transform_list.append(
             v2.ColorJitter(
                 brightness=aug_config["brightness"],
@@ -429,7 +441,7 @@ def train(
             )
         )
 
-        # Step 9: Convert to tensor, apply Gaussian noise
+        # Step 10: Convert to tensor, apply Gaussian noise
         # GaussianNoise requires tensor input, not PIL
         train_transform_list.append(v2.ToImage())
         train_transform_list.append(v2.ToDtype(dtype=torch.float32, scale=True))
