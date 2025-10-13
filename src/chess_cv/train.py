@@ -629,9 +629,8 @@ def train(
     criterion = nn.CrossEntropyLoss()
 
     if use_scheduler:
-        # Calculate total training steps
-        total_steps = num_epochs * len(train_loader)
-        warmup_steps = int(warmup_ratio * total_steps)
+        # Calculate warmup epochs (not steps) for epoch-based scheduling
+        warmup_epochs = int(warmup_ratio * num_epochs)
 
         # Create optimizer with base learning rate
         optimizer = optim.AdamW(
@@ -643,13 +642,13 @@ def train(
         warmup_scheduler = LinearLR(
             optimizer,
             start_factor=0.0,  # Start at exactly zero LR (MLX behavior)
-            total_iters=warmup_steps,
+            total_iters=warmup_epochs,  # Use epochs, not steps
         )
 
         # Cosine decay scheduler - starts from base_lr and decays to min_lr
         cosine_scheduler = CosineAnnealingLR(
             optimizer,
-            T_max=total_steps - warmup_steps,  # Decay phase duration
+            T_max=num_epochs - warmup_epochs,  # Decay phase duration in epochs
             eta_min=min_lr,  # Minimum learning rate
         )
 
@@ -658,22 +657,24 @@ def train(
             optimizer,
             schedulers=[warmup_scheduler, cosine_scheduler],
             milestones=[
-                warmup_steps
-            ],  # Switch from warmup to cosine decay at this step
+                warmup_epochs
+            ],  # Switch from warmup to cosine decay at this epoch
         )
 
-        print("Optimizer: AdamW with SequentialLR scheduler (MLX-compatible)")
+        print(
+            "Optimizer: AdamW with SequentialLR scheduler (MLX-compatible, epoch-based)"
+        )
         print(f"  Base LR:       {base_lr}")
         print(f"  Min LR:        {min_lr}")
         print(f"  Start factor:  0.0 (exactly zero LR, matching MLX)")
         print(f"  Schedule:      0→{base_lr}→{min_lr} (warmup + cosine decay)")
         print(
-            f"  Warmup steps:  {warmup_steps} ({warmup_ratio * 100:.1f}% of {total_steps} total steps)"
+            f"  Warmup epochs: {warmup_epochs} ({warmup_ratio * 100:.1f}% of {num_epochs} total epochs)"
         )
-        print(f"  Total steps:   {total_steps}")
+        print(f"  Total epochs:  {num_epochs}")
         print(f"  Weight decay:  {weight_decay}")
         print(
-            f"  Scheduler:     LinearLR(0→{base_lr}) → CosineAnnealingLR({base_lr}→{min_lr})"
+            f"  Scheduler:     LinearLR(0→{base_lr} epochs) → CosineAnnealingLR({base_lr}→{min_lr} epochs)"
         )
     else:
         optimizer = optim.AdamW(
