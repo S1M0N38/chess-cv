@@ -299,9 +299,9 @@ def train(
         get_val_dir,
     )
 
-    # Only support pieces and arrows models
-    if model_id not in ["pieces", "arrows"]:
-        msg = f"Model '{model_id}' is not supported. Only 'pieces' and 'arrows' models are supported."
+    # Only support pieces, arrows, and snap models
+    if model_id not in ["pieces", "arrows", "snap"]:
+        msg = f"Model '{model_id}' is not supported. Only 'pieces', 'arrows', and 'snap' models are supported."
         raise ValueError(msg)
 
     # Get model configuration
@@ -479,6 +479,63 @@ def train(
         )
 
         # Step 4: Convert to tensor, apply Gaussian noise
+        # GaussianNoise requires tensor input, not PIL
+        train_transform_list.append(v2.ToImage())
+        train_transform_list.append(v2.ToDtype(dtype=torch.float32, scale=True))
+        train_transform_list.append(
+            v2.GaussianNoise(
+                mean=aug_config["noise_mean"],
+                sigma=aug_config["noise_sigma"],
+            )
+        )
+        train_transform_list.append(v2.ToPILImage())
+
+    elif model_id == "snap":
+        # Step 1: Arrow overlay (applied early, before geometric transforms)
+        if aug_config["arrow_probability"] > 0:
+            train_transform_list.append(
+                RandomArrowOverlay(
+                    arrow_dir=DEFAULT_ARROW_DIR,
+                    probability=aug_config["arrow_probability"],
+                )
+            )
+
+        # Step 2: Highlight overlay
+        if aug_config["highlight_probability"] > 0:
+            train_transform_list.append(
+                RandomHighlightOverlay(
+                    highlight_dir=DEFAULT_HIGHLIGHT_DIR,
+                    probability=aug_config["highlight_probability"],
+                )
+            )
+
+        # Step 3: Mouse overlay
+        if aug_config["mouse_probability"] > 0:
+            train_transform_list.append(
+                RandomMouseOverlay(
+                    mouse_dir=DEFAULT_MOUSE_DIR,
+                    probability=aug_config["mouse_probability"],
+                    aug_config=aug_config,
+                )
+            )
+
+        # Step 4: Horizontal flip
+        if aug_config["horizontal_flip"]:
+            train_transform_list.append(
+                v2.RandomHorizontalFlip(p=aug_config["horizontal_flip_prob"])
+            )
+
+        # Step 5: Color jitter
+        train_transform_list.append(
+            v2.ColorJitter(
+                brightness=aug_config["brightness"],
+                contrast=aug_config["contrast"],
+                saturation=aug_config["saturation"],
+                hue=aug_config["hue"],
+            )
+        )
+
+        # Step 6: Convert to tensor, apply Gaussian noise
         # GaussianNoise requires tensor input, not PIL
         train_transform_list.append(v2.ToImage())
         train_transform_list.append(v2.ToDtype(dtype=torch.float32, scale=True))
