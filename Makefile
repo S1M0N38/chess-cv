@@ -74,11 +74,15 @@ clean: ## Clean build artifacts
 eval: ## Evaluate model over multiple datasets
 	@echo "$(YELLOW)=================================== PIECES =====================================$(RESET)"
 	@echo "$(YELLOW)Evaluating pieces model on test data...$(RESET)"
-	chess-cv test pieces --output-dir evals/pieces/test
+	chess-cv test pieces --output-dir evals/pieces/test --checkpoint ./src/chess_cv/weights/pieces.safetensors
 	@echo "$(YELLOW)Evaluating pieces model on openboard dataset...$(RESET)"
-	chess-cv test pieces --hf-test-dir S1M0N38/chess-cv-openboard --output-dir evals/pieces/openboard
+	chess-cv test pieces --hf-test-dir S1M0N38/chess-cv-openboard --output-dir evals/pieces/openboard --checkpoint ./src/chess_cv/weights/pieces.safetensors 
 	@echo "$(YELLOW)Evaluating pieces model on chessvision dataset...$(RESET)"
-	chess-cv test pieces --hf-test-dir S1M0N38/chess-cv-chessvision --concat-splits --output-dir evals/pieces/chessvision
+	chess-cv test pieces --hf-test-dir S1M0N38/chess-cv-chessvision --concat-splits --output-dir evals/pieces/chessvision --checkpoint ./src/chess_cv/weights/pieces.safetensors
 	@echo "$(YELLOW)=================================== ARROWS =====================================$(RESET)"
 	@echo "$(YELLOW)Evaluating arrow model on test data...$(RESET)"
-	chess-cv test arrows --output-dir evals/arrows/test
+	chess-cv test arrows --output-dir evals/arrows/test --checkpoint ./src/chess_cv/weights/arrows.safetensors
+	@echo "$(YELLOW)=================================== SNAP =====================================$(RESET)"
+	@echo "$(YELLOW)Evaluating snap model on test data...$(RESET)"
+	chess-cv test snap --output-dir evals/snap/test --checkpoint ./src/chess_cv/weights/snap.safetensors
+	@echo "$(YELLOW)Evaluating snap model on chessvision dataset...$(RESET)"
