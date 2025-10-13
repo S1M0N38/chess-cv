@@ -12,7 +12,6 @@ and saved to data/splits/{model_id}/{train,validate,test}/.
 import os
 import random
 from collections import defaultdict
-from multiprocessing import Pool
 from pathlib import Path
 
 import cv2
@@ -485,23 +484,69 @@ def _process_snap_class(snap_class: str) -> int:
     return count
 
 
-def _init_worker_snap() -> None:
-    """Initialize worker process by loading squares and pieces."""
-    load_squares()
-    load_pieces()
+def _process_snap_variation(variation: int) -> int:
+    """Process a single variation across all snap classes.
+
+    Args:
+        variation: The variation index to process (0-7)
+
+    Returns:
+        Number of images generated for this variation
+    """
+    train_dir, val_dir, test_dir = _init_snap_dirs()
+    count = 0
+
+    # Calculate total combinations for this variation
+    num_pieces = sum(len(PIECES[piece_class]) for piece_class in PIECES.keys())
+    total_combinations = len(SQUARES) * num_pieces
+    inner_total = total_combinations * 2  # Both ok and bad classes
+
+    with tqdm(total=inner_total, desc=f"Variation {variation}", leave=False) as pbar:
+        for piece_class, piece_set in PIECES.items():
+            for piece_name, piece in piece_set.items():
+                for square_name, square in SQUARES.items():
+                    # Process both snap classes for this variation
+                    for snap_class in ["ok", "bad"]:
+                        # Apply the snap transformation to the piece
+                        transformed_piece = _apply_snap_transform(piece, snap_class)
+
+                        # Composite the transformed piece onto the square
+                        if piece_class == "xx":  # Empty square - always "ok"
+                            if snap_class == "ok":
+                                image = square.convert("RGB")
+                                split_dir = assign_split(train_dir, val_dir, test_dir)
+                                image.save(
+                                    split_dir
+                                    / snap_class
+                                    / f"{square_name}_{piece_name}_var{variation}.png"
+                                )
+                                count += 1
+                                pbar.update(1)
+                        else:  # Piece exists
+                            square_img = Image.alpha_composite(
+                                square, transformed_piece
+                            )
+                            image = square_img.convert("RGB")
+                            split_dir = assign_split(train_dir, val_dir, test_dir)
+                            image.save(
+                                split_dir
+                                / snap_class
+                                / f"{square_name}_{piece_class}_{piece_name}_var{variation}.png"
+                            )
+                            count += 1
+                            pbar.update(1)
+
+    return count
 
 
 def _save_splits_snap() -> None:
-    """Generate and save snap images to train/validate/test splits (parallelized)."""
-    # Initialize directories in main process
+    """Generate and save snap images to train/validate/test splits."""
+    # Initialize directories
     _init_snap_dirs()
 
-    # Load data in main process to get class list
+    # Load data
     load_squares()
     load_pieces()
-
-    snap_classes = ["ok", "bad"]
-    num_workers = os.cpu_count() or 1
 
     # Calculate total images upfront
     # For "ok" class: all pieces + empty squares
@@ -515,12 +560,15 @@ def _save_splits_snap() -> None:
     )  # Only non-empty pieces
     total_images = total_ok_images + total_bad_images
 
-    print(f"Processing {len(snap_classes)} snap classes with {num_workers} workers...")
+    print(f"Processing {NUM_SNAP_VARIATIONS} snap variations...")
 
-    with Pool(processes=num_workers, initializer=_init_worker_snap) as pool:
-        with tqdm(total=total_images, desc="Generating images") as pbar:
-            for count in pool.imap(_process_snap_class, snap_classes):
-                pbar.update(count)
+    # Process all variations sequentially
+    count = 0
+    with tqdm(total=total_images, desc="Generating images") as pbar:
+        for variation in range(NUM_SNAP_VARIATIONS):
+            variation_count = _process_snap_variation(variation)
+            count += variation_count
+            pbar.update(variation_count)
 
 
 ################################################################################
