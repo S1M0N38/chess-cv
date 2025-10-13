@@ -15,6 +15,7 @@ from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
 
+import cv2
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
@@ -368,6 +369,154 @@ def _save_splits_arrows() -> None:
 
 
 ################################################################################
+# Snap model
+################################################################################
+
+
+def _apply_snap_transform(image: Image.Image, snap_class: str) -> Image.Image:
+    """Apply centering transformation to simulate piece positioning.
+
+    Args:
+        image: RGBA image to transform
+        snap_class: Either "ok" (centered/slightly off-centered) or "bad" (off-centered)
+
+    Returns:
+        Transformed RGBA image
+    """
+    if snap_class == "ok":
+        # For "ok" class: minimal shifting (0-3 pixels) to simulate slight misalignment
+        min_shift = 0
+        max_shift = 3
+    else:  # snap_class == "bad"
+        # For "bad" class: significant shifting (3-14 pixels)
+        min_shift = 3
+        max_shift = 14
+
+    # Convert PIL to numpy array for OpenCV processing
+    img_array = np.array(image)
+    height, width = img_array.shape[:2]
+
+    # Generate random shift values
+    if snap_class == "ok":
+        shift_x = random.randint(min_shift, max_shift) * random.choice([-1, 1])
+        shift_y = random.randint(min_shift, max_shift) * random.choice([-1, 1])
+    else:  # snap_class == "bad"
+        shift_x = random.randint(min_shift, max_shift) * random.choice([-1, 1])
+        shift_y = random.randint(min_shift, max_shift) * random.choice([-1, 1])
+
+    # Create transformation matrix for translation
+    M = np.float32([[1, 0, shift_x], [0, 1, shift_y]])
+
+    # Apply the transformation
+    shifted = cv2.warpAffine(
+        img_array,
+        M,
+        (width, height),
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=(0, 0, 0, 0),
+    )  # Transparent border
+
+    # Convert back to PIL Image
+    return Image.fromarray(shifted, "RGBA")
+
+
+def _init_snap_dirs() -> tuple[Path, Path, Path]:
+    """Create directories for train/validate/test splits for snap model.
+
+    Returns:
+        Tuple of (train_dir, val_dir, test_dir)
+    """
+    model_id = "snap"
+
+    train_dir = get_train_dir(model_id)
+    val_dir = get_val_dir(model_id)
+    test_dir = get_test_dir(model_id)
+
+    for split_dir in [train_dir, val_dir, test_dir]:
+        for snap_class in ["ok", "bad"]:
+            (split_dir / snap_class).mkdir(exist_ok=True, parents=True)
+
+    return train_dir, val_dir, test_dir
+
+
+def _process_snap_class(snap_class: str) -> int:
+    """Worker function to process a single snap class.
+
+    Args:
+        snap_class: The snap class to process ("ok" or "bad")
+
+    Returns:
+        Number of images generated for this class
+    """
+    train_dir, val_dir, test_dir = _init_snap_dirs()
+    count = 0
+
+    for piece_class, piece_set in PIECES.items():
+        for piece_name, piece in piece_set.items():
+            for square_name, square in SQUARES.items():
+                # Apply the snap transformation to the piece
+                transformed_piece = _apply_snap_transform(piece, snap_class)
+
+                # Composite the transformed piece onto the square
+                if piece_class == "xx":  # Empty square - always "ok"
+                    if snap_class == "ok":
+                        image = square.convert("RGB")
+                        split_dir = assign_split(train_dir, val_dir, test_dir)
+                        image.save(
+                            split_dir / snap_class / f"{square_name}_{piece_name}.png"
+                        )
+                        count += 1
+                else:  # Piece exists
+                    square_img = Image.alpha_composite(square, transformed_piece)
+                    image = square_img.convert("RGB")
+                    split_dir = assign_split(train_dir, val_dir, test_dir)
+                    image.save(
+                        split_dir
+                        / snap_class
+                        / f"{square_name}_{piece_class}_{piece_name}.png"
+                    )
+                    count += 1
+
+    return count
+
+
+def _init_worker_snap() -> None:
+    """Initialize worker process by loading squares and pieces."""
+    load_squares()
+    load_pieces()
+
+
+def _save_splits_snap() -> None:
+    """Generate and save snap images to train/validate/test splits (parallelized)."""
+    # Initialize directories in main process
+    _init_snap_dirs()
+
+    # Load data in main process to get class list
+    load_squares()
+    load_pieces()
+
+    snap_classes = ["ok", "bad"]
+    num_workers = os.cpu_count() or 1
+
+    # Calculate total images upfront
+    # For "ok" class: all pieces + empty squares
+    # For "bad" class: only pieces (no empty squares)
+    num_pieces = sum(len(PIECES[piece_class]) for piece_class in PIECES.keys())
+    total_ok_images = len(SQUARES) * num_pieces  # All pieces including empty
+    total_bad_images = len(SQUARES) * (
+        num_pieces - len(PIECES["xx"])
+    )  # Only non-empty pieces
+    total_images = total_ok_images + total_bad_images
+
+    print(f"Processing {len(snap_classes)} snap classes with {num_workers} workers...")
+
+    with Pool(processes=num_workers, initializer=_init_worker_snap) as pool:
+        with tqdm(total=total_images, desc="Generating images") as pbar:
+            for count in pool.imap(_process_snap_class, snap_classes):
+                pbar.update(count)
+
+
+################################################################################
 # Public API
 ################################################################################
 
@@ -431,6 +580,8 @@ def generate_split_data(
         _save_splits_pieces()
     elif model_id == "arrows":
         _save_splits_arrows()
+    elif model_id == "snap":
+        _save_splits_snap()
     else:
         raise ValueError(f"No generator implemented for model_id: {model_id}")
 
