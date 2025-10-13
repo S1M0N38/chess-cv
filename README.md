@@ -22,7 +22,7 @@
 
 <img src="docs/assets/model.svg" alt="Model Architecture" width="600">
 
-*CNN-based chess piece classifier*
+*Lightweight CNNs for chess board analysis*
 
 </div>
 
