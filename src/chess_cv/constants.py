@@ -64,7 +64,7 @@ DEFAULT_NUM_WORKERS = 8
 
 # Logging configuration
 LOG_TRAIN_EVERY_N_STEPS = 200  # Log training metrics every N batches
-LOG_VALIDATE_EVERY_N_STEPS = 1000  # Run full validation every N batches
+LOG_VALIDATE_EVERY_N_STEPS = 999_999_999  # Run full validation every N batches
 
 # Data splitting ratios
 DEFAULT_TRAIN_RATIO = 0.7
@@ -189,6 +189,53 @@ AUGMENTATION_CONFIGS = {
         "noise_mean": 0.0,  # Center noise distribution at 0 (no bias)
         "noise_sigma": 0.10,  # Higher noise level (10% of pixel range)
     },
+    "snap": {
+        # ===========================================
+        # OVERLAY AUGMENTATIONS
+        # ===========================================
+        # Arrow overlay - Simulate arrow graphics on pieces
+        "arrow_probability": 0.50,
+        # Highlight overlay - Simulate square highlighting effects
+        "highlight_probability": 0.20,
+        # Mouse cursor overlay - Simulate cursor interaction with pieces
+        "mouse_probability": 0.80,
+        # ===========================================
+        # MOUSE CURSOR SPECIFIC PARAMETERS
+        # ===========================================
+        # Mouse cursor geometric transformations (same as pieces model)
+        "mouse_padding": 134,  # Pad to create rotation space: 32 → 300 (x = 134)
+        "mouse_rotation_degrees": 5,  # Smaller rotation for cursor stability
+        # Center crop calculation: x - (ceil(tan(5°) * x) * 2) = 256 - 10 = 246
+        "mouse_center_crop_size": 246,  # Remove rotation artifacts
+        "mouse_final_size": 32,  # Resize to match piece size
+        # Scale range makes cursor appear smaller: 20-30% of canvas area
+        "mouse_scale_range": (0.20, 0.30),
+        # Ratio range allows cursor shape distortion: ±20% stretch
+        "mouse_ratio_range": (0.8, 1.2),
+        # ===========================================
+        # SPATIAL TRANSFORMATIONS
+        # ===========================================
+        # Horizontal flip - Mirror pieces horizontally (valid for chess pieces)
+        "horizontal_flip": True,
+        "horizontal_flip_prob": 0.5,  # 50% chance of horizontal flip
+        # ===========================================
+        # COLOR AUGMENTATIONS (same as pieces model)
+        # ===========================================
+        # Brightness variation - Simulate different lighting conditions
+        "brightness": 0.15,  # ±15% brightness variation
+        # Contrast variation - Simulate different display contrast settings
+        "contrast": 0.2,  # ±20% contrast variation
+        # Saturation variation - Simulate different color saturation levels
+        "saturation": 0.2,  # ±20% saturation variation
+        # Hue variation - Simulate slight color temperature changes
+        "hue": 0.2,  # ±20% hue rotation (affects white/black pieces)
+        # ===========================================
+        # NOISE AUGMENTATION (same as pieces model)
+        # ===========================================
+        # Gaussian noise - Simulate sensor noise and compression artifacts
+        "noise_mean": 0.0,  # Center noise distribution at 0 (no bias)
+        "noise_sigma": 0.05,  # Low noise level (5% of pixel range)
+    },
 }
 
 # File patterns
@@ -296,6 +343,14 @@ MODEL_CONFIGS = {
             "xx",
         ],
         "description": "Chess square arrow overlay classifier (48 arrow types + empty)",
+    },
+    "snap": {
+        "num_classes": 2,
+        "class_names": [
+            "ok",  # Centered or slightly off-centered pieces, or empty squares
+            "bad",  # Significantly off-centered pieces
+        ],
+        "description": "Chess piece centering classifier (centered vs off-centered)",
     },
     # Future models can be added here:
     # "board": {
