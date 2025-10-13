@@ -80,6 +80,7 @@ def train_epoch(
     best_val_acc: float,
     best_val_loss: float,
     epochs_without_improvement: int,
+    scheduler=None,
 ) -> tuple[float, float, int, float, float, int]:
     """Train for one epoch with mid-epoch validation.
 
@@ -101,6 +102,7 @@ def train_epoch(
         best_val_acc: Best validation accuracy so far
         best_val_loss: Best validation loss so far
         epochs_without_improvement: Counter for early stopping
+        scheduler: Learning rate scheduler (optional, stepped after each batch)
 
     Returns:
         Tuple of (average_loss, average_accuracy, updated_global_step,
@@ -124,6 +126,10 @@ def train_epoch(
         loss = criterion(outputs, batch_labels)
         loss.backward()
         optimizer.step()
+
+        # Step the learning rate scheduler after each batch (if using scheduler)
+        if scheduler is not None:
+            scheduler.step()
 
         # Calculate accuracy
         _, predictions = torch.max(outputs, 1)
@@ -629,26 +635,29 @@ def train(
     criterion = nn.CrossEntropyLoss()
 
     if use_scheduler:
-        # Calculate warmup epochs (not steps) for epoch-based scheduling
-        warmup_epochs = int(warmup_ratio * num_epochs)
+        # Calculate total training steps and warmup steps for step-based scheduling
+        total_steps = num_epochs * len(train_loader)
+        warmup_steps = int(warmup_ratio * total_steps)
 
         # Create optimizer with base learning rate
         optimizer = optim.AdamW(
             model.parameters(), lr=base_lr, weight_decay=weight_decay
         )
 
-        # Create learning rate scheduler: warmup + cosine decay using PyTorch's SequentialLR (MLX-compatible)
-        # Warmup scheduler - starts from exactly zero LR and linearly increases to base_lr (MLX behavior)
+        # Create learning rate scheduler: warmup + cosine decay using PyTorch's SequentialLR
+        # Warmup scheduler - starts from exactly zero LR and linearly increases to base_lr
+        # Note: start_factor must be > 0 for PyTorch LinearLR, so we use a small value
         warmup_scheduler = LinearLR(
             optimizer,
-            start_factor=0.0,  # Start at exactly zero LR (MLX behavior)
-            total_iters=warmup_epochs,  # Use epochs, not steps
+            start_factor=1e-10,  # Start at nearly zero LR (PyTorch requires > 0)
+            end_factor=1.0,  # End at base_lr (multiplier = 1.0)
+            total_iters=warmup_steps,  # Total training steps for warmup phase
         )
 
         # Cosine decay scheduler - starts from base_lr and decays to min_lr
         cosine_scheduler = CosineAnnealingLR(
             optimizer,
-            T_max=num_epochs - warmup_epochs,  # Decay phase duration in epochs
+            T_max=total_steps - warmup_steps,  # Decay phase duration in steps
             eta_min=min_lr,  # Minimum learning rate
         )
 
@@ -657,24 +666,24 @@ def train(
             optimizer,
             schedulers=[warmup_scheduler, cosine_scheduler],
             milestones=[
-                warmup_epochs
-            ],  # Switch from warmup to cosine decay at this epoch
+                warmup_steps
+            ],  # Switch from warmup to cosine decay at this step
         )
 
-        print(
-            "Optimizer: AdamW with SequentialLR scheduler (MLX-compatible, epoch-based)"
-        )
+        print("Optimizer: AdamW with SequentialLR scheduler (step-based)")
         print(f"  Base LR:       {base_lr}")
         print(f"  Min LR:        {min_lr}")
-        print(f"  Start factor:  0.0 (exactly zero LR, matching MLX)")
-        print(f"  Schedule:      0→{base_lr}→{min_lr} (warmup + cosine decay)")
+        print(f"  Start factor:  1e-10 (nearly zero LR)")
+        print(f"  Schedule:      ~0→{base_lr}→{min_lr} (warmup + cosine decay)")
         print(
-            f"  Warmup epochs: {warmup_epochs} ({warmup_ratio * 100:.1f}% of {num_epochs} total epochs)"
+            f"  Warmup steps:  {warmup_steps} ({warmup_ratio * 100:.1f}% of {total_steps} total steps)"
         )
-        print(f"  Total epochs:  {num_epochs}")
+        print(
+            f"  Total steps:   {total_steps} ({num_epochs} epochs × {len(train_loader)} batches)"
+        )
         print(f"  Weight decay:  {weight_decay}")
         print(
-            f"  Scheduler:     LinearLR(0→{base_lr} epochs) → CosineAnnealingLR({base_lr}→{min_lr} epochs)"
+            f"  Scheduler:     LinearLR(~0→{base_lr} over {warmup_steps} steps) → CosineAnnealingLR({base_lr}→{min_lr} over {total_steps - warmup_steps} steps)"
         )
     else:
         optimizer = optim.AdamW(
@@ -732,14 +741,14 @@ def train(
             best_val_acc,
             best_val_loss,
             epochs_without_improvement,
+            scheduler if use_scheduler else None,
         )
         val_loss, val_acc = validate_epoch(
             model, val_loader, criterion, device, leave=False
         )
 
-        # Update scheduler if using one
-        if scheduler is not None:
-            scheduler.step()
+        # Note: Scheduler is now stepped after each batch in train_epoch(), not after each epoch
+        # This provides smooth linear warmup and cosine decay instead of step functions
 
         # Update visualizer or log to wandb
         if use_wandb:
