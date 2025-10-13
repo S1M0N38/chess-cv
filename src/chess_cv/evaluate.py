@@ -1,8 +1,8 @@
 """Evaluation utilities for model performance."""
 
-import mlx.core as mx
-import mlx.nn as nn
 import numpy as np
+import torch
+import torch.nn as nn
 from sklearn.metrics import confusion_matrix, f1_score
 from torch.utils.data import DataLoader
 
@@ -17,62 +17,84 @@ __all__ = [
 ]
 
 
-def compute_accuracy(model: nn.Module, images: mx.array, labels: mx.array) -> float:
+def compute_accuracy(
+    model: nn.Module,
+    images: torch.Tensor,
+    labels: torch.Tensor,
+    device: torch.device = None,
+) -> float:
     """Compute accuracy on a dataset.
 
     Args:
         model: Trained model
-        images: Images array of shape (N, H, W, C)
-        labels: Labels array of shape (N,)
+        images: Images tensor of shape (N, C, H, W)
+        labels: Labels tensor of shape (N,)
+        device: Device to run computation on (optional)
 
     Returns:
         Accuracy as a float between 0 and 1
     """
-    logits = model(images)
-    predictions = mx.argmax(logits, axis=1)
-    correct = mx.sum(predictions == labels)  # type: ignore[arg-type]
-    accuracy = correct / len(labels)
-    return accuracy.item()
+    if device is not None:
+        images = images.to(device)
+        labels = labels.to(device)
+        model = model.to(device)
+
+    model.eval()
+    with torch.no_grad():
+        logits = model(images)
+        predictions = torch.argmax(logits, dim=1)
+        correct = (predictions == labels).sum().item()
+        accuracy = correct / len(labels)
+    return accuracy
 
 
 def compute_per_class_accuracy(
     model: nn.Module,
-    images: mx.array,
-    labels: mx.array,
+    images: torch.Tensor,
+    labels: torch.Tensor,
     class_names: list[str],
     num_classes: int | None = None,
+    device: torch.device = None,
 ) -> dict[str, float]:
     """Compute per-class accuracy.
 
     Args:
         model: Trained model
-        images: Images array of shape (N, H, W, C)
-        labels: Labels array of shape (N,)
+        images: Images tensor of shape (N, C, H, W)
+        labels: Labels tensor of shape (N,)
         class_names: List of class names
         num_classes: Number of classes (if None, inferred from class_names)
+        device: Device to run computation on (optional)
 
     Returns:
         Dictionary mapping class names to accuracy values
     """
+    if device is not None:
+        images = images.to(device)
+        labels = labels.to(device)
+        model = model.to(device)
+
     if num_classes is None:
         num_classes = len(class_names)
 
-    logits = model(images)
-    predictions = mx.argmax(logits, axis=1)
+    model.eval()
+    with torch.no_grad():
+        logits = model(images)
+        predictions = torch.argmax(logits, dim=1)
 
-    per_class_acc = {}
-    for class_idx in range(num_classes):
-        # Find samples belonging to this class
-        class_mask = labels == class_idx  # type: ignore[assignment]
-        class_samples = mx.sum(class_mask)  # type: ignore[arg-type]
+        per_class_acc = {}
+        for class_idx in range(num_classes):
+            # Find samples belonging to this class
+            class_mask = labels == class_idx
+            class_samples = class_mask.sum().item()
 
-        if class_samples > 0:
-            # Compute accuracy for this class
-            class_correct = mx.sum((predictions == labels) & class_mask)  # type: ignore[arg-type,operator]
-            class_accuracy = class_correct / class_samples
-            per_class_acc[class_names[class_idx]] = class_accuracy.item()
-        else:
-            per_class_acc[class_names[class_idx]] = 0.0
+            if class_samples > 0:
+                # Compute accuracy for this class
+                class_correct = ((predictions == labels) & class_mask).sum().item()
+                class_accuracy = class_correct / class_samples
+                per_class_acc[class_names[class_idx]] = class_accuracy
+            else:
+                per_class_acc[class_names[class_idx]] = 0.0
 
     return per_class_acc
 
@@ -97,7 +119,7 @@ def compute_confusion_matrix(
 
     for batch_images, batch_labels in tqdm(data_loader, desc="Computing predictions"):
         logits = model(batch_images)
-        predictions = mx.argmax(logits, axis=1)
+        predictions = torch.argmax(logits, dim=1)
 
         all_predictions.extend(np.array(predictions).tolist())
         all_labels.extend(np.array(batch_labels).tolist())
@@ -129,7 +151,7 @@ def evaluate_model(
 
     for batch_images, batch_labels in data_loader:
         logits = model(batch_images)
-        predictions = mx.argmax(logits, axis=1)
+        predictions = torch.argmax(logits, dim=1)
 
         all_predictions.extend(np.array(predictions).tolist())
         all_labels.extend(np.array(batch_labels).tolist())
@@ -243,21 +265,21 @@ def benchmark_inference_speed(
     for batch_size in batch_sizes:
         # Create dummy input data (batch_size, height, width, channels)
         # MLX uses NHWC format
-        dummy_input = mx.random.uniform(
-            shape=(batch_size, image_size, image_size, 3), dtype=mx.float32
+        dummy_input = torch.randn(
+            batch_size, 3, image_size, image_size, dtype=torch.float32
         )
 
         # Warmup phase - ensure model is compiled and caches are warm
         for _ in range(num_warmup):
             _ = model(dummy_input)
-            mx.eval(dummy_input)  # Force evaluation
+            # Removed mx.eval call(dummy_input)  # Force evaluation
 
         # Measurement phase
         times = []
         for _ in range(num_iterations):
             start_time = time.perf_counter()
             logits = model(dummy_input)
-            mx.eval(logits)  # Force evaluation to ensure computation is complete
+            # Removed mx.eval call(logits)  # Force evaluation to ensure computation is complete
             end_time = time.perf_counter()
             times.append(end_time - start_time)
 

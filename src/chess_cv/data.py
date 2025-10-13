@@ -6,8 +6,8 @@ import random
 from pathlib import Path
 from typing import Callable
 
-import mlx.core as mx
 import numpy as np
+import torch
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision.transforms import v2
@@ -381,15 +381,27 @@ class ChessPiecesDataset(Dataset):
         return img_array, label
 
 
-def collate_fn(batch: list) -> tuple[mx.array, mx.array]:
+def collate_fn(batch: list) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Custom collate function to convert a batch of numpy arrays from the dataset
-    into a single MLX array for images and an MLX array for labels.
+    into a single PyTorch tensor for images and a PyTorch tensor for labels.
+    Handles NHWC to NCHW conversion for PyTorch compatibility.
     """
     images, labels = zip(*batch)
-    images = np.stack(images)
-    labels = np.array(labels)
-    return mx.array(images), mx.array(labels)
+
+    # Stack images and convert to PyTorch tensors
+    # Input shape: (batch_size, height, width, channels) - NHWC
+    # Output shape: (batch_size, channels, height, width) - NCHW for PyTorch
+    images_np = np.stack(images)  # NHWC format
+    images_tensor = torch.from_numpy(images_np).float()  # Convert to float tensor
+
+    # Rearrange dimensions from NHWC to NCHW
+    images_tensor = images_tensor.permute(0, 3, 1, 2)  # (N, H, W, C) -> (N, C, H, W)
+
+    # Convert labels to PyTorch tensor
+    labels_tensor = torch.tensor(labels, dtype=torch.long)
+
+    return images_tensor, labels_tensor
 
 
 class HuggingFaceChessPiecesDataset(Dataset):

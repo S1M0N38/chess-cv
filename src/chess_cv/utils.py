@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-import mlx.core as mx
+import torch
 
 from .constants import get_model_config
 from .model import SimpleCNN
@@ -18,7 +18,7 @@ def get_bundled_weight_path(model_id: str) -> Path:
         model_id: Model identifier (e.g., 'pieces', 'arrows')
 
     Returns:
-        Path to the bundled .safetensors file
+        Path to the bundled model weights file (.pth or .pt)
 
     Raises:
         ValueError: If model_id is not available in bundled weights
@@ -65,7 +65,7 @@ def load_bundled_model(model_id: str) -> SimpleCNN:
 
     # Load bundled weights
     weight_path = get_bundled_weight_path(model_id)
-    weights = mx.load(str(weight_path))
-    model.load_weights(list(weights.items()))  # type: ignore[attr-defined]
+    state_dict = torch.load(weight_path, map_location="cpu")
+    model.load_state_dict(state_dict)
 
     return model

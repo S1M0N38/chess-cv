@@ -1,7 +1,8 @@
 """CNN model architecture for chess piece classification."""
 
-import mlx.core as mx
-import mlx.nn as nn
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 __all__ = ["SimpleCNN", "create_model"]
 
@@ -41,33 +42,33 @@ class SimpleCNN(nn.Module):
         # Fully connected layers
         # After 3 pooling layers: 32 -> 16 -> 8 -> 4
         # Feature map size: 4x4x64 = 1024
-        self.fc1 = nn.Linear(input_dims=64 * 4 * 4, output_dims=128)
+        self.fc1 = nn.Linear(in_features=64 * 4 * 4, out_features=128)
         self.dropout = nn.Dropout(p=dropout)
-        self.fc2 = nn.Linear(input_dims=128, output_dims=num_classes)
+        self.fc2 = nn.Linear(in_features=128, out_features=num_classes)
 
-    def __call__(self, x: mx.array) -> mx.array:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass.
 
         Args:
-            x: Input tensor of shape (batch_size, height, width, channels)
-               MLX uses NHWC format by default
+            x: Input tensor of shape (batch_size, channels, height, width)
+               PyTorch uses NCHW format by default
 
         Returns:
             Logits of shape (batch_size, num_classes)
         """
         # Block 1: Conv → ReLU → Pool
         x = self.conv1(x)
-        x = nn.relu(x)
+        x = F.relu(x)
         x = self.pool(x)
 
         # Block 2: Conv → ReLU → Pool
         x = self.conv2(x)
-        x = nn.relu(x)
+        x = F.relu(x)
         x = self.pool(x)
 
         # Block 3: Conv → ReLU → Pool
         x = self.conv3(x)
-        x = nn.relu(x)
+        x = F.relu(x)
         x = self.pool(x)
 
         # Flatten
@@ -76,7 +77,7 @@ class SimpleCNN(nn.Module):
 
         # Fully connected layers
         x = self.fc1(x)
-        x = nn.relu(x)
+        x = F.relu(x)
         x = self.dropout(x)
         x = self.fc2(x)
 
@@ -93,6 +94,13 @@ def create_model(num_classes: int = 13) -> SimpleCNN:
         Initialized SimpleCNN model
     """
     model = SimpleCNN(num_classes=num_classes)
-    # Initialize parameters by evaluating them
-    mx.eval(model.parameters())
+
+    # Initialize weights using Xavier initialization
+    def _init_weights(m):
+        if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+            nn.init.xavier_uniform_(m.weight)
+            if m.bias is not None:
+                nn.init.zeros_(m.bias)
+
+    model.apply(_init_weights)
     return model

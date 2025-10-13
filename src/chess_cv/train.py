@@ -4,11 +4,11 @@ from pathlib import Path
 
 __all__ = ["train"]
 
-import mlx.core as mx
-import mlx.nn as nn
-import mlx.optimizers as optim
+import math
+
 import torch
-from mlx.utils import tree_flatten
+import torch.nn as nn
+import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision.transforms import v2
 from tqdm import tqdm
@@ -49,10 +49,15 @@ from .visualize import TrainingVisualizer
 from .wandb_utils import WandbLogger
 
 
-def loss_fn(model: nn.Module, images: mx.array, labels: mx.array) -> mx.array:
+def loss_fn(
+    model: nn.Module,
+    images: torch.Tensor,
+    labels: torch.Tensor,
+    criterion: nn.CrossEntropyLoss,
+) -> torch.Tensor:
     """Compute cross-entropy loss."""
     logits = model(images)
-    loss = nn.losses.cross_entropy(logits, labels, reduction="mean")
+    loss = criterion(logits, labels)
     return loss
 
 
@@ -61,7 +66,8 @@ def train_epoch(
     optimizer: optim.Optimizer,
     train_loader: DataLoader,
     val_loader: DataLoader,
-    loss_and_grad_fn,
+    criterion: nn.CrossEntropyLoss,
+    device: torch.device,
     wandb_logger: WandbLogger,
     visualizer,
     epoch: int,
@@ -81,7 +87,8 @@ def train_epoch(
         optimizer: Optimizer
         train_loader: Training data loader
         val_loader: Validation data loader
-        loss_and_grad_fn: Combined loss and gradient function
+        criterion: Loss function
+        device: Device to run training on
         wandb_logger: WandB logger instance
         visualizer: TrainingVisualizer instance or None
         epoch: Current epoch number (1-indexed)
@@ -99,23 +106,31 @@ def train_epoch(
                   updated_best_val_acc, updated_best_val_loss,
                   updated_epochs_without_improvement)
     """
+    model.train()
     total_loss = 0.0
     total_correct = 0
     total_samples = 0
 
     pbar = tqdm(train_loader, desc="Training", leave=False)
     for batch_idx, (batch_images, batch_labels) in enumerate(pbar):
-        loss, grads = loss_and_grad_fn(model, batch_images, batch_labels)
-        optimizer.update(model, grads)
-        mx.eval(model.parameters(), optimizer.state, loss)
+        # Move data to device
+        batch_images = batch_images.to(device)
+        batch_labels = batch_labels.to(device)
 
-        logits = model(batch_images)
-        predictions = mx.argmax(logits, axis=1)
-        correct = mx.sum(predictions == batch_labels)
+        # Zero gradients, forward pass, backward pass, optimize
+        optimizer.zero_grad()
+        outputs = model(batch_images)
+        loss = criterion(outputs, batch_labels)
+        loss.backward()
+        optimizer.step()
 
-        batch_size = len(batch_labels)
+        # Calculate accuracy
+        _, predictions = torch.max(outputs, 1)
+        correct = (predictions == batch_labels).sum().item()
+
+        batch_size = batch_labels.size(0)
         total_loss += loss.item() * batch_size
-        total_correct += correct.item()
+        total_correct += correct
         total_samples += batch_size
 
         # Increment global step
@@ -127,22 +142,23 @@ def train_epoch(
             and wandb_logger.enabled
             and global_step % log_every_n_steps == 0
         ):
-            batch_acc = correct.item() / batch_size
+            batch_acc = correct / batch_size
+            current_lr = optimizer.param_groups[0]["lr"]
             log_dict = {
                 "global_step": global_step,
                 "loss/train_step": loss.item(),
                 "accuracy/train_step": batch_acc,
+                "learning_rate": current_lr,
                 "epoch": epoch,
             }
-            # Add learning rate if using scheduler
-            if hasattr(optimizer.learning_rate, "item"):
-                log_dict["learning_rate"] = optimizer.learning_rate.item()
             wandb_logger.log(log_dict, step=global_step)
 
         # Mid-epoch validation
         if global_step % validate_every_n_steps == 0:
             # Run validation on full validation set
-            val_loss, val_acc = validate_epoch(model, val_loader, leave=False)
+            val_loss, val_acc = validate_epoch(
+                model, val_loader, criterion, device, leave=False
+            )
 
             # Log to wandb
             if wandb_logger is not None and wandb_logger.enabled:
@@ -185,23 +201,17 @@ def train_epoch(
                 epochs_without_improvement = 0
 
                 # Save model checkpoint
-                from mlx.utils import tree_flatten
-
                 model_path = checkpoint_dir / get_model_filename(model_id)
-                mx.save_safetensors(
-                    str(model_path), dict(tree_flatten(model.parameters()))
-                )
+                torch.save(model.state_dict(), model_path)
                 optimizer_path = checkpoint_dir / OPTIMIZER_FILENAME
-                mx.save_safetensors(
-                    str(optimizer_path), dict(tree_flatten(optimizer.state))
-                )
+                torch.save(optimizer.state_dict(), optimizer_path)
             else:
                 epochs_without_improvement += 1
 
         pbar.set_postfix(
             {
                 "loss": f"{loss.item():.4f}",
-                "acc": f"{correct.item() / batch_size:.4f}",
+                "acc": f"{correct / batch_size:.4f}",
             }
         )
 
@@ -216,40 +226,53 @@ def train_epoch(
 
 
 def validate_epoch(
-    model: nn.Module, val_loader: DataLoader, leave: bool = False
+    model: nn.Module,
+    val_loader: DataLoader,
+    criterion: nn.CrossEntropyLoss,
+    device: torch.device,
+    leave: bool = False,
 ) -> tuple[float, float]:
     """Validate for one epoch.
 
     Args:
         model: Model to validate
         val_loader: Validation data loader
+        criterion: Loss function
+        device: Device to run validation on
         leave: Whether to leave the progress bar visible after completion
 
     Returns:
         Tuple of (average_loss, average_accuracy)
     """
+    model.eval()
     total_loss = 0.0
     total_correct = 0
     total_samples = 0
 
     pbar = tqdm(val_loader, desc="Validation", leave=leave)
-    for batch_images, batch_labels in pbar:
-        loss = loss_fn(model, batch_images, batch_labels)
-        logits = model(batch_images)
-        predictions = mx.argmax(logits, axis=1)
-        correct = mx.sum(predictions == batch_labels)
+    with torch.no_grad():
+        for batch_images, batch_labels in pbar:
+            # Move data to device
+            batch_images = batch_images.to(device)
+            batch_labels = batch_labels.to(device)
 
-        batch_size = len(batch_labels)
-        total_loss += loss.item() * batch_size
-        total_correct += correct.item()
-        total_samples += batch_size
+            outputs = model(batch_images)
+            loss = criterion(outputs, batch_labels)
 
-        pbar.set_postfix(
-            {
-                "loss": f"{loss.item():.4f}",
-                "acc": f"{correct.item() / batch_size:.4f}",
-            }
-        )
+            _, predictions = torch.max(outputs, 1)
+            correct = (predictions == batch_labels).sum().item()
+
+            batch_size = batch_labels.size(0)
+            total_loss += loss.item() * batch_size
+            total_correct += correct
+            total_samples += batch_size
+
+            pbar.set_postfix(
+                {
+                    "loss": f"{loss.item():.4f}",
+                    "acc": f"{correct / batch_size:.4f}",
+                }
+            )
 
     return total_loss / total_samples, total_correct / total_samples
 
@@ -591,8 +614,7 @@ def train(
     print(model)
 
     # Calculate total parameters
-    param_list = tree_flatten(model.parameters())
-    num_params = sum(v.size for _, v in param_list)  # type: ignore[attr-defined]
+    num_params = sum(p.numel() for p in model.parameters())
     print(f"\nTotal parameters: {num_params:,}")
 
     # Create optimizer with optional learning rate scheduler
@@ -600,41 +622,55 @@ def train(
     print("OPTIMIZER")
     print("=" * 60)
 
+    # Set device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+    criterion = nn.CrossEntropyLoss()
+
     if use_scheduler:
         # Calculate total training steps
         total_steps = num_epochs * len(train_loader)
         warmup_steps = int(warmup_ratio * total_steps)
-        decay_steps = total_steps - warmup_steps
 
-        # Create warmup schedule: 0 → base_lr
-        warmup_sched = optim.linear_schedule(0.0, base_lr, warmup_steps)
-
-        # Create cosine decay schedule: base_lr → min_lr
-        decay_sched = optim.cosine_decay(
-            init=base_lr, decay_steps=decay_steps, end=min_lr
+        # Create optimizer with base learning rate
+        optimizer = optim.AdamW(
+            model.parameters(), lr=base_lr, weight_decay=weight_decay
         )
 
-        # Join schedules: warmup then decay
-        lr_schedule = optim.join_schedules(
-            schedules=[warmup_sched, decay_sched], boundaries=[warmup_steps]
-        )
+        # Create learning rate scheduler: warmup + cosine decay
+        def lr_lambda(current_step: int) -> float:
+            if current_step < warmup_steps:
+                # Linear warmup
+                return current_step / max(1, warmup_steps)
+            else:
+                # Cosine decay
+                progress = (current_step - warmup_steps) / max(
+                    1, total_steps - warmup_steps
+                )
+                return min_lr + (base_lr - min_lr) * 0.5 * (
+                    1 + math.cos(math.pi * progress)
+                )
 
-        optimizer = optim.AdamW(learning_rate=lr_schedule, weight_decay=weight_decay)
+        scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+
         print("Optimizer: AdamW with LR scheduler")
         print(f"  Base LR:       {base_lr}")
         print(f"  Min LR:        {min_lr}")
         print(
             f"  Warmup steps:  {warmup_steps} ({warmup_ratio * 100:.1f}% of {total_steps} total steps)"
         )
-        print(f"  Decay steps:   {decay_steps}")
+        print(f"  Total steps:   {total_steps}")
         print(f"  Weight decay:  {weight_decay}")
     else:
-        optimizer = optim.AdamW(learning_rate=learning_rate, weight_decay=weight_decay)
+        optimizer = optim.AdamW(
+            model.parameters(), lr=learning_rate, weight_decay=weight_decay
+        )
+        scheduler = None
         print("Optimizer: AdamW (no scheduler)")
         print(f"  Learning rate: {learning_rate}")
         print(f"  Weight decay:  {weight_decay}")
 
-    loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
+    print(f"Device: {device}")
 
     best_val_acc = 0.0
     best_val_loss = float("inf")
@@ -668,7 +704,8 @@ def train(
             optimizer,
             train_loader,
             val_loader,
-            loss_and_grad_fn,
+            criterion,
+            device,
             wandb_logger,
             visualizer if not use_wandb else None,
             epoch + 1,
@@ -681,7 +718,13 @@ def train(
             best_val_loss,
             epochs_without_improvement,
         )
-        val_loss, val_acc = validate_epoch(model, val_loader, leave=False)
+        val_loss, val_acc = validate_epoch(
+            model, val_loader, criterion, device, leave=False
+        )
+
+        # Update scheduler if using one
+        if scheduler is not None:
+            scheduler.step()
 
         # Update visualizer or log to wandb
         if use_wandb:
@@ -694,9 +737,9 @@ def train(
                 "accuracy/train": train_acc,
                 "accuracy/val": val_acc,
             }
-            # Add learning rate if using scheduler
-            if hasattr(optimizer.learning_rate, "item"):
-                epoch_log_dict["learning_rate"] = optimizer.learning_rate.item()
+            # Add learning rate
+            current_lr = optimizer.param_groups[0]["lr"]
+            epoch_log_dict["learning_rate"] = current_lr
             wandb_logger.log(epoch_log_dict)
         else:
             visualizer.update(epoch + 1, train_loss, train_acc, val_loss, val_acc)
@@ -724,11 +767,9 @@ def train(
             best_val_acc = val_acc
             epochs_without_improvement = 0
             model_path = checkpoint_dir / get_model_filename(model_id)
-            mx.save_safetensors(str(model_path), dict(tree_flatten(model.parameters())))
+            torch.save(model.state_dict(), model_path)
             optimizer_path = checkpoint_dir / OPTIMIZER_FILENAME
-            mx.save_safetensors(
-                str(optimizer_path), dict(tree_flatten(optimizer.state))
-            )
+            torch.save(optimizer.state_dict(), optimizer_path)
         else:
             epochs_without_improvement += 1
 
