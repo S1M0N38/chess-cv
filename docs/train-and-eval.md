@@ -6,11 +6,17 @@ Learn how to generate data, train models, and evaluate performance with Chess CV
 
 ### Basic Usage
 
-Generate synthetic chess piece images:
+Generate synthetic training data for a specific model:
 
 ```bash
-# Using default settings (70% train, 15% val, 15% test)
-chess-cv preprocessing
+# Generate data for pieces model (default: 70% train, 15% val, 15% test)
+chess-cv preprocessing pieces
+
+# Generate data for arrows model
+chess-cv preprocessing arrows
+
+# Generate data for snap model
+chess-cv preprocessing snap
 ```
 
 ### Custom Output Directories
@@ -19,41 +25,58 @@ If you need to specify custom output directories:
 
 ```bash
 chess-cv preprocessing pieces \
-  --train-dir custom/train \
-  --val-dir custom/validate \
-  --test-dir custom/test
+  --train-dir custom/pieces/train \
+  --val-dir custom/pieces/validate \
+  --test-dir custom/pieces/test
 ```
 
 Note: The default 70/15/15 train/val/test split with seed 42 is used. These values are defined in `src/chess_cv/constants.py` and provide consistent, reproducible splits.
 
 ### Understanding Data Generation
 
-The preprocessing script:
+The preprocessing script generates model-specific training data:
 
-1. Reads board images from `data/boards/`
-2. Reads piece sets from `data/pieces/`
-3. For each board-piece combination:
+**Pieces Model:**
+
+1. Reads board images from `data/boards/` and piece sets from `data/pieces/`
+2. For each board-piece combination:
     - Renders pieces onto the board
     - Extracts 32×32 pixel squares
     - Saves images to train/validate/test directories
-4. Splits data according to specified ratios
+3. Generates ~93,000 images split into train (70%), val (15%), test (15%)
+4. Balanced across 13 classes (12 pieces + empty square)
 
-**Output:**
+**Arrows Model:**
 
-- **Train set**: ~65,000 images (70%)
-- **Validation set**: ~14,000 images (15%)
-- **Test set**: ~14,000 images (15%)
+1. Reads board images and arrow overlays from `data/arrows/`
+2. For each board-arrow combination:
+    - Renders arrow components onto boards
+    - Extracts 32×32 pixel squares
+3. Generates ~4.5M images for 49 arrow component classes
 
-Each set contains balanced examples of all 13 classes.
+**Snap Model:**
+
+1. Reads board images and piece sets with positioning variations
+2. Generates centered and off-centered piece examples
+3. Generates ~176,000 images for 2 centering classes (ok/bad)
+
+All models use the 70/15/15 train/val/test split with seed 42 for reproducibility.
 
 ## Model Training
 
 ### Basic Training
 
-Train with default settings:
+Train a specific model with default settings:
 
 ```bash
-chess-cv train
+# Train pieces model
+chess-cv train pieces
+
+# Train arrows model
+chess-cv train arrows
+
+# Train snap model
+chess-cv train snap
 ```
 
 ### Custom Training Configuration
@@ -68,6 +91,10 @@ chess-cv train pieces \
   --num-epochs 1000 \
   --num-workers 8
 ```
+
+**Model-Specific Defaults:**
+
+Each model type uses optimized hyperparameters defined in `src/chess_cv/constants.py`. The arrows model, for example, uses larger batch sizes (128) and fewer epochs (20) as it converges faster.
 
 Note: Image size is fixed at 32×32 pixels (model architecture requirement).
 
@@ -144,55 +171,42 @@ Track experiments with the W&B dashboard by adding the `--wandb` flag:
 wandb login
 
 # Train with wandb logging
-chess-cv train --wandb
+chess-cv train pieces --wandb
 ```
 
 **Features**: Real-time metric logging, hyperparameter tracking, model comparison, and experiment organization.
 
 ### Hyperparameter Sweeps
 
-Optimize hyperparameters with W&B sweeps:
+Optimize hyperparameters with W&B sweeps using the integrated `--sweep` flag:
 
 ```bash
-# Initialize sweep with configuration
-wandb sweep sweep.yaml
+# First time setup
+wandb login
 
-# Run sweep agent
-wandb agent your-entity/chess-cv/sweep-id
+# Run hyperparameter sweep for a model (requires --wandb)
+chess-cv train pieces --sweep --wandb
+
+# The sweep will use the configuration defined in src/chess_cv/sweep.py
 ```
 
-Example `sweep.yaml`:
-
-```yaml
-program: chess-cv
-command:
-  - train
-  - --wandb
-method: bayes
-metric:
-  name: val_accuracy
-  goal: maximize
-parameters:
-  learning_rate:
-    distribution: log_uniform
-    min: 0.0001
-    max: 0.001
-  batch_size:
-    values: [32, 64, 128]
-  weight_decay:
-    distribution: log_uniform
-    min: 0.0001
-    max: 0.001
-```
+**Important**: The `--sweep` flag requires `--wandb` to be enabled. The sweep configuration is defined in `src/chess_cv/sweep.py` and includes parameters like learning rate, batch size, and weight decay optimized for each model type.
 
 ## Model Evaluation
 
 ### Basic Evaluation
 
-Evaluate trained model on test set:
+Evaluate a trained model on its test set:
 
 ```bash
-chess-cv test
+# Evaluate pieces model
+chess-cv test pieces
+
+# Evaluate arrows model
+chess-cv test arrows
+
+# Evaluate snap model
+chess-cv test snap
 ```
 
 ### Custom Evaluation
@@ -204,7 +218,22 @@ chess-cv test pieces \
   --checkpoint checkpoints/pieces/pieces.safetensors \
   --batch-size 64 \
   --num-workers 8 \
-  --output-dir outputs
+  --output-dir outputs/pieces
+```
+
+### Evaluating on External Datasets
+
+Test model performance on HuggingFace datasets:
+
+```bash
+# Evaluate on a specific dataset
+chess-cv test pieces \
+  --hf-test-dir S1M0N38/chess-cv-openboard
+
+# Concatenate all splits from the dataset
+chess-cv test pieces \
+  --hf-test-dir S1M0N38/chess-cv-chessvision \
+  --concat-splits
 ```
 
 ### Evaluation Output
@@ -236,27 +265,36 @@ Review examples in `outputs/misclassified_images/` to understand:
 
 ### Upload to Hugging Face Hub
 
-Share your trained model on Hugging Face Hub:
+Share your trained models on Hugging Face Hub:
 
 ```bash
 # First time setup
 hf login
 
-# Upload model
-chess-cv upload --repo-id username/chess-cv
+# Upload a specific model
+chess-cv upload pieces --repo-id username/chess-cv
 ```
 
-**Options:**
+**Examples:**
 
 ```bash
-chess-cv upload \
-  --repo-id username/chess-cv \
-  --checkpoint-dir checkpoints \
-  --message "feat: initial model release" \
-  --private  # Optional: create private repository
+# Upload pieces model with default settings
+chess-cv upload pieces --repo-id username/chess-cv
+
+# Upload arrows model with custom message
+chess-cv upload arrows --repo-id username/chess-cv \
+  --message "feat: improved arrows model v2"
+
+# Upload to private repository
+chess-cv upload snap --repo-id username/chess-cv --private
+
+# Specify custom paths
+chess-cv upload pieces --repo-id username/chess-cv \
+  --checkpoint-dir ./my-checkpoints/pieces \
+  --readme docs/custom_README.md
 ```
 
-**What gets uploaded**: Model weights, model card with metadata, training visualizations, and model configuration.
+**What gets uploaded**: Model weights (`{model-id}.safetensors`), model card with metadata, and model configuration.
 
 ## Troubleshooting
 

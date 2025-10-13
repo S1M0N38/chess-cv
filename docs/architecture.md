@@ -1,6 +1,6 @@
 # Architecture
 
-Detailed information about the Chess CV model architectures, training strategies, and performance characteristics for both the pieces and arrows models.
+Detailed information about the Chess CV model architectures, training strategies, and performance characteristics for the pieces, arrows, and snap models.
 
 <figure markdown>
   ![Model Architecture](assets/model.svg)
@@ -350,3 +350,125 @@ The dataset maintains balanced class distribution:
     The model is trained on images containing **at most one arrow component per square**. Classification accuracy degrades significantly when multiple arrow parts overlap in a single square, which can occur with densely annotated boards or crossing arrows.
 
     **Example failure case**: If a square contains both an arrow head and a perpendicular arrow shaft, the model may only detect one component or produce incorrect predictions.
+
+---
+
+## Snap Model
+
+### Model Architecture
+
+#### Overview
+
+The snap model uses the same SimpleCNN architecture as the pieces and arrows models, but is trained to classify piece centering quality instead of piece identity or arrow components. This enables automated detection of whether chess pieces are properly positioned within board squares, facilitating quality control for digital chess interfaces and automated analysis systems.
+
+#### Network Design
+
+The network architecture is identical to the pieces model (see [Pieces Model Architecture](#network-design) above), with the only difference being the output layer dimension.
+
+```
+[Same architecture as pieces model]
+
+Fully Connected 2:
+└── Linear(128 → 2) → Output logits
+
+Softmax → 2-class probabilities
+```
+
+#### Model Statistics
+
+- **Total Parameters**: 156,077 (same as pieces model)
+- **Trainable Parameters**: 156,077
+- **Model Size**: ~600 KB (safetensors format)
+- **Input Size**: 32×32×3 (RGB)
+- **Output Classes**: 2
+
+#### Class Labels
+
+The model classifies chess squares into 2 categories representing piece centering quality:
+
+**Centered (1):**
+
+- `ok` – Pieces that are properly centered or slightly off-centered, plus empty squares
+
+**Off-Centered (1):**
+
+- `bad` – Pieces that are significantly misaligned or positioned poorly within the square
+
+**Rationale:** The model treats both properly centered pieces and empty squares as "ok" since both represent valid board states. Only poorly positioned pieces trigger the "bad" classification, enabling automated quality assurance.
+
+### Performance Characteristics
+
+#### Expected Results
+
+With the default configuration:
+
+- **Test Accuracy**: TBD (training in progress)
+- **F1 Score (Macro)**: TBD (training in progress)
+- **Training Time**: TBD (training in progress, 200 epochs)
+- **Inference Speed**: ~0.05 ms per image (similar to pieces model, varying by hardware)
+
+#### Per-Class Performance
+
+*Performance metrics will be available after training completion. The model is being trained with 200 epochs using default parameters.*
+
+#### Evaluation on External Datasets
+
+*No external dataset evaluation has been conducted yet. The model has only been evaluated on synthetic test data.*
+
+#### Training Configuration
+
+The snap model uses similar hyperparameters to the pieces model, optimized for the 2-class centering classification task:
+
+- **Epochs**: 200 (same as pieces model)
+- **Batch Size**: 64 (same as pieces model)
+- **Learning Rate**: 0.001 with warmup and cosine decay (same as pieces model)
+- **Weight Decay**: 0.001 (same as pieces model)
+- **Optimizer**: AdamW
+- **Early Stopping**: Disabled
+
+### Dataset Characteristics
+
+#### Synthetic Data Generation
+
+The snap training data is synthetically generated using the same board styles as the pieces model:
+
+**Source Materials:**
+
+- 55 board styles (256×256px)
+- 64 piece sets (32×32px)
+- Multiple visual styles from chess.com and lichess
+- Centered and off-centered piece positions
+
+**Generation Process:**
+
+1. Render pieces with intentional positioning variations
+2. Extract 32×32 squares at piece locations
+3. Extract empty squares from light and dark squares
+4. Split combinations across train/val/test sets
+
+**Data Statistics:**
+
+- **Total Images**: ~176,000
+- **Train Set**: ~123,300 (70.1%)
+- **Validation Set**: ~26,400 (15.0%)
+- **Test Set**: ~26,300 (14.9%)
+
+The dataset size is comparable to the pieces model, reflecting the importance of robust centering detection across different board styles, piece sets, and positioning variations.
+
+#### Class Balance
+
+The dataset maintains balanced class distribution:
+
+- Each centering class has equal representation
+- Empty squares are included in the "ok" class
+- Train/val/test splits maintain class balance
+
+#### Limitations
+
+!!! warning "Centering Semantics Preservation"
+
+    The model is trained with **conservative augmentation** to preserve centering semantics. No rotation or significant geometric transformations are applied that could alter the perceived centering of pieces within squares.
+
+!!! warning "Synthetic Training Data"
+
+    The model is trained only on synthetically generated centering variations. Performance on real-world chess board images with natural positioning variations may vary from synthetic test results.

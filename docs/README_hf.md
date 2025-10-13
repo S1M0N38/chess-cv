@@ -74,6 +74,23 @@ model-index:
             value: 0.9997
             name: F1 Score (Macro)
             verified: false
+  - name: chess-cv-snap
+    results:
+      - task:
+          type: image-classification
+          name: Image Classification
+        dataset:
+          name: Chess CV Snap Test Dataset
+          type: chess-cv-snap-test
+        metrics:
+          - type: accuracy
+            value: TBD
+            name: Accuracy
+            verified: false
+          - type: f1
+            value: TBD
+            name: F1 Score (Macro)
+            verified: false
 pipeline_tag: image-classification
 ---
 
@@ -85,7 +102,7 @@ pipeline_tag: image-classification
 
 </div>
 
-Lightweight CNN (156k parameters) that classifies chess pieces and arrows from 32×32 pixel square images. Trained on synthetic data from chess.com/lichess boards, piece sets and arrow overlays.
+Lightweight CNN (156k parameters) that classifies chess pieces, arrows, and piece centering from 32×32 pixel square images. Trained on synthetic data from chess.com/lichess boards, piece sets, arrow overlays, and centering variations.
 
 ## Quick Start
 
@@ -131,7 +148,7 @@ model.eval()
 
 ## Models
 
-This repository contains two specialized models for chess board analysis:
+This repository contains three specialized models for chess board analysis:
 
 ### ♟️ Pieces Model (`pieces.safetensors`)
 
@@ -183,26 +200,58 @@ The arrows model is optimized for detecting directional annotations while mainta
 
 **Limitation:** Classification accuracy degrades when multiple arrow components overlap in a single square.
 
+### 📐 Snap Model (`snap.safetensors`)
+
+**Overview:**
+
+The snap model classifies chess square images into 2 classes: centered ("ok") and off-centered ("bad") pieces. This model is designed for automated board analysis and piece positioning validation, helping ensure proper piece placement in digital chess interfaces and automated analysis systems.
+
+**Training:**
+
+- **Architecture**: SimpleCNN (156k parameters)
+- **Input**: 32×32px RGB square images
+- **Data**: ~176,000 synthetic images from centered and off-centered piece positions (~123,300 train, ~26,400 val, ~26,300 test)
+- **Augmentation**: Conservative augmentation with arrow overlays (50%), highlight overlays (20%), mouse overlays (80%), horizontal flips (50%), color jitter, and Gaussian noise. No rotation or geometric transformations to preserve centering semantics
+- **Optimizer**: AdamW (weight_decay=0.001) with LR scheduler (warmup + cosine decay: 0→0.001→1e-5)
+- **Training**: 200 epochs, batch size 64
+
+**Performance:**
+
+| Dataset               | Accuracy | F1-Score (Macro) |
+| --------------------- | :------: | :--------------: |
+| Test Data (synthetic) |   TBD    |       TBD        |
+
+*Training in progress*
+
+The snap model is optimized for detecting piece centering issues while maintaining robustness to various board styles and visual conditions.
+
+**Use Cases:**
+
+- Automated board state validation
+- Piece positioning quality control
+- Chess interface usability testing
+- Digital chess board quality assurance
+
 ## Training Your Own Model
 
-To train or evaluate the model yourself:
+To train or evaluate a model yourself:
 
 ```bash
 git clone https://github.com/S1M0N38/chess-cv.git
 cd chess-cv
 uv sync --all-extras
 
-# Generate training data
-chess-cv preprocessing
+# Generate training data for a specific model
+chess-cv preprocessing pieces  # or 'arrows' or 'snap'
 
 # Train model
-chess-cv train
+chess-cv train pieces  # or 'arrows' or 'snap'
 
 # Evaluate model
-chess-cv test
+chess-cv test pieces  # or 'arrows' or 'snap'
 ```
 
-See the [Setup Guide](https://s1m0n38.github.io/chess-cv/setup/) and [Usage Guide](https://s1m0n38.github.io/chess-cv/usage/) for detailed instructions on data generation, training configuration, and evaluation.
+See the [Setup Guide](https://s1m0n38.github.io/chess-cv/setup/) and [Train and Evaluate](https://s1m0n38.github.io/chess-cv/train-and-eval/) for detailed instructions on data generation, training configuration, and evaluation.
 
 ## Limitations
 

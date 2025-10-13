@@ -6,7 +6,7 @@ Learn how to use Chess CV as a library and load pre-trained models.
 
 ### Using Bundled Models (Recommended)
 
-The chess-cv package includes pre-trained weights for both the pieces and arrows models. This is the simplest way to get started:
+The chess-cv package includes pre-trained weights for all three models. This is the simplest way to get started:
 
 ```python
 from chess_cv import load_bundled_model
@@ -14,10 +14,12 @@ from chess_cv import load_bundled_model
 # Load models with bundled weights (included in package)
 pieces_model = load_bundled_model('pieces')
 arrows_model = load_bundled_model('arrows')
+snap_model = load_bundled_model('snap')
 
 # Set to evaluation mode
 pieces_model.eval()
 arrows_model.eval()
+snap_model.eval()
 
 print("Models loaded successfully!")
 ```
@@ -27,13 +29,17 @@ print("Models loaded successfully!")
 ```python
 from chess_cv.constants import get_model_config
 
-# Get class names and other config for a model
+# Get class names and other config for each model
 pieces_config = get_model_config('pieces')
-print(f"Classes: {pieces_config['class_names']}")
-print(f"Number of classes: {pieces_config['num_classes']}")
+print(f"Pieces classes: {pieces_config['class_names']}")  # ['bB', 'bK', ..., 'xx']
+print(f"Number of classes: {pieces_config['num_classes']}")  # 13
 
 arrows_config = get_model_config('arrows')
-print(f"Number of arrow classes: {arrows_config['num_classes']}")
+print(f"Number of arrow classes: {arrows_config['num_classes']}")  # 49
+
+snap_config = get_model_config('snap')
+print(f"Snap classes: {snap_config['class_names']}")  # ['ok', 'bad']
+print(f"Number of classes: {snap_config['num_classes']}")  # 2
 ```
 
 **Advanced: Get bundled weight paths:**
@@ -80,7 +86,9 @@ print("Model loaded successfully!")
 
 ### Making Predictions
 
-Classify a chess square image:
+#### Pieces Model - Classify Chess Pieces
+
+Classify a chess square image to identify pieces:
 
 ```python
 import mlx.core as mx
@@ -128,6 +136,71 @@ predicted_class = mx.argmax(probabilities, axis=-1).item()
 print(f"Predicted class: {classes[predicted_class]}")
 print(f"Confidence: {probabilities[0, predicted_class].item():.2%}")
 ```
+
+#### Arrows Model - Classify Arrow Components
+
+Classify arrow overlay components on chess board squares:
+
+```python
+import mlx.core as mx
+import numpy as np
+from PIL import Image
+from chess_cv import load_bundled_model
+from chess_cv.constants import get_model_config
+
+# Load arrows model
+model = load_bundled_model('arrows')
+model.eval()
+
+# Get class names (49 arrow components + empty)
+classes = get_model_config('arrows')['class_names']
+
+# Preprocess and predict (using same preprocess_image function as above)
+image_tensor = preprocess_image("square_with_arrow.png")
+logits = model(image_tensor)
+probabilities = mx.softmax(logits, axis=-1)
+predicted_class = mx.argmax(probabilities, axis=-1).item()
+
+print(f"Predicted arrow component: {classes[predicted_class]}")
+print(f"Confidence: {probabilities[0, predicted_class].item():.2%}")
+```
+
+**Arrow Classes**: The arrows model classifies 49 components including arrow heads (e.g., `head-N`, `head-SE`), tails (e.g., `tail-W`), middle segments (e.g., `middle-N-S`), corners (e.g., `corner-N-E`), and empty squares (`xx`).
+
+#### Snap Model - Classify Piece Centering
+
+Detect whether chess pieces are properly centered in squares:
+
+```python
+import mlx.core as mx
+import numpy as np
+from PIL import Image
+from chess_cv import load_bundled_model
+from chess_cv.constants import get_model_config
+
+# Load snap model
+model = load_bundled_model('snap')
+model.eval()
+
+# Get class names ('ok' or 'bad')
+classes = get_model_config('snap')['class_names']
+
+# Preprocess and predict (using same preprocess_image function as above)
+image_tensor = preprocess_image("square_to_check.png")
+logits = model(image_tensor)
+probabilities = mx.softmax(logits, axis=-1)
+predicted_class = mx.argmax(probabilities, axis=-1).item()
+
+print(f"Piece centering: {classes[predicted_class]}")
+print(f"Confidence: {probabilities[0, predicted_class].item():.2%}")
+
+if classes[predicted_class] == 'bad':
+    print("⚠️ Piece is off-centered - needs adjustment")
+else:
+    print("✓ Piece is properly centered or square is empty")
+```
+
+**Use Cases**: The snap model is useful for automated board state validation, piece positioning quality control, and chess interface usability testing.
 
 ### Batch Predictions
 
@@ -188,9 +261,11 @@ for pred in predictions:
 
 ## Troubleshooting
 
-**Model Loading Issues**: If model loading fails, verify the file path exists and that the model architecture matches the weights (use `SimpleCNN(num_classes=13)`).
+**Model Loading Issues**: If model loading fails, verify the file path exists and that the model architecture matches the weights. Use `SimpleCNN(num_classes=13)` for pieces, `SimpleCNN(num_classes=49)` for arrows, or `SimpleCNN(num_classes=2)` for snap.
 
 **Memory Issues**: Process images in smaller batches if you encounter memory problems during batch prediction.
+
+**Wrong Predictions**: Ensure input images are properly preprocessed (32×32px, RGB, normalized to [0,1]).
 
 ## Next Steps
 

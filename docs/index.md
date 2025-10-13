@@ -1,15 +1,21 @@
 <figure markdown="span">
   ![Chess CV](assets/model.svg){ width="600" }
-  <figcaption>Lightweight CNN for chess piece classification</figcaption>
+  <figcaption>Lightweight CNNs for chess board analysis</figcaption>
 </figure>
 
 ---
 
 !!! info "Project Status"
 
-    This project is actively developed. The current version provides a complete pipeline for training a lightweight CNN to classify chess pieces from 32×32px square images.
+    This project is actively developed. The current version provides a complete pipeline for training lightweight CNNs to classify chess board elements from 32×32px square images.
 
-Chess CV is a machine learning project that trains a lightweight CNN (156k parameters) from scratch to classify chess pieces from synthetically generated chessboard square images. The project combines 55 board styles with 64 piece sets from chess.com and lichess to generate a diverse training dataset of approximately 93,000 images. By rendering pieces onto different board backgrounds and extracting individual squares, the model learns robust piece recognition across various visual styles.
+Chess CV is a machine learning project that trains lightweight CNNs (156k parameters each) from scratch to classify different aspects of chess board squares. The project includes three specialized models trained on synthetically generated data from 55 board styles combined with piece sets and overlays from chess.com and lichess:
+
+- **Pieces Model** (13 classes): Classifies chess pieces and empty squares for board state recognition and FEN generation
+- **Arrows Model** (49 classes): Classifies arrow annotation components for detecting and reconstructing chess analysis overlays
+- **Snap Model** (2 classes): Classifies piece centering quality for automated board analysis and positioning validation
+
+Each model uses the same efficient CNN architecture but is optimized for its specific classification task, achieving robust recognition across various visual styles.
 
 <div class="grid cards" markdown>
 

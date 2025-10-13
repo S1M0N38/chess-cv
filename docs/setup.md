@@ -1,6 +1,6 @@
 # Setup Guide
 
-This guide will help you install and configure Chess CV for inference and training chess piece classifiers.
+This guide will help you install and configure Chess CV for inference and training chess board classification models.
 
 ## Prerequisites
 

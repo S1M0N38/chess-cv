@@ -1,6 +1,6 @@
 # Data Augmentation
 
-Documentation of data augmentation used in training.
+Documentation of data augmentation strategies used in training each model.
 
 ## Configuration
 
@@ -41,6 +41,25 @@ AUGMENTATION_CONFIGS = {
         "rotation_degrees": 2,
         "noise_mean": 0.0,
         "noise_sigma": 0.10,
+    },
+    "snap": {
+        "arrow_probability": 0.50,
+        "highlight_probability": 0.20,
+        "mouse_probability": 0.80,
+        "mouse_padding": 134,
+        "mouse_rotation_degrees": 5,
+        "mouse_center_crop_size": 246,
+        "mouse_final_size": 32,
+        "mouse_scale_range": (0.20, 0.30),
+        "mouse_ratio_range": (0.8, 1.2),
+        "horizontal_flip": True,
+        "horizontal_flip_prob": 0.5,
+        "brightness": 0.15,
+        "contrast": 0.2,
+        "saturation": 0.2,
+        "hue": 0.2,
+        "noise_mean": 0.0,
+        "noise_sigma": 0.05,
     },
 }
 ```
@@ -119,20 +138,56 @@ Applied in order during training:
 
 ---
 
+## Snap Model Pipeline
+
+<div align="center" markdown="1">
+
+![Snap Original 1](assets/snap/01-original.png){ width="75" style="margin: 0 10px;" }
+![Snap Original 2](assets/snap/02-original.png){ width="75" style="margin: 0 10px;" }
+![Snap Original 3](assets/snap/03-original.png){ width="75" style="margin: 0 10px;" }
+![Snap Original 4](assets/snap/04-original.png){ width="75" style="margin: 0 10px;" }
+
+![Snap Augmented 1](assets/snap/01-augmented.png){ width="75" style="margin: 0 10px;" }
+![Snap Augmented 2](assets/snap/02-augmented.png){ width="75" style="margin: 0 10px;" }
+![Snap Augmented 3](assets/snap/03-augmented.png){ width="75" style="margin: 0 10px;" }
+![Snap Augmented 4](assets/snap/04-augmented.png){ width="75" style="margin: 0 10px;" }
+
+*The first row shows original training images with varying piece centering, while the second row displays their augmented versions for the snap model.*
+
+</div>
+
+Applied in order during training:
+
+1. **Arrow Overlay** (50% probability): Overlays random arrow component from `data/arrows/`. Applied early to simulate realistic interface conditions where arrows may be present during piece positioning.
+
+2. **Highlight Overlay** (20% probability): Overlays semi-transparent highlight from `data/highlights/`. Simulates square highlighting that may occur during piece placement.
+
+3. **Mouse Cursor Overlay** (80% probability): Overlays random mouse cursor from `data/mouse/` with geometric transformations. Applies padding (134px), small rotation (±5°), center crop (246×246), random resized crop to final size (32×32) with scale 0.20-0.30 and ratio 0.8-1.2, making cursor smaller and positioning it randomly on the piece.
+
+4. **Horizontal Flip** (50% probability): Flips image left-to-right. Centering semantics are preserved under horizontal flip.
+
+5. **Color Jitter**: Randomly adjusts brightness (±15%), contrast (±20%), saturation (±20%), and hue (±20%).
+
+**Note:** The snap model uses **conservative augmentation** with no geometric transformations like rotation, cropping, or scaling to preserve piece centering semantics. The model needs to distinguish between properly centered and poorly positioned pieces, so spatial transformations that could alter perceived centering are avoided.
+
+---
+
 ## Key Differences
 
-| Augmentation        | Pieces                        | Arrows      | Reason                                        |
-| ------------------- | ----------------------------- | ----------- | --------------------------------------------- |
-| Canvas Expansion    | 16px edge padding (32→64)     | ❌          | Creates rotation space without edge cropping  |
-| Rotation            | ±10°                          | ±2°         | Pieces can handle more, arrows need direction |
-| Center Crop         | 40×40 (removes black corners) | ❌          | Removes rotation artifacts                    |
-| Random Resized Crop | Area 0.54-0.74, ratio 0.9-1.1 | ❌          | Translation + ±16% zoom + ±10% stretch        |
-| Arrow Overlay       | 80%                           | ❌          | Pieces must handle arrows                     |
-| Highlight Overlay   | 25%                           | 25%         | Both models handle highlights                 |
-| Mouse Overlay       | 90%                           | ❌          | Pieces must handle mouse cursors on screen    |
-| Horizontal Flip     | 50%                           | ❌          | Arrow direction is semantically important     |
-| Color Jitter        | B±15%, CSH±20%                | ±20% (BCSH) | Pieces use reduced brightness variation       |
-| Gaussian Noise      | σ=0.05                        | σ=0.10      | Arrows use higher noise                       |
+| Augmentation        | Pieces                        | Arrows      | Snap           | Reason                                        |
+| ------------------- | ----------------------------- | ----------- | -------------- | --------------------------------------------- |
+| Canvas Expansion    | 16px edge padding (32→64)     | ❌          | ❌             | Creates rotation space without edge cropping  |
+| Rotation            | ±10°                          | ±2°         | ❌             | Snap needs to preserve centering semantics    |
+| Center Crop         | 40×40 (removes black corners) | ❌          | ❌             | Removes rotation artifacts                    |
+| Random Resized Crop | Area 0.54-0.74, ratio 0.9-1.1 | ❌          | ❌             | Translation + zoom would alter centering      |
+| Arrow Overlay       | 80%                           | ❌          | 50%            | Simulates interface arrows during positioning |
+| Highlight Overlay   | 25%                           | 25%         | 20%            | Simulates square highlighting                 |
+| Mouse Overlay       | 90%                           | ❌          | 80%            | Simulates cursor interaction during placement |
+| Horizontal Flip     | 50%                           | ❌          | 50%            | Centering semantics preserved under flip      |
+| Color Jitter        | B±15%, CSH±20%                | ±20% (BCSH) | B±15%, CSH±20% | Snap uses same variation as pieces            |
+| Gaussian Noise      | σ=0.05                        | σ=0.10      | σ=0.05         | Snap uses same noise level as pieces          |
+
+---
 
 ## Implementation
 
@@ -183,4 +238,18 @@ v2.RandomRotation(degrees=2)
 v2.ToImage() → v2.ToDtype() → v2.GaussianNoise() → v2.ToPILImage()
 ```
 
-Validation uses only `v2.Resize((32, 32))` with no augmentation.
+**Snap Model:**
+
+```python
+# 1-3. Overlays
+RandomArrowOverlay(probability=0.50)
+RandomHighlightOverlay(probability=0.20)
+RandomMouseOverlay(probability=0.80)
+
+# 4-5. Geometric + color
+v2.RandomHorizontalFlip(p=0.5)
+v2.ColorJitter(brightness=0.15, contrast=0.2, saturation=0.2, hue=0.2)
+
+# 6. Noise (requires tensor conversion)
+v2.ToImage() → v2.ToDtype() → v2.GaussianNoise() → v2.ToPILImage()
+```
