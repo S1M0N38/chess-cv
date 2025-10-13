@@ -56,6 +56,7 @@ DARK_SQUARE_COORDS = (  # d4 square
 # Configuration
 # Split ratios and random seed are configured via constants.py
 # Future enhancement: Add ratio/seed parameters to generate_split_data()
+NUM_SNAP_VARIATIONS = 8  # Number of random translations to generate per image
 
 # Global caches for loaded images (populated by worker initializers)
 # These are shared across worker processes for efficiency
@@ -454,28 +455,32 @@ def _process_snap_class(snap_class: str) -> int:
     for piece_class, piece_set in PIECES.items():
         for piece_name, piece in piece_set.items():
             for square_name, square in SQUARES.items():
-                # Apply the snap transformation to the piece
-                transformed_piece = _apply_snap_transform(piece, snap_class)
+                # Generate multiple variations per combination
+                for variation in range(NUM_SNAP_VARIATIONS):
+                    # Apply the snap transformation to the piece
+                    transformed_piece = _apply_snap_transform(piece, snap_class)
 
-                # Composite the transformed piece onto the square
-                if piece_class == "xx":  # Empty square - always "ok"
-                    if snap_class == "ok":
-                        image = square.convert("RGB")
+                    # Composite the transformed piece onto the square
+                    if piece_class == "xx":  # Empty square - always "ok"
+                        if snap_class == "ok":
+                            image = square.convert("RGB")
+                            split_dir = assign_split(train_dir, val_dir, test_dir)
+                            image.save(
+                                split_dir
+                                / snap_class
+                                / f"{square_name}_{piece_name}_var{variation}.png"
+                            )
+                            count += 1
+                    else:  # Piece exists
+                        square_img = Image.alpha_composite(square, transformed_piece)
+                        image = square_img.convert("RGB")
                         split_dir = assign_split(train_dir, val_dir, test_dir)
                         image.save(
-                            split_dir / snap_class / f"{square_name}_{piece_name}.png"
+                            split_dir
+                            / snap_class
+                            / f"{square_name}_{piece_class}_{piece_name}_var{variation}.png"
                         )
                         count += 1
-                else:  # Piece exists
-                    square_img = Image.alpha_composite(square, transformed_piece)
-                    image = square_img.convert("RGB")
-                    split_dir = assign_split(train_dir, val_dir, test_dir)
-                    image.save(
-                        split_dir
-                        / snap_class
-                        / f"{square_name}_{piece_class}_{piece_name}.png"
-                    )
-                    count += 1
 
     return count
 
@@ -502,9 +507,11 @@ def _save_splits_snap() -> None:
     # For "ok" class: all pieces + empty squares
     # For "bad" class: only pieces (no empty squares)
     num_pieces = sum(len(PIECES[piece_class]) for piece_class in PIECES.keys())
-    total_ok_images = len(SQUARES) * num_pieces  # All pieces including empty
-    total_bad_images = len(SQUARES) * (
-        num_pieces - len(PIECES["xx"])
+    total_ok_images = (
+        len(SQUARES) * num_pieces * NUM_SNAP_VARIATIONS
+    )  # All pieces including empty
+    total_bad_images = (
+        len(SQUARES) * (num_pieces - len(PIECES["xx"])) * NUM_SNAP_VARIATIONS
     )  # Only non-empty pieces
     total_images = total_ok_images + total_bad_images
 
