@@ -44,10 +44,10 @@ ARROWS_IMAGES = [
 ]
 
 SNAP_IMAGES = [
-    "data/splits/snap/train/bad/chess-com-8_bit_dark_bB_chess-com-alpha.png",
-    "data/splits/snap/train/bad/lichess-wood2_dark_wN_lichess-reillycraig.png",
-    "data/splits/snap/train/ok/chess-com-8_bit_dark_bB_chess-com-book.png",
-    "data/splits/snap/train/ok/chess-com-tan_dark_wK_chess-com-icy_sea.png",
+    "data/splits/snap/train/bad/chess-com-8_bit_dark_bB_chess-com-alpha_var0.png",
+    "data/splits/snap/train/bad/lichess-canvas2_dark_bN_lichess-pirouetti_var3.png",
+    "data/splits/snap/train/ok/chess-com-8_bit_dark_bB_chess-com-8_bit_var2.png",
+    "data/splits/snap/train/ok/lichess-canvas2_light_wR_lichess-kosal_var0.png",
 ]
 
 
