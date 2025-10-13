@@ -9,6 +9,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
 from torch.utils.data import DataLoader
 from torchvision.transforms import v2
 from tqdm import tqdm
@@ -637,30 +638,40 @@ def train(
             model.parameters(), lr=base_lr, weight_decay=weight_decay
         )
 
-        # Create learning rate scheduler: warmup + cosine decay
-        def lr_lambda(current_step: int) -> float:
-            if current_step < warmup_steps:
-                # Linear warmup
-                return current_step / max(1, warmup_steps)
-            else:
-                # Cosine decay
-                progress = (current_step - warmup_steps) / max(
-                    1, total_steps - warmup_steps
-                )
-                return min_lr + (base_lr - min_lr) * 0.5 * (
-                    1 + math.cos(math.pi * progress)
-                )
+        # Create learning rate scheduler: warmup + cosine decay using PyTorch's SequentialLR
+        # Warmup scheduler - starts from 10% of base_lr (not zero!) and linearly increases
+        warmup_scheduler = LinearLR(
+            optimizer,
+            start_factor=0.1,  # Start at 10% of base_lr to avoid zero LR
+            total_iters=warmup_steps,
+        )
 
-        scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+        # Cosine decay scheduler - starts from base_lr and decays to min_lr
+        cosine_scheduler = CosineAnnealingLR(
+            optimizer,
+            T_max=total_steps - warmup_steps,  # Decay phase duration
+            eta_min=min_lr,  # Minimum learning rate
+        )
 
-        print("Optimizer: AdamW with LR scheduler")
+        # Chain schedulers: warmup first, then cosine decay
+        scheduler = SequentialLR(
+            optimizer,
+            schedulers=[warmup_scheduler, cosine_scheduler],
+            milestones=[
+                warmup_steps
+            ],  # Switch from warmup to cosine decay at this step
+        )
+
+        print("Optimizer: AdamW with SequentialLR scheduler")
         print(f"  Base LR:       {base_lr}")
         print(f"  Min LR:        {min_lr}")
+        print(f"  Start factor:  0.1 (10% of base LR to avoid zero LR)")
         print(
             f"  Warmup steps:  {warmup_steps} ({warmup_ratio * 100:.1f}% of {total_steps} total steps)"
         )
         print(f"  Total steps:   {total_steps}")
         print(f"  Weight decay:  {weight_decay}")
+        print(f"  Scheduler:     LinearLR warmup → CosineAnnealingLR decay")
     else:
         optimizer = optim.AdamW(
             model.parameters(), lr=learning_rate, weight_decay=weight_decay
