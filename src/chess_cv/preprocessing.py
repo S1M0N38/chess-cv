@@ -12,6 +12,7 @@ and saved to data/splits/{model_id}/{train,validate,test}/.
 import os
 import random
 from collections import defaultdict
+from multiprocessing import Pool
 from pathlib import Path
 
 import cv2
@@ -55,7 +56,7 @@ DARK_SQUARE_COORDS = (  # d4 square
 # Configuration
 # Split ratios and random seed are configured via constants.py
 # Future enhancement: Add ratio/seed parameters to generate_split_data()
-NUM_SNAP_VARIATIONS = 8  # Number of random translations to generate per image
+NUM_SNAP_VARIATIONS = 4  # Number of random translations to generate per image
 
 # Global caches for loaded images (populated by worker initializers)
 # These are shared across worker processes for efficiency
@@ -64,6 +65,7 @@ PIECES: dict[str, dict[str, Image.Image]] = defaultdict(dict)
 ARROWS: dict[str, dict[str, Image.Image]] = defaultdict(dict)
 
 np.random.seed(DEFAULT_RANDOM_SEED)
+random.seed(DEFAULT_RANDOM_SEED)
 
 ################################################################################
 # Validation
@@ -439,136 +441,99 @@ def _init_snap_dirs() -> tuple[Path, Path, Path]:
     return train_dir, val_dir, test_dir
 
 
-def _process_snap_class(snap_class: str) -> int:
-    """Worker function to process a single snap class.
+def _process_snap_piece_class(piece_class: str) -> int:
+    """Worker function to process a single piece class for snap model.
 
     Args:
-        snap_class: The snap class to process ("ok" or "bad")
+        piece_class: The piece class to process (e.g., "wP", "bK", "xx")
 
     Returns:
-        Number of images generated for this class
+        Number of images generated for this piece class
     """
     train_dir, val_dir, test_dir = _init_snap_dirs()
+    piece_set = PIECES[piece_class]
     count = 0
 
-    for piece_class, piece_set in PIECES.items():
-        for piece_name, piece in piece_set.items():
-            for square_name, square in SQUARES.items():
-                # Generate multiple variations per combination
+    for piece_name, piece in piece_set.items():
+        for square_name, square in SQUARES.items():
+            if piece_class == "xx":
+                # Empty square - only generate "ok" variations (no transformation)
                 for variation in range(NUM_SNAP_VARIATIONS):
-                    # Apply the snap transformation to the piece
-                    transformed_piece = _apply_snap_transform(piece, snap_class)
+                    image = square.convert("RGB")
+                    split_dir = assign_split(train_dir, val_dir, test_dir)
+                    image.save(
+                        split_dir
+                        / "ok"
+                        / f"{square_name}_{piece_name}_var{variation}.png"
+                    )
+                    count += 1
+            else:
+                # Non-empty piece - generate both "ok" and "bad" variations
+                for variation in range(NUM_SNAP_VARIATIONS):
+                    # Generate "ok" variation
+                    transformed_piece_ok = _apply_snap_transform(piece, "ok")
+                    square_img_ok = Image.alpha_composite(square, transformed_piece_ok)
+                    image_ok = square_img_ok.convert("RGB")
+                    split_dir_ok = assign_split(train_dir, val_dir, test_dir)
+                    image_ok.save(
+                        split_dir_ok
+                        / "ok"
+                        / f"{square_name}_{piece_class}_{piece_name}_var{variation}.png"
+                    )
+                    count += 1
 
-                    # Composite the transformed piece onto the square
-                    if piece_class == "xx":  # Empty square - always "ok"
-                        if snap_class == "ok":
-                            image = square.convert("RGB")
-                            split_dir = assign_split(train_dir, val_dir, test_dir)
-                            image.save(
-                                split_dir
-                                / snap_class
-                                / f"{square_name}_{piece_name}_var{variation}.png"
-                            )
-                            count += 1
-                    else:  # Piece exists
-                        square_img = Image.alpha_composite(square, transformed_piece)
-                        image = square_img.convert("RGB")
-                        split_dir = assign_split(train_dir, val_dir, test_dir)
-                        image.save(
-                            split_dir
-                            / snap_class
-                            / f"{square_name}_{piece_class}_{piece_name}_var{variation}.png"
-                        )
-                        count += 1
-
-    return count
-
-
-def _process_snap_variation(variation: int) -> int:
-    """Process a single variation across all snap classes.
-
-    Args:
-        variation: The variation index to process (0-7)
-
-    Returns:
-        Number of images generated for this variation
-    """
-    train_dir, val_dir, test_dir = _init_snap_dirs()
-    count = 0
-
-    # Calculate total combinations for this variation
-    num_pieces = sum(len(PIECES[piece_class]) for piece_class in PIECES.keys())
-    total_combinations = len(SQUARES) * num_pieces
-    inner_total = total_combinations * 2  # Both ok and bad classes
-
-    with tqdm(total=inner_total, desc=f"Variation {variation}", leave=False) as pbar:
-        for piece_class, piece_set in PIECES.items():
-            for piece_name, piece in piece_set.items():
-                for square_name, square in SQUARES.items():
-                    # Process both snap classes for this variation
-                    for snap_class in ["ok", "bad"]:
-                        # Apply the snap transformation to the piece
-                        transformed_piece = _apply_snap_transform(piece, snap_class)
-
-                        # Composite the transformed piece onto the square
-                        if piece_class == "xx":  # Empty square - always "ok"
-                            if snap_class == "ok":
-                                image = square.convert("RGB")
-                                split_dir = assign_split(train_dir, val_dir, test_dir)
-                                image.save(
-                                    split_dir
-                                    / snap_class
-                                    / f"{square_name}_{piece_name}_var{variation}.png"
-                                )
-                                count += 1
-                                pbar.update(1)
-                        else:  # Piece exists
-                            square_img = Image.alpha_composite(
-                                square, transformed_piece
-                            )
-                            image = square_img.convert("RGB")
-                            split_dir = assign_split(train_dir, val_dir, test_dir)
-                            image.save(
-                                split_dir
-                                / snap_class
-                                / f"{square_name}_{piece_class}_{piece_name}_var{variation}.png"
-                            )
-                            count += 1
-                            pbar.update(1)
+                    # Generate "bad" variation
+                    transformed_piece_bad = _apply_snap_transform(piece, "bad")
+                    square_img_bad = Image.alpha_composite(
+                        square, transformed_piece_bad
+                    )
+                    image_bad = square_img_bad.convert("RGB")
+                    split_dir_bad = assign_split(train_dir, val_dir, test_dir)
+                    image_bad.save(
+                        split_dir_bad
+                        / "bad"
+                        / f"{square_name}_{piece_class}_{piece_name}_var{variation}.png"
+                    )
+                    count += 1
 
     return count
 
 
-def _save_splits_snap() -> None:
-    """Generate and save snap images to train/validate/test splits."""
-    # Initialize directories
-    _init_snap_dirs()
-
-    # Load data
+def _init_worker_snap() -> None:
+    """Initialize worker process by loading squares and pieces."""
     load_squares()
     load_pieces()
 
+
+def _save_splits_snap() -> None:
+    """Generate and save snap images to train/validate/test splits (parallelized)."""
+    # Initialize directories in main process
+    _init_snap_dirs()
+
+    # Load data in main process to get class list
+    load_squares()
+    load_pieces()
+
+    piece_classes = list(PIECES.keys())
+    num_workers = os.cpu_count() or 1
+
     # Calculate total images upfront
-    # For "ok" class: all pieces + empty squares
-    # For "bad" class: only pieces (no empty squares)
-    num_pieces = sum(len(PIECES[piece_class]) for piece_class in PIECES.keys())
-    total_ok_images = (
-        len(SQUARES) * num_pieces * NUM_SNAP_VARIATIONS
-    )  # All pieces including empty
-    total_bad_images = (
-        len(SQUARES) * (num_pieces - len(PIECES["xx"])) * NUM_SNAP_VARIATIONS
-    )  # Only non-empty pieces
-    total_images = total_ok_images + total_bad_images
+    # For empty squares: 4 "ok" variations per combination
+    # For non-empty pieces: 4 "ok" + 4 "bad" = 8 variations per combination
+    num_empty = len(PIECES["xx"])
+    num_non_empty = sum(len(PIECES[pc]) for pc in PIECES.keys()) - num_empty
+    total_empty_images = len(SQUARES) * num_empty * NUM_SNAP_VARIATIONS
+    total_non_empty_images = len(SQUARES) * num_non_empty * NUM_SNAP_VARIATIONS * 2
+    total_images = total_empty_images + total_non_empty_images
 
-    print(f"Processing {NUM_SNAP_VARIATIONS} snap variations...")
+    print(
+        f"Processing {len(piece_classes)} piece classes with {num_workers} workers..."
+    )
 
-    # Process all variations sequentially
-    count = 0
-    with tqdm(total=total_images, desc="Generating images") as pbar:
-        for variation in range(NUM_SNAP_VARIATIONS):
-            variation_count = _process_snap_variation(variation)
-            count += variation_count
-            pbar.update(variation_count)
+    with Pool(processes=num_workers, initializer=_init_worker_snap) as pool:
+        with tqdm(total=total_images, desc="Generating images") as pbar:
+            for count in pool.imap(_process_snap_piece_class, piece_classes):
+                pbar.update(count)
 
 
 ################################################################################
