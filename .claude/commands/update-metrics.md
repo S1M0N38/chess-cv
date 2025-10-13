@@ -1,6 +1,6 @@
 Update performance metrics in documentation from evaluation results.
 
-Read the latest evaluation results from `make eval` and update all documentation files with current model performance metrics for both pieces and arrows models.
+Read the latest evaluation results from `make eval` and update all documentation files with current model performance metrics for pieces, arrows, and snap models.
 
 ## Prerequisites
 
@@ -24,6 +24,9 @@ Read all JSON files in parallel:
 
 **Arrows Model:**
 - `evals/arrows/test/test_summary.json`
+
+**Snap Model:**
+- `evals/snap/test/test_summary.json`
 
 From each, extract:
 - `overall_accuracy`
@@ -50,6 +53,14 @@ Update:
 - ChessVision row: keep "-" for accuracy, update F1-Score (2 decimals, %)
 
 **Pattern 2 - Arrows Model Table:**
+Search for table containing:
+```
+| Test Data (synthetic) |  99.97%  |      99.97%      |
+```
+
+Update Test Data row: accuracy (2 decimals, %), F1-Score (2 decimals, %)
+
+**Pattern 3 - Snap Model Table:**
 Search for table containing:
 ```
 | Test Data (synthetic) |  99.97%  |      99.97%      |
@@ -102,7 +113,17 @@ Search for:
 
 Update accuracy `value` and f1 `value` in the metrics section below.
 
-**Pattern 5 & 6 - Performance Tables:**
+**Pattern 5 - YAML Frontmatter (Snap Dataset):**
+Search for:
+```yaml
+  - name: chess-cv-snap
+    results:
+      - task:
+```
+
+Update accuracy `value` and f1 `value` in the metrics section below.
+
+**Pattern 6 & 7 - Performance Tables:**
 Same as README.md tables - use same search patterns.
 
 #### docs/architecture.md
@@ -206,6 +227,30 @@ Calculate for each component type by grouping classes:
 - Corners: prefix "corner-" (count, avg, min-max range)
 - Empty Square: class "xx" (just show accuracy)
 
+**Pattern 11 - Snap Test Performance:**
+Search for:
+```markdown
+- **Test Accuracy**: ~99.97%
+- **F1 Score (Macro)**: ~99.97%
+```
+
+In Snap Model section, update both (use "~" prefix, 2 decimals, %).
+
+**Pattern 12 - Snap Per-Class Summary:**
+Search for:
+```markdown
+- **Highest Accuracy**: 100.00%
+- **Lowest Accuracy**: 99.79%
+- **Mean Accuracy**: 99.97%
+- **Classes > 99.9%**: 44 out of 49
+```
+
+Calculate from `per_class_accuracy` dict:
+- Highest: max value
+- Lowest: min value
+- Mean: average of all values
+- Classes > 99.9%: count where value > 0.999
+
 #### AGENTS.md
 
 **Pattern 1 - Project Overview:**
@@ -259,6 +304,9 @@ Generate summary showing:
 **Arrows Model:**
 - Test: [old_acc → new_acc]%, [old_f1 → new_f1]%
 
+**Snap Model:**
+- Test: [old_acc → new_acc]%, [old_f1 → new_f1]%
+
 **Files Modified:**
 - README.md
 - docs/README_hf.md
@@ -277,7 +325,7 @@ Generate summary showing:
 → Warn if value < 0 or > 1
 
 **Wrong class count:**
-→ Error if pieces ≠ 13 classes or arrows ≠ 49 classes
+→ Error if pieces ≠ 13 classes, arrows ≠ 49 classes, or snap ≠ [expected] classes
 
 ## Data Structure Reference
 
@@ -308,12 +356,26 @@ Generate summary showing:
 }
 ```
 
+**Snap Model JSON** (`evals/snap/test/test_summary.json`):
+```json
+{
+  "overall_accuracy": 0.9997,
+  "f1_score_macro": 0.9997,
+  "per_class_accuracy": {
+    "class-1": 1.0, "class-2": 0.9999,
+    ... ([expected] classes total)
+  },
+  "num_test_samples": [sample_count]
+}
+```
+
 ## Notes
 
 - Run after `make eval` completes
-- Updates both pieces and arrows models
+- Updates pieces, arrows, and snap models
 - Pieces: 3 datasets (test, openboard, chessvision)
 - Arrows: 1 dataset (test only)
+- Snap: 1 dataset (test only)
 - Use pattern matching, not line numbers
 - Preserve formatting and structure
 - ChessVision uses concatenated splits
