@@ -407,7 +407,7 @@ def _apply_snap_transform(image: Image.Image, snap_class: str) -> Image.Image:
         shift_y = random.randint(min_shift, max_shift) * random.choice([-1, 1])
 
     # Create transformation matrix for translation
-    M = np.float32([[1, 0, shift_x], [0, 1, shift_y]])
+    M: np.ndarray = np.array([[1, 0, shift_x], [0, 1, shift_y]], dtype=np.float32)
 
     # Apply the transformation
     shifted = cv2.warpAffine(
