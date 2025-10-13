@@ -178,7 +178,29 @@ AUGMENTATION_CONFIGS = {
     },
     "snap": {
         # ===========================================
-        # OVERLAY AUGMENTATIONS
+        # GEOMETRIC TRANSFORMATIONS (Steps 1-4)
+        # ===========================================
+        # Step 1: Padding - Create rotation space by expanding the canvas
+        # Original 32x32 → 64x64 (16 pixels padding on each side)
+        "padding": 16,
+        "padding_mode": "edge",
+        # Step 2: Rotation - Apply random rotation to the padded image
+        # ±10 degrees provides sufficient variation while preserving piece recognizability
+        "rotation_degrees": 10,
+        # Step 3: Center Crop - Remove black bands created by rotation
+        # Formula: 64 - (ceil(tan(10°) * 64) * 2) = 64 - 24 = 40
+        # This ensures no black borders remain after rotation
+        "center_crop_size": 40,
+        # Step 4: Random Resized Crop - Simulate different distances and positions
+        # Final resize to target model input size (32x32)
+        "final_size": 32,
+        # Scale range controls zoom: (0.54, 0.74) = 0.64 ± 0.1 (±16% zoom variation)
+        # Base scale 0.64 = (32/40)² = area ratio for translation without zoom
+        "resized_crop_scale": (0.54, 0.74),
+        # Ratio range controls aspect ratio changes: (0.9, 1.1) = ±10% stretch
+        "resized_crop_ratio": (0.9, 1.1),
+        # ===========================================
+        # OVERLAY AUGMENTATIONS (Step 5)
         # ===========================================
         # Arrow overlay - Simulate arrow graphics on pieces
         "arrow_probability": 0.50,
@@ -200,13 +222,13 @@ AUGMENTATION_CONFIGS = {
         # Ratio range allows cursor shape distortion: ±20% stretch
         "mouse_ratio_range": (0.8, 1.2),
         # ===========================================
-        # SPATIAL TRANSFORMATIONS
+        # SPATIAL TRANSFORMATIONS (Step 6)
         # ===========================================
         # Horizontal flip - Mirror pieces horizontally (valid for chess pieces)
         "horizontal_flip": True,
         "horizontal_flip_prob": 0.5,  # 50% chance of horizontal flip
         # ===========================================
-        # COLOR AUGMENTATIONS (same as pieces model)
+        # COLOR AUGMENTATIONS (Steps 7-8)
         # ===========================================
         # Brightness variation - Simulate different lighting conditions
         "brightness": 0.15,  # ±15% brightness variation
@@ -217,7 +239,7 @@ AUGMENTATION_CONFIGS = {
         # Hue variation - Simulate slight color temperature changes
         "hue": 0.2,  # ±20% hue rotation (affects white/black pieces)
         # ===========================================
-        # NOISE AUGMENTATION (same as pieces model)
+        # NOISE AUGMENTATION (Step 9)
         # ===========================================
         # Gaussian noise - Simulate sensor noise and compression artifacts
         "noise_mean": 0.0,  # Center noise distribution at 0 (no bias)
