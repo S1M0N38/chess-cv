@@ -43,6 +43,13 @@ ARROWS_IMAGES = [
     "data/splits/arrows/train/head-SE/chess-com-orange_light_bR_lichess-caliente_chess-com-blue.png",
 ]
 
+SNAP_IMAGES = [
+    "data/splits/snap/train/bad/chess-com-8_bit_dark_bB_chess-com-alpha.png",
+    "data/splits/snap/train/bad/lichess-wood2_dark_wN_lichess-reillycraig.png",
+    "data/splits/snap/train/ok/chess-com-8_bit_dark_bB_chess-com-book.png",
+    "data/splits/snap/train/ok/chess-com-tan_dark_wK_chess-com-icy_sea.png",
+]
+
 
 def build_augmentation_pipeline(model_id: str):
     """Build augmentation pipeline for the given model."""
@@ -170,6 +177,63 @@ def build_augmentation_pipeline(model_id: str):
         )
         train_transform_list.append(v2.ToPILImage())
 
+    elif model_id == "snap":
+        # Pipeline for snap model using v2 transforms
+        # Step 1: Arrow overlay (simulated arrow graphics on pieces)
+        if aug_config["arrow_probability"] > 0:
+            train_transform_list.append(
+                RandomArrowOverlay(
+                    arrow_dir=DEFAULT_ARROW_DIR,
+                    probability=aug_config["arrow_probability"],
+                )
+            )
+
+        # Step 2: Highlight overlay
+        if aug_config["highlight_probability"] > 0:
+            train_transform_list.append(
+                RandomHighlightOverlay(
+                    highlight_dir=DEFAULT_HIGHLIGHT_DIR,
+                    probability=aug_config["highlight_probability"],
+                )
+            )
+
+        # Step 3: Mouse overlay
+        if aug_config["mouse_probability"] > 0:
+            train_transform_list.append(
+                RandomMouseOverlay(
+                    mouse_dir=DEFAULT_MOUSE_DIR,
+                    probability=aug_config["mouse_probability"],
+                    aug_config=aug_config,
+                )
+            )
+
+        # Step 4: Horizontal flip
+        if aug_config["horizontal_flip"]:
+            train_transform_list.append(
+                v2.RandomHorizontalFlip(p=aug_config["horizontal_flip_prob"])
+            )
+
+        # Step 5: Color jitter
+        train_transform_list.append(
+            v2.ColorJitter(
+                brightness=aug_config["brightness"],
+                contrast=aug_config["contrast"],
+                saturation=aug_config["saturation"],
+                hue=aug_config["hue"],
+            )
+        )
+
+        # Step 6: Convert to tensor, apply Gaussian noise
+        train_transform_list.append(v2.ToImage())
+        train_transform_list.append(v2.ToDtype(dtype=torch.float32, scale=True))
+        train_transform_list.append(
+            v2.GaussianNoise(
+                mean=aug_config["noise_mean"],
+                sigma=aug_config["noise_sigma"],
+            )
+        )
+        train_transform_list.append(v2.ToPILImage())
+
     else:
         raise ValueError(f"Unknown model ID: {model_id}")
 
@@ -205,7 +269,7 @@ def generate_examples(model_id: str, image_paths: list[str], output_dir: Path):
 
 
 def main():
-    """Generate augmentation examples for both models."""
+    """Generate augmentation examples for all models."""
     script_dir = Path(__file__).parent
 
     # Generate pieces examples
@@ -217,6 +281,11 @@ def main():
     print("\n🎯 Generating arrows augmentation examples...")
     arrows_dir = script_dir / "arrows"
     generate_examples("arrows", ARROWS_IMAGES, arrows_dir)
+
+    # Generate snap examples
+    print("\n📐 Generating snap augmentation examples...")
+    snap_dir = script_dir / "snap"
+    generate_examples("snap", SNAP_IMAGES, snap_dir)
 
     print("\n✨ Done! Generated augmentation examples in docs/assets/")
 
