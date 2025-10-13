@@ -18,6 +18,7 @@ from .constants import (
     DEFAULT_HIGHLIGHT_DIR,
     DEFAULT_IMAGE_SIZE,
     DEFAULT_LEARNING_RATE,
+    DEFAULT_MOUSE_DIR,
     DEFAULT_NUM_EPOCHS,
     DEFAULT_NUM_WORKERS,
     DEFAULT_PATIENCE,
@@ -34,6 +35,7 @@ from .data import (
     ChessPiecesDataset,
     RandomArrowOverlay,
     RandomHighlightOverlay,
+    RandomMouseOverlay,
     collate_fn,
     get_image_files,
     get_label_map_from_class_names,
@@ -54,7 +56,7 @@ def train_epoch(
     model_id: str,
     scaler: torch.amp.GradScaler | None = None,  # type: ignore
     wandb_logger: WandbLogger | None = None,
-    visualizer = None,
+    visualizer=None,
     epoch: int = 0,
     global_step: int = 0,
     log_every_n_steps: int = 50,
@@ -155,11 +157,13 @@ def train_epoch(
         # Mid-epoch validation
         if global_step % validate_every_n_steps == 0:
             # Run validation on full validation set
-            val_loss, val_acc = validate_epoch(model, val_loader, criterion, device, leave=True)
-            
+            val_loss, val_acc = validate_epoch(
+                model, val_loader, criterion, device, leave=True
+            )
+
             # Return to training mode
             model.train()
-            
+
             # Log to wandb
             if wandb_logger is not None and wandb_logger.enabled:
                 wandb_logger.log(
@@ -171,7 +175,7 @@ def train_epoch(
                     },
                     step=global_step,
                 )
-            
+
             # Log to local visualizer (if not using wandb)
             if visualizer is not None:
                 # For mid-epoch, use fractional epoch number
@@ -190,32 +194,32 @@ def train_epoch(
                     val_loss,
                     val_acc,
                 )
-            
+
             # Update best validation loss
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
-            
+
             # Check if this is the best validation accuracy
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
                 epochs_without_improvement = 0
-                
+
                 # Save model checkpoint
                 from .constants import OPTIMIZER_FILENAME, get_model_filename
-                
+
                 model_path = checkpoint_dir / get_model_filename(model_id)
                 try:
                     from safetensors.torch import save_model
-                    
+
                     save_model(model, str(model_path))
                 except ImportError:
                     # Fallback to regular torch.save if safetensors not available
                     torch.save(model.state_dict(), str(model_path))
-                
+
                 # Save optimizer state
                 optimizer_path = checkpoint_dir / OPTIMIZER_FILENAME
                 torch.save(optimizer.state_dict(), str(optimizer_path))
-                
+
                 print(
                     f"\n[Step {global_step}] New best validation accuracy: {val_acc:.4f} - Model saved"
                 )
@@ -419,39 +423,88 @@ def train(
             )
         )
 
-    # Random resized crop
-    train_transform_list.append(
-        transforms.RandomResizedCrop(
-            size=(image_size, image_size),
-            scale=(aug_config["scale_min"], aug_config["scale_max"]),
-            antialias=True,
+    # Mouse cursor overlay (new feature from snap model)
+    if aug_config.get("mouse_probability", 0) > 0:
+        train_transform_list.append(
+            RandomMouseOverlay(
+                mouse_dir=DEFAULT_MOUSE_DIR,
+                probability=aug_config["mouse_probability"],
+                aug_config=aug_config,
+            )
         )
-    )
+
+    # Advanced augmentation pipeline for models that support it (pieces, snap)
+    if "padding" in aug_config:
+        # Multi-step geometric transformations (from snap model)
+
+        # Step 1: Padding - Create rotation space
+        train_transform_list.append(
+            transforms.Pad(
+                padding=aug_config["padding"],
+                padding_mode=aug_config.get("padding_mode", "edge"),
+            )
+        )
+
+        # Step 2: Rotation
+        if aug_config["rotation_degrees"] > 0:
+            train_transform_list.append(
+                transforms.RandomRotation(degrees=aug_config["rotation_degrees"])
+            )
+
+        # Step 3: Center Crop - Remove black bands from rotation
+        if "center_crop_size" in aug_config:
+            train_transform_list.append(
+                transforms.CenterCrop(size=aug_config["center_crop_size"])
+            )
+
+        # Step 4: Random Resized Crop - Simulate distance/position variation
+        if "resized_crop_scale" in aug_config and "resized_crop_ratio" in aug_config:
+            train_transform_list.append(
+                transforms.RandomResizedCrop(
+                    size=aug_config["final_size"],
+                    scale=aug_config["resized_crop_scale"],
+                    ratio=aug_config["resized_crop_ratio"],
+                    antialias=True,
+                )
+            )
+        else:
+            # Fallback to simple resize for compatibility
+            train_transform_list.append(
+                transforms.Resize((image_size, image_size), antialias=True)
+            )
+    else:
+        # Simple augmentation pipeline for backward compatibility (arrows model)
+        # Random resized crop
+        train_transform_list.append(
+            transforms.RandomResizedCrop(
+                size=(image_size, image_size),
+                scale=(aug_config["scale_min"], aug_config["scale_max"]),
+                antialias=True,
+            )
+        )
 
     # Horizontal flip
     if aug_config["horizontal_flip"]:
         train_transform_list.append(transforms.RandomHorizontalFlip())
 
-    # Color jitter
-    train_transform_list.append(
-        transforms.ColorJitter(
-            brightness=aug_config["brightness"],
-            contrast=aug_config["contrast"],
-            saturation=aug_config["saturation"],
-        )
-    )
+    # Color jitter (with hue support for models that have it)
+    color_jitter_kwargs = {
+        "brightness": aug_config["brightness"],
+        "contrast": aug_config["contrast"],
+        "saturation": aug_config["saturation"],
+    }
+    # Add hue parameter if available (new feature from snap model)
+    if "hue" in aug_config:
+        color_jitter_kwargs["hue"] = aug_config["hue"]
 
-    # Rotation
-    if aug_config["rotation_degrees"] > 0:
-        train_transform_list.append(
-            transforms.RandomRotation(degrees=aug_config["rotation_degrees"])
-        )
+    train_transform_list.append(transforms.ColorJitter(**color_jitter_kwargs))
 
-    # Gaussian noise
+    # Gaussian noise (parameter name differs between configs)
+    noise_std = aug_config.get("noise_sigma", aug_config.get("noise_std", 0.05))
     train_transform_list.append(
         AddGaussianNoise(
             mean=aug_config["noise_mean"],
-            std=aug_config["noise_std"],
+            std=noise_std,
         )
     )
 
@@ -571,7 +624,9 @@ def train(
             best_val_loss,
             epochs_without_improvement,
         )
-        val_loss, val_acc = validate_epoch(model, val_loader, criterion, device, leave=False)
+        val_loss, val_acc = validate_epoch(
+            model, val_loader, criterion, device, leave=False
+        )
 
         # Update visualizer or log to wandb
         if use_wandb:
@@ -604,7 +659,7 @@ def train(
             best_train_acc = train_acc
         if train_loss < best_train_loss:
             best_train_loss = train_loss
-        
+
         # Check end-of-epoch validation results
         if val_loss < best_val_loss:
             best_val_loss = val_loss

@@ -10,12 +10,13 @@ import numpy as np
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
+from torchvision.transforms import v2
 
 __all__ = [
     "CLASS_NAMES",
-    "AddGaussianNoise",
     "RandomArrowOverlay",
     "RandomHighlightOverlay",
+    "RandomMouseOverlay",
     "ChessPiecesDataset",
     "HuggingFaceChessPiecesDataset",
     "ConcatenatedHuggingFaceDataset",
@@ -45,32 +46,6 @@ CLASS_NAMES = [
     "wR",  # white rook
     "xx",  # empty square
 ]
-
-
-# Custom transform for Gaussian Noise
-class AddGaussianNoise:
-    """Adds Gaussian noise to a PIL image."""
-
-    def __init__(self, mean: float = 0.0, std: float = 0.1):
-        self.std = std
-        self.mean = mean
-
-    def __call__(self, img: Image.Image) -> Image.Image:
-        """
-        Args:
-            img (PIL Image): Image to be augmented.
-
-        Returns:
-            PIL Image: Augmented image.
-        """
-        np_img = np.array(img).astype(np.float32)
-        noise = np.random.normal(self.mean, self.std * 255, np_img.shape)
-        np_img = np_img + noise
-        np_img = np.clip(np_img, 0, 255).astype(np.uint8)
-        return Image.fromarray(np_img)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(mean={self.mean}, std={self.std})"
 
 
 class RandomArrowOverlay:
@@ -127,8 +102,8 @@ class RandomArrowOverlay:
         # Randomly select an arrow (no rotation needed, all rotations pre-generated)
         arrow = random.choice(self.arrow_images).copy()
 
-        # Composite arrow onto the image
-        img.paste(arrow, (0, 0), arrow)
+        # Composite arrow onto the image using alpha composition
+        img = Image.alpha_composite(img, arrow)
 
         # Convert back to RGB
         return img.convert("RGB")
@@ -200,8 +175,8 @@ class RandomHighlightOverlay:
         # Randomly select a highlight (no rotation needed, all rotations pre-generated)
         highlight = random.choice(self.highlight_images).copy()
 
-        # Composite highlight onto the image
-        img.paste(highlight, (0, 0), highlight)
+        # Composite highlight onto the image using alpha composition
+        img = Image.alpha_composite(img, highlight)
 
         # Convert back to RGB
         return img.convert("RGB")
@@ -209,6 +184,112 @@ class RandomHighlightOverlay:
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(num_highlights={len(self.highlight_images)}, "
+            f"probability={self.probability})"
+        )
+
+
+class RandomMouseOverlay:
+    """Randomly overlays mouse cursor images on chess piece images with geometric transformations."""
+
+    def __init__(
+        self,
+        mouse_dir: Path | str,
+        probability: float = 0.3,
+        aug_config: dict | None = None,
+    ):
+        """
+        Args:
+            mouse_dir: Directory containing mouse cursor PNG images
+            probability: Probability of applying mouse overlay (0.0 to 1.0)
+            aug_config: Augmentation configuration for mouse transformations
+        """
+        self.probability = probability
+        self.mouse_images: list[Image.Image] = []
+
+        # Load all mouse images from the directory
+        mouse_dir = Path(mouse_dir)
+        mouse_paths = glob.glob(str(mouse_dir / "*.png"))
+
+        if not mouse_paths:
+            raise FileNotFoundError(f"No mouse images found in {mouse_dir}")
+
+        # Load and cache all mouse images
+        for mouse_path in mouse_paths:
+            try:
+                mouse_img = Image.open(mouse_path).convert("RGBA")
+                self.mouse_images.append(mouse_img)
+            except Exception as e:
+                print(f"Warning: Could not load mouse image {mouse_path}: {e}")
+
+        if not self.mouse_images:
+            raise ValueError("No valid mouse images could be loaded")
+
+        print(f"Loaded {len(self.mouse_images)} mouse images for augmentation")
+
+        # Set up mouse transformation pipeline
+        if aug_config is None:
+            # Default configuration for mouse transformations
+            aug_config = {
+                "mouse_padding": 16,
+                "mouse_rotation_degrees": 5,
+                "mouse_center_crop_size": 40,
+                "mouse_final_size": 32,
+                "mouse_scale_range": (0.10, 0.30),
+                "mouse_ratio_range": (0.8, 1.2),
+            }
+
+        # Create mouse transformation pipeline
+        self.mouse_transform = v2.Compose(
+            [
+                # Step 1: Pad to create rotation space (32x32 → 64x64)
+                v2.Pad(padding=aug_config["mouse_padding"], padding_mode="edge"),
+                # Step 2: Random rotation with small degrees
+                v2.RandomRotation(degrees=aug_config["mouse_rotation_degrees"], fill=0),
+                # Step 3: Remove black corners from rotation
+                v2.CenterCrop(size=aug_config["mouse_center_crop_size"]),
+                # Step 4: Random crop + scale variation + resize back to 32×32
+                # This makes cursor smaller and positions it randomly
+                v2.RandomResizedCrop(
+                    size=aug_config["mouse_final_size"],
+                    scale=aug_config["mouse_scale_range"],
+                    ratio=aug_config["mouse_ratio_range"],
+                    antialias=True,
+                ),
+            ]
+        )
+
+    def __call__(self, img: Image.Image) -> Image.Image:
+        """
+        Args:
+            img (PIL Image): Image to be augmented.
+
+        Returns:
+            PIL Image: Augmented image (with or without mouse overlay).
+        """
+        # Randomly decide whether to apply mouse overlay
+        if random.random() > self.probability:
+            return img
+
+        # Convert to RGBA to support alpha compositing
+        if img.mode != "RGBA":
+            img = img.convert("RGBA")
+
+        # Randomly select a mouse cursor
+        mouse = random.choice(self.mouse_images).copy()
+
+        # Apply geometric transformations to the mouse cursor
+        # This makes the cursor smaller and positions it randomly
+        mouse = self.mouse_transform(mouse)
+
+        # Composite transformed mouse onto the image using alpha composition
+        img = Image.alpha_composite(img, mouse)
+
+        # Convert back to RGB
+        return img.convert("RGB")
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(num_mice={len(self.mouse_images)}, "
             f"probability={self.probability})"
         )
 
@@ -302,21 +383,31 @@ class ChessPiecesDataset(Dataset):
 
 def collate_fn(batch: list) -> tuple[torch.Tensor, torch.Tensor]:
     """
-    Custom collate function to convert a batch of numpy arrays from the dataset
-    into PyTorch tensors for images and labels.
-
-    Converts from HWC (numpy) to CHW (PyTorch) format.
+    Custom collate function to convert a batch of PIL images from the dataset
+    into a single tensor for images and a tensor for labels.
     """
     images, labels = zip(*batch)
-    images = np.stack(images)
-    labels = np.array(labels)
 
-    # Convert to PyTorch tensors
-    # Images: (B, H, W, C) -> (B, C, H, W)
-    images_tensor = torch.from_numpy(images).permute(0, 3, 1, 2)
-    labels_tensor = torch.from_numpy(labels).long()
+    # Convert PIL images to tensors
+    image_tensors = []
+    for img in images:
+        if isinstance(img, Image.Image):
+            # Convert PIL to tensor
+            img_tensor = torch.from_numpy(np.array(img)).float()
+            # If image has channels (RGB), move channel dimension first
+            if len(img_tensor.shape) == 3:
+                img_tensor = img_tensor.permute(2, 0, 1)
+            image_tensors.append(img_tensor)
+        else:
+            # Already a numpy array
+            img_tensor = torch.from_numpy(np.array(img)).float()
+            if len(img_tensor.shape) == 3:
+                img_tensor = img_tensor.permute(2, 0, 1)
+            image_tensors.append(img_tensor)
 
-    return images_tensor, labels_tensor
+    images = torch.stack(image_tensors)
+    labels = torch.tensor(labels, dtype=torch.long)
+    return images, labels
 
 
 class HuggingFaceChessPiecesDataset(Dataset):

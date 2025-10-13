@@ -5,7 +5,6 @@ from pathlib import Path
 import click
 
 from .constants import (
-    BEST_MODEL_FILENAME,
     DEFAULT_BATCH_SIZE,
     DEFAULT_LEARNING_RATE,
     DEFAULT_NUM_EPOCHS,
@@ -13,6 +12,7 @@ from .constants import (
     DEFAULT_WEIGHT_DECAY,
     get_checkpoint_dir,
     get_model_config,
+    get_model_filename,
     get_output_dir,
     get_test_dir,
     get_train_dir,
@@ -277,7 +277,7 @@ def test(
     if train_dir is None:
         train_dir = get_train_dir(model_id)
     if checkpoint is None:
-        checkpoint = get_checkpoint_dir(model_id) / BEST_MODEL_FILENAME
+        checkpoint = get_checkpoint_dir(model_id) / get_model_filename(model_id)
     if output_dir is None:
         output_dir = get_output_dir(model_id)
 
