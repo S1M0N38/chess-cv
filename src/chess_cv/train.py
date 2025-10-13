@@ -45,6 +45,58 @@ from .visualize import TrainingVisualizer
 from .wandb_utils import WandbLogger
 
 
+def safe_move_to_device(
+    tensor: torch.Tensor, device: torch.device, non_blocking: bool = True
+) -> torch.Tensor:
+    """Safely move tensor to device with error handling for MPS.
+
+    Args:
+        tensor: Tensor to move
+        device: Target device
+        non_blocking: Whether to use non-blocking transfer
+
+    Returns:
+        Tensor on target device, or original tensor if move fails
+    """
+    try:
+        return tensor.to(device, non_blocking=non_blocking)
+    except RuntimeError as e:
+        if device.type == "mps":
+            print(f"Warning: MPS transfer failed, falling back to CPU. Error: {e}")
+            return tensor.to("cpu", non_blocking=False)
+        raise
+
+
+def get_device_specific_config(device: torch.device) -> dict:
+    """Get device-specific configuration for training.
+
+    Args:
+        device: PyTorch device
+
+    Returns:
+        Dictionary of device-specific configurations
+    """
+    config = {
+        "supports_channels_last": device.type == "cuda",
+        "supports_pin_memory": device.type == "cuda",
+        "supports_mixed_precision": device.type in ["cuda", "mps"],
+        "autocast_device_type": device.type
+        if device.type in ["cuda", "mps"]
+        else "cpu",
+    }
+
+    # Device-specific warnings
+    if device.type == "mps":
+        config.update(
+            {
+                "memory_warning": "MPS uses unified memory - monitor GPU memory usage",
+                "num_workers_warning": "Consider reducing num_workers if you encounter MPS issues",
+            }
+        )
+
+    return config
+
+
 def train_epoch(
     model: nn.Module,
     optimizer: optim.Optimizer,
@@ -99,25 +151,47 @@ def train_epoch(
 
     pbar = tqdm(train_loader, desc="Training", leave=False)
     for batch_idx, (batch_images, batch_labels) in enumerate(pbar):
-        # Move to device with non-blocking transfer
-        batch_images = batch_images.to(device, non_blocking=True)
-        batch_labels = batch_labels.to(device, non_blocking=True)
+        # Safely move to device with error handling
+        try:
+            batch_images = safe_move_to_device(batch_images, device, non_blocking=True)
+            batch_labels = safe_move_to_device(batch_labels, device, non_blocking=True)
+        except Exception as e:
+            print(f"Error moving batch to device {device}: {e}")
+            continue
 
-        # Apply channels_last memory format for CUDA optimization
+        # Apply device-specific memory format optimizations
         if device.type == "cuda":
-            batch_images = batch_images.to(memory_format=torch.channels_last)
+            try:
+                batch_images = batch_images.to(memory_format=torch.channels_last)
+            except Exception as e:
+                print(f"Warning: Failed to apply channels_last format: {e}")
+        # MPS and CPU use standard memory format (channels_last not supported on MPS)
 
         optimizer.zero_grad()
 
-        # Mixed precision training
+        # Mixed precision training with device-specific autocast
         if scaler is not None:
-            with torch.amp.autocast("cuda"):  # type: ignore
-                logits = model(batch_images)
-                loss = criterion(logits, batch_labels)
+            device_type = device.type  # cuda, mps, or cpu
+            try:
+                with torch.amp.autocast(device_type):  # type: ignore
+                    logits = model(batch_images)
+                    loss = criterion(logits, batch_labels)
 
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+                scaler.scale(loss).backward()
+                scaler.step(optimizer)
+                scaler.update()
+            except Exception as e:
+                if device.type == "mps":
+                    print(
+                        f"Warning: MPS autocast failed, falling back to float32. Error: {e}"
+                    )
+                    # Fallback to float32 without autocast
+                    logits = model(batch_images)
+                    loss = criterion(logits, batch_labels)
+                    loss.backward()
+                    optimizer.step()
+                else:
+                    raise
         else:
             logits = model(batch_images)
             loss = criterion(logits, batch_labels)
@@ -270,13 +344,27 @@ def validate_epoch(
     pbar = tqdm(val_loader, desc="Validation", leave=leave)
     with torch.inference_mode():
         for batch_images, batch_labels in pbar:
-            # Move to device with non-blocking transfer
-            batch_images = batch_images.to(device, non_blocking=True)
-            batch_labels = batch_labels.to(device, non_blocking=True)
+            # Safely move to device with error handling
+            try:
+                batch_images = safe_move_to_device(
+                    batch_images, device, non_blocking=True
+                )
+                batch_labels = safe_move_to_device(
+                    batch_labels, device, non_blocking=True
+                )
+            except Exception as e:
+                print(f"Error moving validation batch to device {device}: {e}")
+                continue
 
-            # Apply channels_last memory format for CUDA optimization
+            # Apply device-specific memory format optimizations
             if device.type == "cuda":
-                batch_images = batch_images.to(memory_format=torch.channels_last)
+                try:
+                    batch_images = batch_images.to(memory_format=torch.channels_last)
+                except Exception as e:
+                    print(
+                        f"Warning: Failed to apply channels_last format in validation: {e}"
+                    )
+            # MPS and CPU use standard memory format (channels_last not supported on MPS)
 
             logits = model(batch_images)
             loss = criterion(logits, batch_labels)
@@ -356,10 +444,20 @@ def train(
     # Create checkpoint directory
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    # Setup device and CUDA optimizations
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # Setup device with priority: CUDA > MPS > CPU
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        device_type = "cuda"
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+        device_type = "mps"
+    else:
+        device = torch.device("cpu")
+        device_type = "cpu"
+
     print(f"Using device: {device}")
 
+    # Apply device-specific optimizations
     if device.type == "cuda":
         # Enable cuDNN benchmark for optimal conv performance
         torch.backends.cudnn.benchmark = True
@@ -367,6 +465,13 @@ def train(
         print("  - cuDNN benchmark: True")
         print("  - Channels last memory format: True")
         print("  - Mixed precision training (AMP): True")
+    elif device.type == "mps":
+        print("MPS optimizations enabled:")
+        print("  - Metal Performance Shaders: Active")
+        print("  - Mixed precision training (AMP): True")
+        print("  - Standard memory format (channels_last not supported)")
+    else:
+        print("CPU mode (no GPU acceleration available)")
 
     # Initialize wandb logger
     wandb_logger = WandbLogger(enabled=use_wandb)
@@ -521,14 +626,17 @@ def train(
     )
     val_dataset = ChessPiecesDataset(val_files, label_map, transform=val_transforms)
 
-    # Create DataLoaders with CUDA optimizations
+    # Create DataLoaders with device-specific optimizations
+    # Pin memory configuration: CUDA=True, MPS=False, CPU=False
+    pin_memory_enabled = device.type == "cuda"
+
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
         num_workers=num_workers,
         collate_fn=collate_fn,
-        pin_memory=(device.type == "cuda"),
+        pin_memory=pin_memory_enabled,
         persistent_workers=(num_workers > 0),
     )
     val_loader = DataLoader(
@@ -537,7 +645,7 @@ def train(
         shuffle=False,
         num_workers=num_workers,
         collate_fn=collate_fn,
-        pin_memory=(device.type == "cuda"),
+        pin_memory=pin_memory_enabled,
         persistent_workers=(num_workers > 0),
     )
 
@@ -572,10 +680,16 @@ def train(
     print(f"  Weight decay:  {weight_decay}")
     print("\nLoss function: CrossEntropyLoss")
 
-    # Setup mixed precision training for CUDA
+    # Setup mixed precision training for CUDA and MPS
     scaler = None
     if device.type == "cuda":
         scaler = torch.amp.GradScaler("cuda")  # type: ignore
+        print("Mixed precision: Enabled (CUDA)")
+    elif device.type == "mps":
+        scaler = torch.amp.GradScaler("mps")  # type: ignore
+        print("Mixed precision: Enabled (MPS)")
+    else:
+        print("Mixed precision: Disabled (CPU)")
 
     best_val_acc = 0.0
     best_val_loss = float("inf")
