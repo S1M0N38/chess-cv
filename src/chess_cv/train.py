@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from torchvision import transforms
+from torchvision.transforms import v2
 from tqdm import tqdm
 
 from .constants import (
@@ -31,7 +31,6 @@ from .constants import (
     get_output_dir,
 )
 from .data import (
-    AddGaussianNoise,
     ChessPiecesDataset,
     RandomArrowOverlay,
     RandomHighlightOverlay,
@@ -510,7 +509,57 @@ def train(
 
     train_transform_list = []
 
-    # Arrow overlay
+    # Advanced augmentation pipeline for models that support it (pieces, snap)
+    if "padding" in aug_config:
+        # Multi-step geometric transformations (from snap model)
+
+        # Step 1: Padding - Create rotation space
+        train_transform_list.append(
+            v2.Pad(
+                padding=aug_config["padding"],
+                padding_mode=aug_config.get("padding_mode", "edge"),
+            )
+        )
+
+        # Step 2: Rotation
+        if aug_config["rotation_degrees"] > 0:
+            train_transform_list.append(
+                v2.RandomRotation(degrees=aug_config["rotation_degrees"])
+            )
+
+        # Step 3: Center Crop - Remove black bands from rotation
+        if "center_crop_size" in aug_config:
+            train_transform_list.append(
+                v2.CenterCrop(size=aug_config["center_crop_size"])
+            )
+
+        # Step 4: Random Resized Crop - Simulate distance/position variation
+        if "resized_crop_scale" in aug_config and "resized_crop_ratio" in aug_config:
+            train_transform_list.append(
+                v2.RandomResizedCrop(
+                    size=aug_config["final_size"],
+                    scale=aug_config["resized_crop_scale"],
+                    ratio=aug_config["resized_crop_ratio"],
+                    antialias=True,
+                )
+            )
+        else:
+            # Fallback to simple resize for compatibility
+            train_transform_list.append(
+                v2.Resize((image_size, image_size), antialias=True)
+            )
+    else:
+        # Simple augmentation pipeline for backward compatibility (arrows model)
+        # Random resized crop
+        train_transform_list.append(
+            v2.RandomResizedCrop(
+                size=(image_size, image_size),
+                scale=(aug_config["scale_min"], aug_config["scale_max"]),
+                antialias=True,
+            )
+        )
+
+    # Arrow overlay (after geometric transforms, same as snap-model branch)
     if aug_config["arrow_probability"] > 0:
         train_transform_list.append(
             RandomArrowOverlay(
@@ -538,59 +587,9 @@ def train(
             )
         )
 
-    # Advanced augmentation pipeline for models that support it (pieces, snap)
-    if "padding" in aug_config:
-        # Multi-step geometric transformations (from snap model)
-
-        # Step 1: Padding - Create rotation space
-        train_transform_list.append(
-            transforms.Pad(
-                padding=aug_config["padding"],
-                padding_mode=aug_config.get("padding_mode", "edge"),
-            )
-        )
-
-        # Step 2: Rotation
-        if aug_config["rotation_degrees"] > 0:
-            train_transform_list.append(
-                transforms.RandomRotation(degrees=aug_config["rotation_degrees"])
-            )
-
-        # Step 3: Center Crop - Remove black bands from rotation
-        if "center_crop_size" in aug_config:
-            train_transform_list.append(
-                transforms.CenterCrop(size=aug_config["center_crop_size"])
-            )
-
-        # Step 4: Random Resized Crop - Simulate distance/position variation
-        if "resized_crop_scale" in aug_config and "resized_crop_ratio" in aug_config:
-            train_transform_list.append(
-                transforms.RandomResizedCrop(
-                    size=aug_config["final_size"],
-                    scale=aug_config["resized_crop_scale"],
-                    ratio=aug_config["resized_crop_ratio"],
-                    antialias=True,
-                )
-            )
-        else:
-            # Fallback to simple resize for compatibility
-            train_transform_list.append(
-                transforms.Resize((image_size, image_size), antialias=True)
-            )
-    else:
-        # Simple augmentation pipeline for backward compatibility (arrows model)
-        # Random resized crop
-        train_transform_list.append(
-            transforms.RandomResizedCrop(
-                size=(image_size, image_size),
-                scale=(aug_config["scale_min"], aug_config["scale_max"]),
-                antialias=True,
-            )
-        )
-
     # Horizontal flip
     if aug_config["horizontal_flip"]:
-        train_transform_list.append(transforms.RandomHorizontalFlip())
+        train_transform_list.append(v2.RandomHorizontalFlip(p=aug_config["horizontal_flip_prob"]))
 
     # Color jitter (with hue support for models that have it)
     color_jitter_kwargs = {
@@ -602,21 +601,24 @@ def train(
     if "hue" in aug_config:
         color_jitter_kwargs["hue"] = aug_config["hue"]
 
-    train_transform_list.append(transforms.ColorJitter(**color_jitter_kwargs))
+    train_transform_list.append(v2.ColorJitter(**color_jitter_kwargs))
 
-    # Gaussian noise (parameter name differs between configs)
-    noise_std = aug_config.get("noise_sigma", aug_config.get("noise_std", 0.05))
-    train_transform_list.append(
-        AddGaussianNoise(
-            mean=aug_config["noise_mean"],
-            std=noise_std,
-        )
-    )
+    # Small rotation for arrows model (applied after color jitter, same as snap-model branch)
+    # Only apply if we're in the simple pipeline (arrows model) and rotation_degrees > 0
+    if "padding" not in aug_config and aug_config.get("rotation_degrees", 0) > 0:
+        train_transform_list.append(v2.RandomRotation(degrees=aug_config["rotation_degrees"]))
 
-    train_transforms = transforms.Compose(train_transform_list)
-    val_transforms = transforms.Compose(
+    # Gaussian noise using v2 transforms (same as snap-model branch)
+    # Convert to tensor, apply Gaussian noise, convert back to PIL
+    train_transform_list.append(v2.ToImage())
+    train_transform_list.append(v2.ToDtype(dtype=torch.float32, scale=True))
+    train_transform_list.append(v2.GaussianNoise(mean=aug_config["noise_mean"], sigma=aug_config["noise_sigma"]))
+    train_transform_list.append(v2.ToPILImage())
+
+    train_transforms = v2.Compose(train_transform_list)
+    val_transforms = v2.Compose(
         [
-            transforms.Resize((image_size, image_size), antialias=True),
+            v2.Resize((image_size, image_size), antialias=True),
         ]
     )
 
