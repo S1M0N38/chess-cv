@@ -58,7 +58,7 @@ The preprocessing script generates model-specific training data:
 
 1. Reads board images and piece sets with positioning variations
 2. Generates centered and off-centered piece examples
-3. Generates ~176,000 images for 2 centering classes (ok/bad)
+3. Generates ~1.4M synthetic images for 2 centering classes (ok/bad)
 
 All models use the 70/15/15 train/val/test split with seed 42 for reproducibility.
 

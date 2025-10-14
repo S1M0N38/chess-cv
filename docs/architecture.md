@@ -455,12 +455,16 @@ The snap training data is synthetically generated using the same board styles as
 
 **Data Statistics:**
 
-- **Total Images**: ~176,000
-- **Train Set**: ~123,300 (70.1%)
-- **Validation Set**: ~26,400 (15.0%)
-- **Test Set**: ~26,300 (14.9%)
+- **Total Images**: ~1.4M synthetic images
+- **Train Set**: ~980,000 (70%)
+- **Validation Set**: ~210,000 (15%)
+- **Test Set**: ~210,000 (15%)
 
-The dataset size is comparable to the pieces model, reflecting the importance of robust centering detection across different board styles, piece sets, and positioning variations.
+The dataset is generated with 8 positional variations per piece-board combination:
+
+- Non-empty pieces: 4 "ok" (centered/slightly off-centered) + 4 "bad" (significantly off-centered) variations
+- Empty squares: 4 "ok" variations only (empty squares are always considered valid)
+- This comprehensive variation strategy ensures robust centering detection across different board styles, piece sets, and positioning variations
 
 #### Class Balance
 
