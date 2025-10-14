@@ -71,18 +71,37 @@ clean: ## Clean build artifacts
 	@echo "$(GREEN)✓ Cleanup completed$(RESET)"
 
 # Evaluation targets
-eval: ## Evaluate model over multiple datasets
-	@echo "$(YELLOW)=================================== PIECES =====================================$(RESET)"
+eval-pieces-test: ## Evaluate pieces model on test data
 	@echo "$(YELLOW)Evaluating pieces model on test data...$(RESET)"
 	chess-cv test pieces --output-dir evals/pieces/test --checkpoint ./src/chess_cv/weights/pieces.safetensors
+
+eval-pieces-openboard: ## Evaluate pieces model on openboard dataset
 	@echo "$(YELLOW)Evaluating pieces model on openboard dataset...$(RESET)"
-	chess-cv test pieces --hf-test-dir S1M0N38/chess-cv-openboard --output-dir evals/pieces/openboard --checkpoint ./src/chess_cv/weights/pieces.safetensors 
+	chess-cv test pieces --hf-test-dir S1M0N38/chess-cv-openboard --output-dir evals/pieces/openboard --checkpoint ./src/chess_cv/weights/pieces.safetensors
+
+eval-pieces-chessvision: ## Evaluate pieces model on chessvision dataset
 	@echo "$(YELLOW)Evaluating pieces model on chessvision dataset...$(RESET)"
 	chess-cv test pieces --hf-test-dir S1M0N38/chess-cv-chessvision --concat-splits --output-dir evals/pieces/chessvision --checkpoint ./src/chess_cv/weights/pieces.safetensors
-	@echo "$(YELLOW)=================================== ARROWS =====================================$(RESET)"
+
+eval-pieces: eval-pieces-test eval-pieces-openboard eval-pieces-chessvision ## Evaluate pieces model on all datasets
+
+eval-arrows: ## Evaluate arrows model on test data
 	@echo "$(YELLOW)Evaluating arrow model on test data...$(RESET)"
 	chess-cv test arrows --output-dir evals/arrows/test --checkpoint ./src/chess_cv/weights/arrows.safetensors
-	@echo "$(YELLOW)=================================== SNAP =====================================$(RESET)"
+
+eval-snap-test: ## Evaluate snap model on test data
 	@echo "$(YELLOW)Evaluating snap model on test data...$(RESET)"
 	chess-cv test snap --output-dir evals/snap/test --checkpoint ./src/chess_cv/weights/snap.safetensors
+
+eval-snap-chessvision: ## Evaluate snap model on chessvision dataset
 	@echo "$(YELLOW)Evaluating snap model on chessvision dataset...$(RESET)"
+
+eval-snap: eval-snap-test eval-snap-chessvision ## Evaluate snap model on all datasets
+
+eval: ## Evaluate all models over multiple datasets
+	@echo "$(YELLOW)=================================== PIECES =====================================$(RESET)"
+	$(MAKE) eval-pieces
+	@echo "$(YELLOW)=================================== ARROWS =====================================$(RESET)"
+	$(MAKE) eval-arrows
+	@echo "$(YELLOW)=================================== SNAP =====================================$(RESET)"
+	$(MAKE) eval-snap
