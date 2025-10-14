@@ -102,7 +102,7 @@ This project includes three specialized models for chess board analysis:
 
 Classifies chess square images into **13 classes**: 6 white pieces (wP, wN, wB, wR, wQ, wK), 6 black pieces (bP, bN, bB, bR, bQ, bK), and empty squares (xx). Designed for board state recognition and FEN generation.
 
-**Training:** ~93,000 synthetic images with aggressive augmentation (arrow overlays, flips, rotation, color jitter)
+**Training:** \~93,000 synthetic images with aggressive augmentation (arrow overlays, flips, rotation, color jitter)
 
 **Performance:**
 
@@ -118,7 +118,7 @@ Classifies chess square images into **13 classes**: 6 white pieces (wP, wN, wB, 
 
 Classifies chess square images into **49 classes** representing arrow overlay patterns: 20 arrow heads, 12 tails, 8 middle segments, 4 corners, and empty squares. Enables detection and reconstruction of arrow annotations in chess interfaces. The NSEW naming (North/South/East/West) indicates arrow orientation, with corners handling knight-move arrow patterns.
 
-**Training:** ~3.14M synthetic images (20 epochs, batch size 128) with conservative augmentation (no flips/rotation to preserve arrow directionality)
+**Training:** \~3.14M synthetic images (20 epochs, batch size 128) with conservative augmentation (no flips/rotation to preserve arrow directionality)
 
 **Performance:**
 
@@ -132,7 +132,7 @@ Classifies chess square images into **49 classes** representing arrow overlay pa
 
 Classifies chess square images into **2 classes**: centered ("ok") and off-centered ("bad") pieces. Designed for automated board analysis and piece positioning validation, helping ensure proper piece placement in digital chess interfaces.
 
-**Training:** ~176,000 synthetic images (centered and off-centered piece positions) with conservative augmentation (no rotation to preserve centering semantics)
+**Training:** \~1.4M synthetic images (centered and off-centered piece positions) with conservative augmentation (no rotation to preserve centering semantics)
 
 **Performance:**
 

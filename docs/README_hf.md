@@ -157,7 +157,7 @@ The pieces model classifies chess square images into 13 classes: 6 white pieces 
 
 - **Architecture**: SimpleCNN (156k parameters)
 - **Input**: 32×32px RGB square images
-- **Data**: ~93,000 synthetic images from 55 board styles × 64 piece sets
+- **Data**: \~93,000 synthetic images from 55 board styles × 64 piece sets
 - **Augmentation**: Aggressive augmentation with arrow overlays (80%), highlight overlays (25%), random crops, horizontal flips, color jitter, rotation (±10°), and Gaussian noise
 - **Optimizer**: AdamW (weight_decay=0.001) with LR scheduler (warmup + cosine decay: 0→0.001→1e-5)
 - **Training**: 1000 epochs, batch size 64
@@ -184,7 +184,7 @@ The arrows model classifies chess square images into 49 classes representing dif
 
 - **Architecture**: SimpleCNN (156k parameters, same as pieces model)
 - **Input**: 32×32px RGB square images
-- **Data**: ~4.5M synthetic images from 55 board styles × arrow overlays (~3.14M train, ~672K val, ~672K test)
+- **Data**: \~4.5M synthetic images from 55 board styles × arrow overlays (\~3.14M train, \~672K val, \~672K test)
 - **Augmentation**: Conservative augmentation with highlight overlays (25%), random crops, and minimal color jitter/noise. No horizontal flips to preserve arrow directionality
 - **Optimizer**: AdamW (lr=0.0005, weight_decay=0.00005)
 - **Training**: 20 epochs, batch size 128
@@ -211,7 +211,7 @@ The snap model classifies chess square images into 2 classes: centered ("ok") an
 
 - **Architecture**: SimpleCNN (156k parameters)
 - **Input**: 32×32px RGB square images
-- **Data**: ~176,000 synthetic images from centered and off-centered piece positions (~123,300 train, ~26,400 val, ~26,300 test)
+- **Data**: \~1.4M synthetic images from centered and off-centered piece positions (\~985,960 train, \~211,574 validate, \~210,466 test)
 - **Augmentation**: Conservative augmentation with arrow overlays (50%), highlight overlays (20%), mouse overlays (80%), horizontal flips (50%), color jitter, and Gaussian noise. No rotation or geometric transformations to preserve centering semantics
 - **Optimizer**: AdamW (weight_decay=0.001) with LR scheduler (warmup + cosine decay: 0→0.001→1e-5)
 - **Training**: 200 epochs, batch size 64
