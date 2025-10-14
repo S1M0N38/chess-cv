@@ -43,7 +43,7 @@ The preprocessing script generates model-specific training data:
     - Renders pieces onto the board
     - Extracts 32×32 pixel squares
     - Saves images to train/validate/test directories
-3. Generates \~93,000 images split into train (70%), val (15%), test (15%)
+3. Generates ~93,000 images split into train (70%), val (15%), test (15%)
 4. Balanced across 13 classes (12 pieces + empty square)
 
 **Arrows Model:**
@@ -52,13 +52,13 @@ The preprocessing script generates model-specific training data:
 2. For each board-arrow combination:
     - Renders arrow components onto boards
     - Extracts 32×32 pixel squares
-3. Generates \~4.5M images for 49 arrow component classes
+3. Generates ~4.5M images for 49 arrow component classes
 
 **Snap Model:**
 
 1. Reads board images and piece sets with positioning variations
 2. Generates centered and off-centered piece examples
-3. Generates \~176,000 images for 2 centering classes (ok/bad)
+3. Generates ~176,000 images for 2 centering classes (ok/bad)
 
 All models use the 70/15/15 train/val/test split with seed 42 for reproducibility.
 
@@ -108,7 +108,7 @@ Note: Image size is fixed at 32×32 pixels (model architecture requirement).
 
 - Base LR: 0.001 (peak after warmup)
 - Min LR: 1e-5 (end of cosine decay)
-- Warmup: 3% of total steps (\~30 epochs for 1000-epoch training)
+- Warmup: 3% of total steps (~30 epochs for 1000-epoch training)
 
 **Training Control:**
 

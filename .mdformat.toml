@@ -9,4 +9,5 @@ exclude = [
   ".claude/**",
   "wandb/**",
   "data/**",
+  "docs/README_hf.md",
 ]

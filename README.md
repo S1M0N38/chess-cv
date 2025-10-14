@@ -3,9 +3,6 @@
 # Chess CV
 
 <p align="center">
-  <a href="https://github.com/S1M0N38/chess-cv/releases">
-    <img alt="GitHub release" src="https://img.shields.io/github/v/release/S1M0N38/chess-cv?include_prereleases&sort=semver&style=for-the-badge&logo=github"/>
-  </a>
   <a href="https://pypi.org/project/chess-cv/">
     <img alt="PyPI" src="https://img.shields.io/pypi/v/chess-cv?style=for-the-badge&logo=pypi&logoColor=white"/>
   </a>
@@ -13,10 +10,10 @@
     <img alt="Python 3.13+" src="https://img.shields.io/badge/python-3.13+-blue.svg?style=for-the-badge&logo=python&logoColor=white"/>
   </a>
   <a href="https://opensource.org/licenses/MIT">
-    <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge"/>
+    <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge&color=0d990d"/>
   </a>
-  <a href="https://s1m0n38.github.io/chess-cv/llms-full.txt">
-    <img alt="llms.txt" src="https://img.shields.io/badge/llms.txt-grey?style=for-the-badge"/>
+  <a href="https://huggingface.co/S1M0N38/chess-cv">
+    <img alt="Hugging Face" src="https://img.shields.io/badge/Hugging%20Face-FFD21E?style=for-the-badge&label=model&logoColor=white&labelColor=grey"/>
   </a>
 </p>
 
@@ -102,7 +99,7 @@ This project includes three specialized models for chess board analysis:
 
 Classifies chess square images into **13 classes**: 6 white pieces (wP, wN, wB, wR, wQ, wK), 6 black pieces (bP, bN, bB, bR, bQ, bK), and empty squares (xx). Designed for board state recognition and FEN generation.
 
-**Training:** \~93,000 synthetic images with aggressive augmentation (arrow overlays, flips, rotation, color jitter)
+**Training:** ~93,000 synthetic images with aggressive augmentation (arrow overlays, flips, rotation, color jitter)
 
 **Performance:**
 
@@ -118,7 +115,7 @@ Classifies chess square images into **13 classes**: 6 white pieces (wP, wN, wB, 
 
 Classifies chess square images into **49 classes** representing arrow overlay patterns: 20 arrow heads, 12 tails, 8 middle segments, 4 corners, and empty squares. Enables detection and reconstruction of arrow annotations in chess interfaces. The NSEW naming (North/South/East/West) indicates arrow orientation, with corners handling knight-move arrow patterns.
 
-**Training:** \~3.14M synthetic images (20 epochs, batch size 128) with conservative augmentation (no flips/rotation to preserve arrow directionality)
+**Training:** ~3.14M synthetic images (20 epochs, batch size 128) with conservative augmentation (no flips/rotation to preserve arrow directionality)
 
 **Performance:**
 
@@ -132,7 +129,7 @@ Classifies chess square images into **49 classes** representing arrow overlay pa
 
 Classifies chess square images into **2 classes**: centered ("ok") and off-centered ("bad") pieces. Designed for automated board analysis and piece positioning validation, helping ensure proper piece placement in digital chess interfaces.
 
-**Training:** \~1.4M synthetic images (centered and off-centered piece positions) with conservative augmentation (no rotation to preserve centering semantics)
+**Training:** ~1.4M synthetic images (centered and off-centered piece positions) with conservative augmentation (no rotation to preserve centering semantics)
 
 **Performance:**
 

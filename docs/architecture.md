@@ -50,7 +50,7 @@ Softmax → 13-class probabilities
 
 - **Total Parameters**: 156,077
 - **Trainable Parameters**: 156,077
-- **Model Size**: \~600 KB (safetensors format)
+- **Model Size**: ~600 KB (safetensors format)
 - **Input Size**: 32×32×3 (RGB)
 - **Output Classes**: 13
 
@@ -86,9 +86,9 @@ The model classifies chess squares into 13 categories:
 
 With the default configuration:
 
-- **Test Accuracy**: \~99.93%
-- **F1 Score (Macro)**: \~99.93%
-- **Training Time**: \~90 minutes (varies by hardware)
+- **Test Accuracy**: ~99.93%
+- **F1 Score (Macro)**: ~99.93%
+- **Training Time**: ~90 minutes (varies by hardware)
 - **Inference Speed**: 0.05 ms per image (batch size 8192, varying by hardware)
 
 #### Per-Class Performance
@@ -176,12 +176,12 @@ The training data is synthetically generated:
 
 **Data Statistics:**
 
-- **Total Combinations**: \~3,520 (55 boards × 64 piece sets)
+- **Total Combinations**: ~3,520 (55 boards × 64 piece sets)
 - **Images per Combination**: 26 (12 pieces × 2 colors + 2 empty)
-- **Total Images**: \~91,500
-- **Train Set**: \~64,000 (70%)
-- **Validation Set**: \~13,500 (15%)
-- **Test Set**: \~13,500 (15%)
+- **Total Images**: ~91,500
+- **Train Set**: ~64,000 (70%)
+- **Validation Set**: ~13,500 (15%)
+- **Test Set**: ~13,500 (15%)
 
 #### Class Balance
 
@@ -218,7 +218,7 @@ Softmax → 49-class probabilities
 
 - **Total Parameters**: 156,077 (same as pieces model)
 - **Trainable Parameters**: 156,077
-- **Model Size**: \~645 KB (safetensors format)
+- **Model Size**: ~645 KB (safetensors format)
 - **Input Size**: 32×32×3 (RGB)
 - **Output Classes**: 49
 
@@ -266,10 +266,10 @@ Corner pieces for knight-move arrows (L-shaped patterns):
 
 With the default configuration:
 
-- **Test Accuracy**: \~99.97%
-- **F1 Score (Macro)**: \~99.97%
-- **Training Time**: \~9 minutes for 20 epochs (varies by hardware)
-- **Inference Speed**: \~0.019 ms per image (batch size 512, varies by hardware)
+- **Test Accuracy**: ~99.97%
+- **F1 Score (Macro)**: ~99.97%
+- **Training Time**: ~9 minutes for 20 epochs (varies by hardware)
+- **Inference Speed**: ~0.019 ms per image (batch size 512, varies by hardware)
 
 #### Per-Class Performance
 
@@ -328,12 +328,12 @@ The arrows training data is synthetically generated using the same board styles 
 
 **Data Statistics:**
 
-- **Total Images**: \~4.5 million
-- **Train Set**: \~3,139,633 (70%)
-- **Validation Set**: \~672,253 (15%)
-- **Test Set**: \~672,594 (15%)
+- **Total Images**: ~4.5 million
+- **Train Set**: ~3,139,633 (70%)
+- **Validation Set**: ~672,253 (15%)
+- **Test Set**: ~672,594 (15%)
 
-The significantly larger dataset compared to pieces (\~4.5M vs \~91K) is due to the combination of 55 boards × 49 arrow component types, with multiple arrow variants per component type.
+The significantly larger dataset compared to pieces (~4.5M vs ~91K) is due to the combination of 55 boards × 49 arrow component types, with multiple arrow variants per component type.
 
 #### Class Balance
 
@@ -378,7 +378,7 @@ Softmax → 2-class probabilities
 
 - **Total Parameters**: 156,077 (same as pieces model)
 - **Trainable Parameters**: 156,077
-- **Model Size**: \~600 KB (safetensors format)
+- **Model Size**: ~600 KB (safetensors format)
 - **Input Size**: 32×32×3 (RGB)
 - **Output Classes**: 2
 
@@ -402,10 +402,10 @@ The model classifies chess squares into 2 categories representing piece centerin
 
 With the default configuration:
 
-- **Test Accuracy**: \~99.96%
-- **F1 Score (Macro)**: \~99.96%
+- **Test Accuracy**: ~99.96%
+- **F1 Score (Macro)**: ~99.96%
 - **Training Time**: TBD (training in progress, 200 epochs)
-- **Inference Speed**: \~0.05 ms per image (similar to pieces model, varying by hardware)
+- **Inference Speed**: ~0.05 ms per image (similar to pieces model, varying by hardware)
 
 #### Per-Class Performance
 
@@ -455,10 +455,10 @@ The snap training data is synthetically generated using the same board styles as
 
 **Data Statistics:**
 
-- **Total Images**: \~176,000
-- **Train Set**: \~123,300 (70.1%)
-- **Validation Set**: \~26,400 (15.0%)
-- **Test Set**: \~26,300 (14.9%)
+- **Total Images**: ~176,000
+- **Train Set**: ~123,300 (70.1%)
+- **Validation Set**: ~26,400 (15.0%)
+- **Test Set**: ~26,300 (14.9%)
 
 The dataset size is comparable to the pieces model, reflecting the importance of robust centering detection across different board styles, piece sets, and positioning variations.
 
