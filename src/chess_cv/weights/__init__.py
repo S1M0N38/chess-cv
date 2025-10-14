@@ -11,4 +11,5 @@ WEIGHTS_DIR = Path(__file__).parent
 BUNDLED_WEIGHTS = {
     "pieces": WEIGHTS_DIR / "pieces.safetensors",
     "arrows": WEIGHTS_DIR / "arrows.safetensors",
+    "snap": WEIGHTS_DIR / "snap.safetensors",
 }
