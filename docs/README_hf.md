@@ -84,11 +84,11 @@ model-index:
           type: chess-cv-snap-test
         metrics:
           - type: accuracy
-            value: TBD
+            value: 0.9996
             name: Accuracy
             verified: false
           - type: f1
-            value: TBD
+            value: 0.9996
             name: F1 Score (Macro)
             verified: false
 pipeline_tag: image-classification
@@ -102,7 +102,11 @@ pipeline_tag: image-classification
 
 </div>
 
-Lightweight CNN (156k parameters) that classifies chess pieces, arrows, and piece centering from 32×32 pixel square images. Trained on synthetic data from chess.com/lichess boards, piece sets, arrow overlays, and centering variations.
+Lightweight CNNs (156k parameters each) for chess board analysis from 32×32 pixel square images. The project includes three specialized models trained on synthetic data from chess.com/lichess boards, piece sets, arrow overlays, and centering variations:
+
+- **Pieces Model**: Classifies 13 classes (6 white pieces, 6 black pieces, empty squares) for board state recognition and FEN generation
+- **Arrows Model**: Classifies 49 classes representing arrow overlay patterns for detecting chess analysis annotations
+- **Snap Model**: Classifies 2 classes (centered vs off-centered pieces) for automated board analysis and piece positioning validation
 
 ## Quick Start
 
@@ -111,24 +115,17 @@ pip install chess-cv
 ```
 
 ```python
-import mlx.core as mx
-import numpy as np
-from PIL import Image
 from chess_cv import load_bundled_model
-from chess_cv.constants import get_model_config
 
-# Load model with bundled weights (included in package)
-model = load_bundled_model('pieces')
-model.eval()
+# Load pre-trained models (weights included in package)
+pieces_model = load_bundled_model('pieces')
+arrows_model = load_bundled_model('arrows')
+snap_model = load_bundled_model('snap')
 
-# Predict
-img = Image.open("square.png").convert('RGB').resize((32, 32))
-img_array = mx.array(np.array(img, dtype=np.float32)[None, ...] / 255.0)
-pred_idx = mx.argmax(model(img_array), axis=-1).item()
-
-# Get class names for the model
-classes = get_model_config('pieces')['class_names']
-print(f"Predicted: {classes[pred_idx]}")
+# Make predictions
+piece_predictions = pieces_model(image_tensor)
+arrow_predictions = arrows_model(image_tensor)
+snap_predictions = snap_model(image_tensor)
 ```
 
 **Alternative: Load latest version from Hugging Face Hub**
@@ -175,6 +172,8 @@ The pieces model classifies chess square images into 13 classes: 6 white pieces 
 
 \* *Dataset with unbalanced class distribution (e.g. many more samples for empty square class), so accuracy is not representative.*
 
+---
+
 ### ↗ Arrows Model (`arrows.safetensors`)
 
 **Overview:**
@@ -200,6 +199,8 @@ The arrows model is optimized for detecting directional annotations while mainta
 
 **Limitation:** Classification accuracy degrades when multiple arrow components overlap in a single square.
 
+---
+
 ### 📐 Snap Model (`snap.safetensors`)
 
 **Overview:**
@@ -219,9 +220,7 @@ The snap model classifies chess square images into 2 classes: centered ("ok") an
 
 | Dataset               | Accuracy | F1-Score (Macro) |
 | --------------------- | :------: | :--------------: |
-| Test Data (synthetic) |   TBD    |       TBD        |
-
-*Training in progress*
+| Test Data (synthetic) |  99.96%  |      99.96%      |
 
 The snap model is optimized for detecting piece centering issues while maintaining robustness to various board styles and visual conditions.
 
