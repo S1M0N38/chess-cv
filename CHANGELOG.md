@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/S1M0N38/chess-cv/compare/v0.5.0...v0.5.1) (2025-10-14)
+
+
+### Bug Fixes
+
+* add snap to BUNDLED_WEIGHTS ([4829a24](https://github.com/S1M0N38/chess-cv/commit/4829a24e2b4a4c2435db648b922c6bc3c1a6149d))
+
 ## [0.5.0](https://github.com/S1M0N38/chess-cv/compare/v0.4.0...v0.5.0) (2025-10-14)
 
 
