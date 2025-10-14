@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.5.0](https://github.com/S1M0N38/chess-cv/compare/v0.4.0...v0.5.0) (2025-10-14)
+
+
+### Features
+
+* add data augmentation for snap model ([0ee3e6b](https://github.com/S1M0N38/chess-cv/commit/0ee3e6b9ce55267e243a0700a0a977afce721ae6))
+* add mouse cursor png to data ([b6f981e](https://github.com/S1M0N38/chess-cv/commit/b6f981ea9993bc9062630f307010f790b426d19b))
+* add mouse overlay step to augmentation pipeline ([79af1a1](https://github.com/S1M0N38/chess-cv/commit/79af1a1ee4318e28c1bd5b272f7c1f66f613932c))
+* add preprocessing for snap model ([3cc638b](https://github.com/S1M0N38/chess-cv/commit/3cc638b76fa8434b0de44b2b43f5efbd9b75548b))
+* add snap weights ([82fa484](https://github.com/S1M0N38/chess-cv/commit/82fa48429c56ac71314eefbc6680d8874d5f8491))
+* def constants for snap model ([86beac9](https://github.com/S1M0N38/chess-cv/commit/86beac9b07ce00ff765fd19beebb284a1651a154))
+* generate more (8) variations per image for snap ([233473d](https://github.com/S1M0N38/chess-cv/commit/233473dd4b940dccbd393a2d8df49e48ffd73130))
+* new pieces model weights ([9a0d8f1](https://github.com/S1M0N38/chess-cv/commit/9a0d8f1f6ce67f5c27c7ee5cb79f4109428a5b35))
+* update augmentations configs ([bb286b6](https://github.com/S1M0N38/chess-cv/commit/bb286b637ad1566fc248fdec13aad3283f29d4cb))
+* update constants for snap model preprocessing ([4179103](https://github.com/S1M0N38/chess-cv/commit/41791031703c464dca1b41e85047eacbd287b401))
+
+
+### Bug Fixes
+
+* preprocessing for snap model ([0c5546b](https://github.com/S1M0N38/chess-cv/commit/0c5546be6a1a5f61edba5eea53ed933a11a73cde))
+* simplify preprocessing for snap model ([8b440a2](https://github.com/S1M0N38/chess-cv/commit/8b440a22d8ab51368db968201c9c5973011ae664))
+
+
+### Documentation
+
+* add sample images for snap model ([9d3e800](https://github.com/S1M0N38/chess-cv/commit/9d3e80023333ae8ceabc9056a66333d9b9cacd8a))
+* add snap model to docs (WIP) ([6c9b53e](https://github.com/S1M0N38/chess-cv/commit/6c9b53ec43b155d141f5c1e69f476480e8e372a5))
+* update citations and huggingface readme ([ffc3758](https://github.com/S1M0N38/chess-cv/commit/ffc375845fdf33b28c843a4d4a2b611bd91061c0))
+* update data augmentation with mouse overlay ([c2ac0e5](https://github.com/S1M0N38/chess-cv/commit/c2ac0e5bd7b7d2432cab6f34b0954a30dcc56403))
+* update metrics for new pieces model ([94f9ba8](https://github.com/S1M0N38/chess-cv/commit/94f9ba8f3851df6f3a42d56915598cb47c4ee354))
+* update repo subtitle ([ab210b1](https://github.com/S1M0N38/chess-cv/commit/ab210b112f81218870cb9f844d67d93082fc46be))
+* update sample images for the snap model ([f4b0fe9](https://github.com/S1M0N38/chess-cv/commit/f4b0fe9bf7a0d8eb7f4ffdd63cd3224d46df557a))
+* update snap dataset size and escape `~` in markdown ([a989fc4](https://github.com/S1M0N38/chess-cv/commit/a989fc4b90f19bc27e45ee72469a3934e2d81bac))
+* update snap model samples for data aug ([b31e978](https://github.com/S1M0N38/chess-cv/commit/b31e9783ac242fb6f297f7ad5465a494e12a33aa))
+* update snap scores (good-wood-12) ([fe5e0a8](https://github.com/S1M0N38/chess-cv/commit/fe5e0a8836d545071d09423684b5801e199c06ef))
+* update the script to generate snap augmentation examples ([0313d2c](https://github.com/S1M0N38/chess-cv/commit/0313d2ca6ba3fa9a8e7911f96247f0bb8e69a452))
+
 ## [0.4.0](https://github.com/S1M0N38/chess-cv/compare/v0.3.0...v0.4.0) (2025-10-12)
 
 
