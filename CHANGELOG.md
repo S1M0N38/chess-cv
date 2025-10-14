@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/S1M0N38/chess-cv/compare/v0.5.1...v0.5.2) (2025-10-14)
+
+
+### Documentation
+
+* fix values for dataset for the snap model ([63b81cd](https://github.com/S1M0N38/chess-cv/commit/63b81cd5500ab2366a2cef0061b6d0016dcd314f))
+
 ## [0.5.1](https://github.com/S1M0N38/chess-cv/compare/v0.5.0...v0.5.1) (2025-10-14)
 
 
