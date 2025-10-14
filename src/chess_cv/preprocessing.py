@@ -56,7 +56,7 @@ DARK_SQUARE_COORDS = (  # d4 square
 # Configuration
 # Split ratios and random seed are configured via constants.py
 # Future enhancement: Add ratio/seed parameters to generate_split_data()
-NUM_SNAP_VARIATIONS = 4  # Number of random translations to generate per image
+NUM_SNAP_VARIATIONS = 8  # Number of random translations to generate per image
 
 # Global caches for loaded images (populated by worker initializers)
 # These are shared across worker processes for efficiency
@@ -386,9 +386,9 @@ def _apply_snap_transform(image: Image.Image, snap_class: str) -> Image.Image:
         Transformed RGBA image
     """
     if snap_class == "ok":
-        # For "ok" class: minimal shifting (0-3 pixels) to simulate slight misalignment
+        # For "ok" class: minimal shifting (0-2 pixels) to simulate slight misalignment
         min_shift = 0
-        max_shift = 3
+        max_shift = 2
     else:  # snap_class == "bad"
         # For "bad" class: significant shifting (3-14 pixels)
         min_shift = 3
