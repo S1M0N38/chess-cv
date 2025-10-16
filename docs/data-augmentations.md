@@ -156,6 +156,15 @@ Applied in order during training:
 
 </div>
 
+Applied during preprocessing:
+
+1. **Piece Positioning**: Applies translation to simulate different degrees of misalignment:
+
+    - "ok" class: 0-2px shifts (minimal/slight misalignment)
+    - "bad" class: 3-14px shifts (significant misalignment)
+
+2. **Zoom Variation**: Applies (-10%, +15%) random scaling to both classes for zoom robustness. Scaling is applied around the image center to preserve centering semantics while making the model resistant to different zoom levels.
+
 Applied in order during training:
 
 1. **Arrow Overlay** (50% probability): Overlays random arrow component from `data/arrows/`. Applied early to simulate realistic interface conditions where arrows may be present during piece positioning.
@@ -168,7 +177,7 @@ Applied in order during training:
 
 5. **Color Jitter**: Randomly adjusts brightness (±15%), contrast (±20%), saturation (±20%), and hue (±20%).
 
-**Note:** The snap model uses **conservative augmentation** with no geometric transformations like rotation, cropping, or scaling to preserve piece centering semantics. The model needs to distinguish between properly centered and poorly positioned pieces, so spatial transformations that could alter perceived centering are avoided.
+**Note:** The snap model uses **conservative augmentation** during training with no additional geometric transformations like rotation, cropping, or further scaling beyond the zoom variation in preprocessing. This preserves piece centering semantics—the model needs to distinguish between properly centered and poorly positioned pieces. Zoom variation in preprocessing (-10%, +15%) provides robustness to different zoom levels while maintaining the fundamental centering distinction.
 
 ---
 

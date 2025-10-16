@@ -455,7 +455,7 @@ def _save_splits_arrows(
 
 
 def _apply_snap_transform(image: Image.Image, snap_class: str) -> Image.Image:
-    """Apply centering transformation to simulate piece positioning.
+    """Apply centering and zoom transformations to simulate piece positioning.
 
     Args:
         image: RGBA image to transform
@@ -478,18 +478,20 @@ def _apply_snap_transform(image: Image.Image, snap_class: str) -> Image.Image:
     height, width = img_array.shape[:2]
 
     # Generate random shift values
-    if snap_class == "ok":
-        shift_x = random.randint(min_shift, max_shift) * random.choice([-1, 1])
-        shift_y = random.randint(min_shift, max_shift) * random.choice([-1, 1])
-    else:  # snap_class == "bad"
-        shift_x = random.randint(min_shift, max_shift) * random.choice([-1, 1])
-        shift_y = random.randint(min_shift, max_shift) * random.choice([-1, 1])
+    shift_x = random.randint(min_shift, max_shift) * random.choice([-1, 1])
+    shift_y = random.randint(min_shift, max_shift) * random.choice([-1, 1])
 
-    # Create transformation matrix for translation
-    M: np.ndarray = np.array([[1, 0, shift_x], [0, 1, shift_y]], dtype=np.float32)
+    # Generate random zoom (-10%, +15% for both classes)
+    scale = random.uniform(0.90, 1.15)
+
+    # Create transformation matrix combining scale (around center) and translation
+    center = (width // 2, height // 2)
+    M = cv2.getRotationMatrix2D(center, angle=0, scale=scale)
+    M[0, 2] += shift_x  # Add translation offset
+    M[1, 2] += shift_y
 
     # Apply the transformation
-    shifted = cv2.warpAffine(
+    transformed = cv2.warpAffine(
         img_array,
         M,
         (width, height),
@@ -498,7 +500,7 @@ def _apply_snap_transform(image: Image.Image, snap_class: str) -> Image.Image:
     )  # Transparent border
 
     # Convert back to PIL Image
-    return Image.fromarray(shifted, "RGBA")
+    return Image.fromarray(transformed, "RGBA")
 
 
 def _init_snap_dirs(
