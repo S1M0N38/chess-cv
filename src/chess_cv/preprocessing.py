@@ -64,6 +64,11 @@ SQUARES: dict[str, Image.Image] = {}
 PIECES: dict[str, dict[str, Image.Image]] = defaultdict(dict)
 ARROWS: dict[str, dict[str, Image.Image]] = defaultdict(dict)
 
+# Global directory paths for multiprocessing (set by _save_splits_* functions)
+_TRAIN_DIR: Path | None = None
+_VAL_DIR: Path | None = None
+_TEST_DIR: Path | None = None
+
 np.random.seed(DEFAULT_RANDOM_SEED)
 random.seed(DEFAULT_RANDOM_SEED)
 
@@ -207,17 +212,29 @@ def load_arrows() -> None:
 ################################################################################
 
 
-def _init_pieces_dirs() -> tuple[Path, Path, Path]:
+def _init_pieces_dirs(
+    train_dir: Path | None = None,
+    val_dir: Path | None = None,
+    test_dir: Path | None = None,
+) -> tuple[Path, Path, Path]:
     """Create directories for train/validate/test splits for pieces model.
+
+    Args:
+        train_dir: Training directory (default: data/splits/pieces/train)
+        val_dir: Validation directory (default: data/splits/pieces/validate)
+        test_dir: Test directory (default: data/splits/pieces/test)
 
     Returns:
         Tuple of (train_dir, val_dir, test_dir)
     """
     model_id = "pieces"
 
-    train_dir = get_train_dir(model_id)
-    val_dir = get_val_dir(model_id)
-    test_dir = get_test_dir(model_id)
+    if train_dir is None:
+        train_dir = get_train_dir(model_id)
+    if val_dir is None:
+        val_dir = get_val_dir(model_id)
+    if test_dir is None:
+        test_dir = get_test_dir(model_id)
 
     for split_dir in [train_dir, val_dir, test_dir]:
         for piece_class in PIECES.keys():
@@ -235,30 +252,51 @@ def _process_piece_class(piece_class: str) -> int:
     Returns:
         Number of images generated for this class
     """
-    train_dir, val_dir, test_dir = _init_pieces_dirs()
     piece_set = PIECES[piece_class]
     count = 0
 
     for piece_name, piece in piece_set.items():
         for square_name, square in SQUARES.items():
             image = Image.alpha_composite(square, piece).convert("RGB")
-            split_dir = assign_split(train_dir, val_dir, test_dir)
+            split_dir = assign_split(_TRAIN_DIR, _VAL_DIR, _TEST_DIR)
             image.save(split_dir / piece_class / f"{square_name}_{piece_name}.png")
             count += 1
 
     return count
 
 
-def _init_worker_pieces() -> None:
-    """Initialize worker process by loading squares and pieces."""
+def _init_worker_pieces(train_dir: Path, val_dir: Path, test_dir: Path) -> None:
+    """Initialize worker process by loading squares, pieces, and setting directories.
+
+    Args:
+        train_dir: Training directory
+        val_dir: Validation directory
+        test_dir: Test directory
+    """
+    global _TRAIN_DIR, _VAL_DIR, _TEST_DIR
+    _TRAIN_DIR = train_dir
+    _VAL_DIR = val_dir
+    _TEST_DIR = test_dir
     load_squares()
     load_pieces()
 
 
-def _save_splits_pieces() -> None:
-    """Generate and save piece images to train/validate/test splits (parallelized)."""
+def _save_splits_pieces(
+    train_dir: Path | None = None,
+    val_dir: Path | None = None,
+    test_dir: Path | None = None,
+) -> None:
+    """Generate and save piece images to train/validate/test splits (parallelized).
+
+    Args:
+        train_dir: Training directory (default: data/splits/pieces/train)
+        val_dir: Validation directory (default: data/splits/pieces/validate)
+        test_dir: Test directory (default: data/splits/pieces/test)
+    """
+    global _TRAIN_DIR, _VAL_DIR, _TEST_DIR
+
     # Initialize directories in main process
-    _init_pieces_dirs()
+    _TRAIN_DIR, _VAL_DIR, _TEST_DIR = _init_pieces_dirs(train_dir, val_dir, test_dir)
 
     # Load data in main process to get class list
     load_squares()
@@ -275,7 +313,11 @@ def _save_splits_pieces() -> None:
         f"Processing {len(piece_classes)} piece classes with {num_workers} workers..."
     )
 
-    with Pool(processes=num_workers, initializer=_init_worker_pieces) as pool:
+    with Pool(
+        processes=num_workers,
+        initializer=_init_worker_pieces,
+        initargs=(_TRAIN_DIR, _VAL_DIR, _TEST_DIR),
+    ) as pool:
         with tqdm(total=total_images, desc="Generating images") as pbar:
             for count in pool.imap(_process_piece_class, piece_classes):
                 pbar.update(count)
@@ -286,17 +328,29 @@ def _save_splits_pieces() -> None:
 ################################################################################
 
 
-def _init_arrows_dirs() -> tuple[Path, Path, Path]:
+def _init_arrows_dirs(
+    train_dir: Path | None = None,
+    val_dir: Path | None = None,
+    test_dir: Path | None = None,
+) -> tuple[Path, Path, Path]:
     """Create directories for train/validate/test splits for arrows model.
+
+    Args:
+        train_dir: Training directory (default: data/splits/arrows/train)
+        val_dir: Validation directory (default: data/splits/arrows/validate)
+        test_dir: Test directory (default: data/splits/arrows/test)
 
     Returns:
         Tuple of (train_dir, val_dir, test_dir)
     """
     model_id = "arrows"
 
-    train_dir = get_train_dir(model_id)
-    val_dir = get_val_dir(model_id)
-    test_dir = get_test_dir(model_id)
+    if train_dir is None:
+        train_dir = get_train_dir(model_id)
+    if val_dir is None:
+        val_dir = get_val_dir(model_id)
+    if test_dir is None:
+        test_dir = get_test_dir(model_id)
 
     for split_dir in [train_dir, val_dir, test_dir]:
         for arrow_class in ARROWS.keys():
@@ -314,7 +368,6 @@ def _process_arrow_class(arrow_class: str) -> int:
     Returns:
         Number of images generated for this class
     """
-    train_dir, val_dir, test_dir = _init_arrows_dirs()
     arrow_set = ARROWS[arrow_class]
     count = 0
 
@@ -324,7 +377,7 @@ def _process_arrow_class(arrow_class: str) -> int:
                 arrow_name, arrow_img = random.choice(list(arrow_set.items()))
                 square_img = Image.alpha_composite(square, piece)
                 image = Image.alpha_composite(square_img, arrow_img)
-                split_dir = assign_split(train_dir, val_dir, test_dir)
+                split_dir = assign_split(_TRAIN_DIR, _VAL_DIR, _TEST_DIR)
                 image.save(
                     split_dir
                     / arrow_class
@@ -335,17 +388,39 @@ def _process_arrow_class(arrow_class: str) -> int:
     return count
 
 
-def _init_worker_arrows() -> None:
-    """Initialize worker process by loading squares, pieces, and arrows."""
+def _init_worker_arrows(train_dir: Path, val_dir: Path, test_dir: Path) -> None:
+    """Initialize worker process by loading squares, pieces, arrows, and setting directories.
+
+    Args:
+        train_dir: Training directory
+        val_dir: Validation directory
+        test_dir: Test directory
+    """
+    global _TRAIN_DIR, _VAL_DIR, _TEST_DIR
+    _TRAIN_DIR = train_dir
+    _VAL_DIR = val_dir
+    _TEST_DIR = test_dir
     load_squares()
     load_pieces()
     load_arrows()
 
 
-def _save_splits_arrows() -> None:
-    """Generate and save arrow images to train/validate/test splits (parallelized)."""
+def _save_splits_arrows(
+    train_dir: Path | None = None,
+    val_dir: Path | None = None,
+    test_dir: Path | None = None,
+) -> None:
+    """Generate and save arrow images to train/validate/test splits (parallelized).
+
+    Args:
+        train_dir: Training directory (default: data/splits/arrows/train)
+        val_dir: Validation directory (default: data/splits/arrows/validate)
+        test_dir: Test directory (default: data/splits/arrows/test)
+    """
+    global _TRAIN_DIR, _VAL_DIR, _TEST_DIR
+
     # Initialize directories in main process
-    _init_arrows_dirs()
+    _TRAIN_DIR, _VAL_DIR, _TEST_DIR = _init_arrows_dirs(train_dir, val_dir, test_dir)
 
     # Load data in main process to get class list
     load_squares()
@@ -364,7 +439,11 @@ def _save_splits_arrows() -> None:
         f"Processing {len(arrow_classes)} arrow classes with {num_workers} workers..."
     )
 
-    with Pool(processes=num_workers, initializer=_init_worker_arrows) as pool:
+    with Pool(
+        processes=num_workers,
+        initializer=_init_worker_arrows,
+        initargs=(_TRAIN_DIR, _VAL_DIR, _TEST_DIR),
+    ) as pool:
         with tqdm(total=total_images, desc="Generating images") as pbar:
             for count in pool.imap(_process_arrow_class, arrow_classes):
                 pbar.update(count)
@@ -422,17 +501,29 @@ def _apply_snap_transform(image: Image.Image, snap_class: str) -> Image.Image:
     return Image.fromarray(shifted, "RGBA")
 
 
-def _init_snap_dirs() -> tuple[Path, Path, Path]:
+def _init_snap_dirs(
+    train_dir: Path | None = None,
+    val_dir: Path | None = None,
+    test_dir: Path | None = None,
+) -> tuple[Path, Path, Path]:
     """Create directories for train/validate/test splits for snap model.
+
+    Args:
+        train_dir: Training directory (default: data/splits/snap/train)
+        val_dir: Validation directory (default: data/splits/snap/validate)
+        test_dir: Test directory (default: data/splits/snap/test)
 
     Returns:
         Tuple of (train_dir, val_dir, test_dir)
     """
     model_id = "snap"
 
-    train_dir = get_train_dir(model_id)
-    val_dir = get_val_dir(model_id)
-    test_dir = get_test_dir(model_id)
+    if train_dir is None:
+        train_dir = get_train_dir(model_id)
+    if val_dir is None:
+        val_dir = get_val_dir(model_id)
+    if test_dir is None:
+        test_dir = get_test_dir(model_id)
 
     for split_dir in [train_dir, val_dir, test_dir]:
         for snap_class in ["ok", "bad"]:
@@ -450,7 +541,6 @@ def _process_snap_piece_class(piece_class: str) -> int:
     Returns:
         Number of images generated for this piece class
     """
-    train_dir, val_dir, test_dir = _init_snap_dirs()
     piece_set = PIECES[piece_class]
     count = 0
 
@@ -460,7 +550,7 @@ def _process_snap_piece_class(piece_class: str) -> int:
                 # Empty square - only generate "ok" variations (no transformation)
                 for variation in range(NUM_SNAP_VARIATIONS):
                     image = square.convert("RGB")
-                    split_dir = assign_split(train_dir, val_dir, test_dir)
+                    split_dir = assign_split(_TRAIN_DIR, _VAL_DIR, _TEST_DIR)
                     image.save(
                         split_dir
                         / "ok"
@@ -474,7 +564,7 @@ def _process_snap_piece_class(piece_class: str) -> int:
                     transformed_piece_ok = _apply_snap_transform(piece, "ok")
                     square_img_ok = Image.alpha_composite(square, transformed_piece_ok)
                     image_ok = square_img_ok.convert("RGB")
-                    split_dir_ok = assign_split(train_dir, val_dir, test_dir)
+                    split_dir_ok = assign_split(_TRAIN_DIR, _VAL_DIR, _TEST_DIR)
                     image_ok.save(
                         split_dir_ok
                         / "ok"
@@ -488,7 +578,7 @@ def _process_snap_piece_class(piece_class: str) -> int:
                         square, transformed_piece_bad
                     )
                     image_bad = square_img_bad.convert("RGB")
-                    split_dir_bad = assign_split(train_dir, val_dir, test_dir)
+                    split_dir_bad = assign_split(_TRAIN_DIR, _VAL_DIR, _TEST_DIR)
                     image_bad.save(
                         split_dir_bad
                         / "bad"
@@ -499,16 +589,38 @@ def _process_snap_piece_class(piece_class: str) -> int:
     return count
 
 
-def _init_worker_snap() -> None:
-    """Initialize worker process by loading squares and pieces."""
+def _init_worker_snap(train_dir: Path, val_dir: Path, test_dir: Path) -> None:
+    """Initialize worker process by loading squares, pieces, and setting directories.
+
+    Args:
+        train_dir: Training directory
+        val_dir: Validation directory
+        test_dir: Test directory
+    """
+    global _TRAIN_DIR, _VAL_DIR, _TEST_DIR
+    _TRAIN_DIR = train_dir
+    _VAL_DIR = val_dir
+    _TEST_DIR = test_dir
     load_squares()
     load_pieces()
 
 
-def _save_splits_snap() -> None:
-    """Generate and save snap images to train/validate/test splits (parallelized)."""
+def _save_splits_snap(
+    train_dir: Path | None = None,
+    val_dir: Path | None = None,
+    test_dir: Path | None = None,
+) -> None:
+    """Generate and save snap images to train/validate/test splits (parallelized).
+
+    Args:
+        train_dir: Training directory (default: data/splits/snap/train)
+        val_dir: Validation directory (default: data/splits/snap/validate)
+        test_dir: Test directory (default: data/splits/snap/test)
+    """
+    global _TRAIN_DIR, _VAL_DIR, _TEST_DIR
+
     # Initialize directories in main process
-    _init_snap_dirs()
+    _TRAIN_DIR, _VAL_DIR, _TEST_DIR = _init_snap_dirs(train_dir, val_dir, test_dir)
 
     # Load data in main process to get class list
     load_squares()
@@ -530,7 +642,11 @@ def _save_splits_snap() -> None:
         f"Processing {len(piece_classes)} piece classes with {num_workers} workers..."
     )
 
-    with Pool(processes=num_workers, initializer=_init_worker_snap) as pool:
+    with Pool(
+        processes=num_workers,
+        initializer=_init_worker_snap,
+        initargs=(_TRAIN_DIR, _VAL_DIR, _TEST_DIR),
+    ) as pool:
         with tqdm(total=total_images, desc="Generating images") as pbar:
             for count in pool.imap(_process_snap_piece_class, piece_classes):
                 pbar.update(count)
@@ -597,11 +713,11 @@ def generate_split_data(
     print(f"Classes: {model_config['num_classes']}\n")
 
     if model_id == "pieces":
-        _save_splits_pieces()
+        _save_splits_pieces(train_dir, val_dir, test_dir)
     elif model_id == "arrows":
-        _save_splits_arrows()
+        _save_splits_arrows(train_dir, val_dir, test_dir)
     elif model_id == "snap":
-        _save_splits_snap()
+        _save_splits_snap(train_dir, val_dir, test_dir)
     else:
         raise ValueError(f"No generator implemented for model_id: {model_id}")
 
