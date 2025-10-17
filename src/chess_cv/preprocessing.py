@@ -152,7 +152,9 @@ def stats_splits(model_id: str) -> None:
     print("=" * 60 + "\n")
 
 
-def assign_split(train_dir: Path, val_dir: Path, test_dir: Path) -> Path:
+def assign_split(
+    train_dir: Path | None, val_dir: Path | None, test_dir: Path | None
+) -> Path:
     """Randomly assign an image to train/validate/test split.
 
     Args:
@@ -165,10 +167,13 @@ def assign_split(train_dir: Path, val_dir: Path, test_dir: Path) -> Path:
     """
     rand = np.random.random()
     if rand < DEFAULT_TRAIN_RATIO:
+        assert train_dir is not None
         return train_dir
     elif rand < DEFAULT_TRAIN_RATIO + DEFAULT_VAL_RATIO:
+        assert val_dir is not None
         return val_dir
     else:
+        assert test_dir is not None
         return test_dir
 
 
