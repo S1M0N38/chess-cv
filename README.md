@@ -135,7 +135,7 @@ Classifies chess square images into **2 classes**: centered ("ok") and off-cente
 
 | Dataset               | Accuracy | F1-Score (Macro) |
 | --------------------- | :------: | :--------------: |
-| Test Data (synthetic) |  99.96%  |      99.96%      |
+| Test Data (synthetic) |  99.92%  |      99.92%      |
 
 **Use Cases:** Automated board state validation, piece positioning quality control, and chess interface usability testing.
 

@@ -84,11 +84,11 @@ model-index:
           type: chess-cv-snap-test
         metrics:
           - type: accuracy
-            value: 0.9996
+            value: 0.9992
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.9996
+            value: 0.9992
             name: F1 Score (Macro)
             verified: false
 pipeline_tag: image-classification
@@ -220,7 +220,7 @@ The snap model classifies chess square images into 2 classes: centered ("ok") an
 
 | Dataset               | Accuracy | F1-Score (Macro) |
 | --------------------- | :------: | :--------------: |
-| Test Data (synthetic) |  99.96%  |      99.96%      |
+| Test Data (synthetic) |  99.92%  |      99.92%      |
 
 The snap model is optimized for detecting piece centering issues while maintaining robustness to various board styles and visual conditions.
 

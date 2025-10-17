@@ -402,8 +402,8 @@ The model classifies chess squares into 2 categories representing piece centerin
 
 With the default configuration:
 
-- **Test Accuracy**: ~99.96%
-- **F1 Score (Macro)**: ~99.96%
+- **Test Accuracy**: ~99.92%
+- **F1 Score (Macro)**: ~99.92%
 - **Training Time**: TBD (training in progress, 200 epochs)
 - **Inference Speed**: ~0.05 ms per image (similar to pieces model, varying by hardware)
 
@@ -414,9 +414,9 @@ The snap model achieves excellent accuracy across both classes on the synthetic 
 **Summary Statistics:**
 
 - **Highest Accuracy**: 99.99% (ok)
-- **Lowest Accuracy**: 99.91% (bad)
-- **Mean Accuracy**: 99.96%
-- **Classes > 99.9%**: 2 out of 2
+- **Lowest Accuracy**: 99.85% (bad)
+- **Mean Accuracy**: 99.92%
+- **Classes > 99.9%**: 1 out of 2
 
 #### Evaluation on External Datasets
 
