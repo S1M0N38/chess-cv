@@ -264,7 +264,10 @@ def _process_piece_class(piece_class: str) -> int:
         for square_name, square in SQUARES.items():
             image = Image.alpha_composite(square, piece).convert("RGB")
             split_dir = assign_split(_TRAIN_DIR, _VAL_DIR, _TEST_DIR)
-            image.save(split_dir / piece_class / f"{square_name}_{piece_name}.png")
+            output_path = split_dir / piece_class / f"{square_name}_{piece_name}.png"
+            # Ensure directory exists before saving
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            image.save(output_path)
             count += 1
 
     return count
