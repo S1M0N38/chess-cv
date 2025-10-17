@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.6.0](https://github.com/S1M0N38/chess-cv/compare/v0.5.2...v0.6.0) (2025-10-17)
+
+
+### Features
+
+* add zoom variation to snap preprocessing ([4d27ebb](https://github.com/S1M0N38/chess-cv/commit/4d27ebbafd47d547c5bc24d664f791f1345797b3))
+* new snap checkpoint (dutiful-cosmos-13) ([49ea2ef](https://github.com/S1M0N38/chess-cv/commit/49ea2ef6a912c1aa40281506c8918cff9a136b4c))
+
+
+### Bug Fixes
+
+* make use of the --train-dir, --val-dir, and --test-dir arguments ([af22ae0](https://github.com/S1M0N38/chess-cv/commit/af22ae01553571386009a0de57264812f83a31e8))
+* make use of the bundled weights in upload ([af8c008](https://github.com/S1M0N38/chess-cv/commit/af8c008279f877c0953b20a9853e04cab1d4231d))
+* typecheck in preprocessing.py ([0d8944e](https://github.com/S1M0N38/chess-cv/commit/0d8944e13b99996b4cdced4eab5bc1c0470b83f8))
+* update the upload helps in the CLI ([b169071](https://github.com/S1M0N38/chess-cv/commit/b16907187bf4ccbd7c71e5d6aa79fe4ac847bced))
+* use `S1M0N38/chess-cv` as default repo-id in upload ([6258b68](https://github.com/S1M0N38/chess-cv/commit/6258b681152d2cb7c26cceefc1ed33f7f70f270e))
+
+
+### Documentation
+
+* update metrics for the snap model ([fab0eba](https://github.com/S1M0N38/chess-cv/commit/fab0eba1cbca71db2d40ca207e4dcf8a6d886e14))
+
 ## [0.5.2](https://github.com/S1M0N38/chess-cv/compare/v0.5.1...v0.5.2) (2025-10-14)
 
 
