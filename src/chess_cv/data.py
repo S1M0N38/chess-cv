@@ -309,7 +309,9 @@ class RandomMouseOverlay:
         self.mouse_transform = v2.Compose(
             [
                 # Step 1: Pad to create rotation space (32x32 → 64x64)
-                v2.Pad(padding=aug_config["mouse_padding"], padding_mode="edge"),
+                v2.Pad(
+                    padding=aug_config["mouse_padding"], padding_mode="constant", fill=0
+                ),
                 # Step 2: Random rotation with small degrees
                 v2.RandomRotation(degrees=aug_config["mouse_rotation_degrees"], fill=0),
                 # Step 3: Remove black corners from rotation
