@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install installdev lint format typecheck test quality clean docs all eval
+.PHONY: help install installdev lint format typecheck test quality clean docs all eval eval-pieces-test eval-pieces-openboard eval-pieces-chessvision eval-pieces eval-arrows eval-snap
 
 # Colors for output
 YELLOW := \033[33m
@@ -89,14 +89,9 @@ eval-arrows: ## Evaluate arrows model on test data
 	@echo "$(YELLOW)Evaluating arrow model on test data...$(RESET)"
 	chess-cv test arrows --output-dir evals/arrows/test --checkpoint ./src/chess_cv/weights/arrows.safetensors
 
-eval-snap-test: ## Evaluate snap model on test data
+eval-snap: ## Evaluate snap model on test data
 	@echo "$(YELLOW)Evaluating snap model on test data...$(RESET)"
 	chess-cv test snap --output-dir evals/snap/test --checkpoint ./src/chess_cv/weights/snap.safetensors
-
-eval-snap-chessvision: ## Evaluate snap model on chessvision dataset
-	@echo "$(YELLOW)Evaluating snap model on chessvision dataset...$(RESET)"
-
-eval-snap: eval-snap-test eval-snap-chessvision ## Evaluate snap model on all datasets
 
 eval: ## Evaluate all models over multiple datasets
 	@echo "$(YELLOW)=================================== PIECES =====================================$(RESET)"
