@@ -34,7 +34,7 @@ def get_checkpoint_dir(model_id: str) -> Path:
     For loading bundled pre-trained weights, use get_bundled_weight_path()
     from the utils module instead.
     """
-    return Path("checkpoints") / model_id
+    return Path("src/chess_cv/weights")
 
 
 def get_output_dir(model_id: str) -> Path:
