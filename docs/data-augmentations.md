@@ -18,6 +18,7 @@ AUGMENTATION_CONFIGS = {
         "resized_crop_ratio": (0.9, 1.1),
         "arrow_probability": 0.80,
         "highlight_probability": 0.25,
+        "move_probability": 0.50,
         "mouse_probability": 0.90,
         "horizontal_flip": True,
         "horizontal_flip_prob": 0.5,
@@ -31,6 +32,7 @@ AUGMENTATION_CONFIGS = {
     "arrows": {
         "arrow_probability": 0.0,
         "highlight_probability": 0.25,
+        "move_probability": 0.50,
         "scale_min": 0.75,
         "scale_max": 1.0,
         "horizontal_flip": False,
@@ -45,6 +47,7 @@ AUGMENTATION_CONFIGS = {
     "snap": {
         "arrow_probability": 0.50,
         "highlight_probability": 0.20,
+        "move_probability": 0.50,
         "mouse_probability": 0.80,
         "mouse_padding": 134,
         "mouse_rotation_degrees": 5,
@@ -98,13 +101,15 @@ Applied in order during training:
 
 6. **Highlight Overlay** (25% probability): Overlays semi-transparent highlight from `data/highlights/`.
 
-7. **Mouse Overlay** (90% probability): Overlays random mouse cursor from `data/mouse/` with geometric transformations. Applies padding (134px), small rotation (±5°), center crop (246×246), random resized crop to final size (32×32) with scale 0.20-0.30 and ratio 0.8-1.2, making cursor smaller and positioning it randomly on the piece.
+7. **Move Overlay** (50% probability): Overlays random move indicator (dot/ring) from `data/moves/`. Simulates move annotations on pieces during gameplay.
 
-8. **Horizontal Flip** (50% probability): Flips image left-to-right.
+8. **Mouse Overlay** (90% probability): Overlays random mouse cursor from `data/mouse/` with geometric transformations. Applies padding (134px), small rotation (±5°), center crop (246×246), random resized crop to final size (32×32) with scale 0.20-0.30 and ratio 0.8-1.2, making cursor smaller and positioning it randomly on the piece.
 
-9. **Color Jitter**: Randomly adjusts brightness (±15%), contrast (±20%), saturation (±20%), and hue (±20%).
+9. **Horizontal Flip** (50% probability): Flips image left-to-right.
 
-10. **Gaussian Noise** (σ=0.05): Adds noise to normalized [0,1] pixels.
+10. **Color Jitter**: Randomly adjusts brightness (±15%), contrast (±20%), saturation (±20%), and hue (±20%).
+
+11. **Gaussian Noise** (σ=0.05): Adds noise to normalized [0,1] pixels.
 
 ---
 
@@ -130,11 +135,13 @@ Applied in order during training:
 
 1. **Highlight Overlay** (25% probability): Overlays semi-transparent highlight from `data/highlights/`. Applied early before other transforms.
 
-2. **Color Jitter**: Randomly adjusts brightness, contrast, saturation by ±20%, and hue by ±20%.
+2. **Move Overlay** (50% probability): Overlays random move indicator (dot/ring) from `data/moves/`. Simulates move annotations on arrow components.
 
-3. **Random Rotation** (±2°): Small rotation to preserve arrow directionality.
+3. **Color Jitter**: Randomly adjusts brightness, contrast, saturation by ±20%, and hue by ±20%.
 
-4. **Gaussian Noise** (σ=0.10): Adds noise to normalized [0,1] pixels. Higher noise than pieces model.
+4. **Random Rotation** (±2°): Small rotation to preserve arrow directionality.
+
+5. **Gaussian Noise** (σ=0.10): Adds noise to normalized [0,1] pixels. Higher noise than pieces model.
 
 ---
 
@@ -171,11 +178,13 @@ Applied in order during training:
 
 2. **Highlight Overlay** (20% probability): Overlays semi-transparent highlight from `data/highlights/`. Simulates square highlighting that may occur during piece placement.
 
-3. **Mouse Cursor Overlay** (80% probability): Overlays random mouse cursor from `data/mouse/` with geometric transformations. Applies padding (134px), small rotation (±5°), center crop (246×246), random resized crop to final size (32×32) with scale 0.20-0.30 and ratio 0.8-1.2, making cursor smaller and positioning it randomly on the piece.
+3. **Move Overlay** (50% probability): Overlays random move indicator (dot/ring) from `data/moves/`. Simulates move indicators during piece positioning evaluation.
 
-4. **Horizontal Flip** (50% probability): Flips image left-to-right. Centering semantics are preserved under horizontal flip.
+4. **Mouse Cursor Overlay** (80% probability): Overlays random mouse cursor from `data/mouse/` with geometric transformations. Applies padding (134px), small rotation (±5°), center crop (246×246), random resized crop to final size (32×32) with scale 0.20-0.30 and ratio 0.8-1.2, making cursor smaller and positioning it randomly on the piece.
 
-5. **Color Jitter**: Randomly adjusts brightness (±15%), contrast (±20%), saturation (±20%), and hue (±20%).
+5. **Horizontal Flip** (50% probability): Flips image left-to-right. Centering semantics are preserved under horizontal flip.
+
+6. **Color Jitter**: Randomly adjusts brightness (±15%), contrast (±20%), saturation (±20%), and hue (±20%).
 
 **Note:** The snap model uses **conservative augmentation** during training with no additional geometric transformations like rotation, cropping, or further scaling beyond the zoom variation in preprocessing. This preserves piece centering semantics—the model needs to distinguish between properly centered and poorly positioned pieces. Zoom variation in preprocessing (-10%, +15%) provides robustness to different zoom levels while maintaining the fundamental centering distinction.
 
@@ -191,6 +200,7 @@ Applied in order during training:
 | Random Resized Crop | Area 0.54-0.74, ratio 0.9-1.1 | ❌          | ❌             | Translation + zoom would alter centering      |
 | Arrow Overlay       | 80%                           | ❌          | 50%            | Simulates interface arrows during positioning |
 | Highlight Overlay   | 25%                           | 25%         | 20%            | Simulates square highlighting                 |
+| Move Overlay        | 50%                           | 50%         | 50%            | Simulates move indicators on pieces/arrows    |
 | Mouse Overlay       | 90%                           | ❌          | 80%            | Simulates cursor interaction during placement |
 | Horizontal Flip     | 50%                           | ❌          | 50%            | Centering semantics preserved under flip      |
 | Color Jitter        | B±15%, CSH±20%                | ±20% (BCSH) | B±15%, CSH±20% | Snap uses same variation as pieces            |
@@ -220,16 +230,17 @@ v2.CenterCrop(size=40)
 # Aspect ratio: ±10% stretch → (0.9, 1.1)
 v2.RandomResizedCrop(size=32, scale=(0.54, 0.74), ratio=(0.9, 1.1))
 
-# 5-7. Overlays
+# 5-8. Overlays
 RandomArrowOverlay(probability=0.80)
 RandomHighlightOverlay(probability=0.25)
+RandomMoveOverlay(probability=0.50)
 RandomMouseOverlay(probability=0.90)
 
-# 8-9. Geometric + color
+# 9-10. Geometric + color
 v2.RandomHorizontalFlip(p=0.5)
 v2.ColorJitter(brightness=0.15, contrast=0.2, saturation=0.2, hue=0.2)
 
-# 10. Noise (requires tensor conversion)
+# 11. Noise (requires tensor conversion)
 v2.ToImage() → v2.ToDtype() → v2.GaussianNoise() → v2.ToPILImage()
 ```
 
@@ -239,26 +250,30 @@ v2.ToImage() → v2.ToDtype() → v2.GaussianNoise() → v2.ToPILImage()
 # 1. Highlight overlay
 RandomHighlightOverlay(probability=0.25)
 
-# 2-3. Color + rotation
+# 2. Move overlay
+RandomMoveOverlay(probability=0.50)
+
+# 3-4. Color + rotation
 v2.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2)
 v2.RandomRotation(degrees=2)
 
-# 4. Noise (requires tensor conversion)
+# 5. Noise (requires tensor conversion)
 v2.ToImage() → v2.ToDtype() → v2.GaussianNoise() → v2.ToPILImage()
 ```
 
 **Snap Model:**
 
 ```python
-# 1-3. Overlays
+# 1-4. Overlays
 RandomArrowOverlay(probability=0.50)
 RandomHighlightOverlay(probability=0.20)
+RandomMoveOverlay(probability=0.50)
 RandomMouseOverlay(probability=0.80)
 
-# 4-5. Geometric + color
+# 5-6. Geometric + color
 v2.RandomHorizontalFlip(p=0.5)
 v2.ColorJitter(brightness=0.15, contrast=0.2, saturation=0.2, hue=0.2)
 
-# 6. Noise (requires tensor conversion)
+# 7. Noise (requires tensor conversion)
 v2.ToImage() → v2.ToDtype() → v2.GaussianNoise() → v2.ToPILImage()
 ```

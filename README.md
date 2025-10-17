@@ -99,7 +99,7 @@ This project includes three specialized models for chess board analysis:
 
 Classifies chess square images into **13 classes**: 6 white pieces (wP, wN, wB, wR, wQ, wK), 6 black pieces (bP, bN, bB, bR, bQ, bK), and empty squares (xx). Designed for board state recognition and FEN generation.
 
-**Training:** ~93,000 synthetic images with aggressive augmentation (arrow overlays, flips, rotation, color jitter)
+**Training:** ~93,000 synthetic images with aggressive augmentation (arrow overlays, highlight overlays, move overlays, flips, rotation, color jitter)
 
 **Performance:**
 
