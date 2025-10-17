@@ -300,7 +300,7 @@ def test(
 @click.option(
     "--repo-id",
     type=str,
-    required=True,
+    default="S1M0N38/chess-cv",
     help="Repository ID on Hugging Face Hub (format: 'username/repo-name')",
 )
 @click.option(
@@ -342,20 +342,23 @@ def upload(
     token: str | None,
 ):
     """Upload trained chess-cv model to Hugging Face Hub.
-    
+
     MODEL_ID: Model identifier (e.g., 'pieces')
-    
+
     Examples:
-    
-      # Upload with default settings
+
+      # Upload with default settings (to S1M0N38/chess-cv)
+      chess-cv upload pieces
+
+      # Upload to custom repository
       chess-cv upload pieces --repo-id username/chess-cv
-    
+
       # Upload with custom commit message
       chess-cv upload pieces --repo-id username/chess-cv --message "feat: improved model v2"
-    
+
       # Upload to private repository
       chess-cv upload pieces --repo-id username/chess-cv --private
-    
+
       # Specify custom paths
       chess-cv upload pieces --repo-id username/chess-cv \\
         --checkpoint-dir ./my-checkpoints \\
