@@ -76,6 +76,7 @@ DEFAULT_RANDOM_SEED = 42
 DEFAULT_ARROW_DIR = DEFAULT_DATA_DIR / "arrows"
 DEFAULT_HIGHLIGHT_DIR = DEFAULT_DATA_DIR / "highlights"
 DEFAULT_MOUSE_DIR = DEFAULT_DATA_DIR / "mouse"
+DEFAULT_MOVE_DIR = DEFAULT_DATA_DIR / "moves"
 
 # Model-specific augmentation configurations
 AUGMENTATION_CONFIGS = {
@@ -109,6 +110,8 @@ AUGMENTATION_CONFIGS = {
         "arrow_probability": 0.80,
         # Highlight overlay - Simulate square highlighting effects
         "highlight_probability": 0.25,
+        # Move indicator overlay - Simulate move indicators on pieces
+        "move_probability": 0.5,
         # Mouse cursor overlay - Simulate cursor interaction with pieces
         "mouse_probability": 0.90,
         # ===========================================
@@ -156,6 +159,8 @@ AUGMENTATION_CONFIGS = {
         "arrow_probability": 0.0,
         # Highlight overlay - Simulate square highlighting effects
         "highlight_probability": 0.25,
+        # Move indicator overlay - Simulate move indicators on arrows
+        "move_probability": 0.5,
         # ===========================================
         # GEOMETRIC TRANSFORMATIONS
         # ===========================================
@@ -197,6 +202,8 @@ AUGMENTATION_CONFIGS = {
         "arrow_probability": 0.50,
         # Highlight overlay - Simulate square highlighting effects
         "highlight_probability": 0.20,
+        # Move indicator overlay - Simulate move indicators on pieces
+        "move_probability": 0.50,
         # Mouse cursor overlay - Simulate cursor interaction with pieces
         "mouse_probability": 0.80,
         # ===========================================

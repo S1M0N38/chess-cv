@@ -17,6 +17,7 @@ __all__ = [
     "RandomArrowOverlay",
     "RandomHighlightOverlay",
     "RandomMouseOverlay",
+    "RandomMoveOverlay",
     "ChessPiecesDataset",
     "HuggingFaceChessPiecesDataset",
     "ConcatenatedHuggingFaceDataset",
@@ -184,6 +185,72 @@ class RandomHighlightOverlay:
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(num_highlights={len(self.highlight_images)}, "
+            f"probability={self.probability})"
+        )
+
+
+class RandomMoveOverlay:
+    """Randomly overlays move indicator images on chess piece images."""
+
+    def __init__(self, move_dir: Path | str, probability: float = 0.3):
+        """
+        Args:
+            move_dir: Directory containing move indicator subdirectories (dot, ring)
+            probability: Probability of applying move overlay (0.0 to 1.0)
+        """
+        self.probability = probability
+        self.move_images: list[Image.Image] = []
+
+        # Load all move images from all subdirectories
+        move_dir = Path(move_dir)
+        move_paths = glob.glob(str(move_dir / "*" / "*.png"))
+
+        if not move_paths:
+            raise FileNotFoundError(
+                f"No move images found in {move_dir} subdirectories"
+            )
+
+        # Load and cache all move images
+        for move_path in move_paths:
+            try:
+                move_img = Image.open(move_path).convert("RGBA")
+                self.move_images.append(move_img)
+            except Exception as e:
+                print(f"Warning: Could not load move image {move_path}: {e}")
+
+        if not self.move_images:
+            raise ValueError("No valid move images could be loaded")
+
+        print(f"Loaded {len(self.move_images)} move images for augmentation")
+
+    def __call__(self, img: Image.Image) -> Image.Image:
+        """
+        Args:
+            img (PIL Image): Image to be augmented.
+
+        Returns:
+            PIL Image: Augmented image (with or without move overlay).
+        """
+        # Randomly decide whether to apply move overlay
+        if random.random() > self.probability:
+            return img
+
+        # Convert to RGBA to support alpha compositing
+        if img.mode != "RGBA":
+            img = img.convert("RGBA")
+
+        # Randomly select a move indicator (no rotation needed, all rotations pre-generated)
+        move = random.choice(self.move_images).copy()
+
+        # Composite move onto the image using alpha composition
+        img = Image.alpha_composite(img, move)
+
+        # Convert back to RGB
+        return img.convert("RGB")
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(num_moves={len(self.move_images)}, "
             f"probability={self.probability})"
         )
 

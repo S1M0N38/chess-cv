@@ -23,6 +23,7 @@ from .constants import (
     DEFAULT_LEARNING_RATE,
     DEFAULT_MIN_LR,
     DEFAULT_MOUSE_DIR,
+    DEFAULT_MOVE_DIR,
     DEFAULT_NUM_EPOCHS,
     DEFAULT_NUM_WORKERS,
     DEFAULT_PATIENCE,
@@ -40,6 +41,7 @@ from .data import (
     RandomArrowOverlay,
     RandomHighlightOverlay,
     RandomMouseOverlay,
+    RandomMoveOverlay,
     collate_fn,
     get_image_files,
     get_label_map_from_class_names,
@@ -415,7 +417,16 @@ def train(
                 )
             )
 
-        # Step 7: Mouse overlay
+        # Step 7: Move overlay
+        if aug_config["move_probability"] > 0:
+            train_transform_list.append(
+                RandomMoveOverlay(
+                    move_dir=DEFAULT_MOVE_DIR,
+                    probability=aug_config["move_probability"],
+                )
+            )
+
+        # Step 8: Mouse overlay
         if aug_config["mouse_probability"] > 0:
             train_transform_list.append(
                 RandomMouseOverlay(
@@ -425,13 +436,13 @@ def train(
                 )
             )
 
-        # Step 8: Horizontal flip
+        # Step 9: Horizontal flip
         if aug_config["horizontal_flip"]:
             train_transform_list.append(
                 v2.RandomHorizontalFlip(p=aug_config["horizontal_flip_prob"])
             )
 
-        # Step 9: Color jitter
+        # Step 10: Color jitter
         train_transform_list.append(
             v2.ColorJitter(
                 brightness=aug_config["brightness"],
@@ -441,7 +452,7 @@ def train(
             )
         )
 
-        # Step 10: Convert to tensor, apply Gaussian noise
+        # Step 11: Convert to tensor, apply Gaussian noise
         # GaussianNoise requires tensor input, not PIL
         train_transform_list.append(v2.ToImage())
         train_transform_list.append(v2.ToDtype(dtype=torch.float32, scale=True))
@@ -463,7 +474,16 @@ def train(
                 )
             )
 
-        # Step 2: Color jitter
+        # Step 2: Move overlay
+        if aug_config["move_probability"] > 0:
+            train_transform_list.append(
+                RandomMoveOverlay(
+                    move_dir=DEFAULT_MOVE_DIR,
+                    probability=aug_config["move_probability"],
+                )
+            )
+
+        # Step 3: Color jitter
         train_transform_list.append(
             v2.ColorJitter(
                 brightness=aug_config["brightness"],
@@ -473,12 +493,12 @@ def train(
             )
         )
 
-        # Step 3: Small rotation (±2 degrees)
+        # Step 4: Small rotation (±2 degrees)
         train_transform_list.append(
             v2.RandomRotation(degrees=aug_config["rotation_degrees"])
         )
 
-        # Step 4: Convert to tensor, apply Gaussian noise
+        # Step 5: Convert to tensor, apply Gaussian noise
         # GaussianNoise requires tensor input, not PIL
         train_transform_list.append(v2.ToImage())
         train_transform_list.append(v2.ToDtype(dtype=torch.float32, scale=True))
@@ -509,7 +529,16 @@ def train(
                 )
             )
 
-        # Step 3: Mouse overlay
+        # Step 3: Move overlay
+        if aug_config["move_probability"] > 0:
+            train_transform_list.append(
+                RandomMoveOverlay(
+                    move_dir=DEFAULT_MOVE_DIR,
+                    probability=aug_config["move_probability"],
+                )
+            )
+
+        # Step 4: Mouse overlay
         if aug_config["mouse_probability"] > 0:
             train_transform_list.append(
                 RandomMouseOverlay(
@@ -519,13 +548,13 @@ def train(
                 )
             )
 
-        # Step 4: Horizontal flip
+        # Step 5: Horizontal flip
         if aug_config["horizontal_flip"]:
             train_transform_list.append(
                 v2.RandomHorizontalFlip(p=aug_config["horizontal_flip_prob"])
             )
 
-        # Step 5: Color jitter
+        # Step 6: Color jitter
         train_transform_list.append(
             v2.ColorJitter(
                 brightness=aug_config["brightness"],
@@ -535,7 +564,7 @@ def train(
             )
         )
 
-        # Step 6: Convert to tensor, apply Gaussian noise
+        # Step 7: Convert to tensor, apply Gaussian noise
         # GaussianNoise requires tensor input, not PIL
         train_transform_list.append(v2.ToImage())
         train_transform_list.append(v2.ToDtype(dtype=torch.float32, scale=True))
