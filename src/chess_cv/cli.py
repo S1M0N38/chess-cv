@@ -97,7 +97,7 @@ def preprocessing(
     "--checkpoint-dir",
     type=click.Path(path_type=Path),
     default=None,
-    help="Checkpoint directory (default: checkpoints/{model-id})",
+    help="Checkpoint directory (default: src/chess_cv/weights)",
 )
 @click.option(
     "--batch-size",
@@ -214,7 +214,7 @@ def train(
     "--checkpoint",
     type=click.Path(path_type=Path),
     default=None,
-    help="Model checkpoint path (default: checkpoints/{model-id}/{model-id}.safetensors)",
+    help="Model checkpoint path (default: src/chess_cv/weights/{model-id}.safetensors)",
 )
 @click.option(
     "--batch-size",
@@ -307,7 +307,7 @@ def test(
     "--checkpoint-dir",
     type=click.Path(path_type=Path),
     default=None,
-    help="Directory containing model checkpoints (default: checkpoints/{model-id})",
+    help="Directory containing model checkpoints (default: src/chess_cv/weights)",
 )
 @click.option(
     "--readme",
