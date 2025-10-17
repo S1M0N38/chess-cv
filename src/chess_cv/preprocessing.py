@@ -386,11 +386,14 @@ def _process_arrow_class(arrow_class: str) -> int:
                 square_img = Image.alpha_composite(square, piece)
                 image = Image.alpha_composite(square_img, arrow_img)
                 split_dir = assign_split(_TRAIN_DIR, _VAL_DIR, _TEST_DIR)
-                image.save(
+                output_path = (
                     split_dir
                     / arrow_class
                     / f"{square_name}_{piece_class}_{piece_name}_{arrow_name}.png"
                 )
+                # Ensure directory exists before saving
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                image.save(output_path)
                 count += 1
 
     return count
@@ -561,11 +564,14 @@ def _process_snap_piece_class(piece_class: str) -> int:
                 for variation in range(NUM_SNAP_VARIATIONS):
                     image = square.convert("RGB")
                     split_dir = assign_split(_TRAIN_DIR, _VAL_DIR, _TEST_DIR)
-                    image.save(
+                    output_path = (
                         split_dir
                         / "ok"
                         / f"{square_name}_{piece_name}_var{variation}.png"
                     )
+                    # Ensure directory exists before saving
+                    output_path.parent.mkdir(parents=True, exist_ok=True)
+                    image.save(output_path)
                     count += 1
             else:
                 # Non-empty piece - generate both "ok" and "bad" variations
@@ -575,11 +581,14 @@ def _process_snap_piece_class(piece_class: str) -> int:
                     square_img_ok = Image.alpha_composite(square, transformed_piece_ok)
                     image_ok = square_img_ok.convert("RGB")
                     split_dir_ok = assign_split(_TRAIN_DIR, _VAL_DIR, _TEST_DIR)
-                    image_ok.save(
+                    output_path_ok = (
                         split_dir_ok
                         / "ok"
                         / f"{square_name}_{piece_class}_{piece_name}_var{variation}.png"
                     )
+                    # Ensure directory exists before saving
+                    output_path_ok.parent.mkdir(parents=True, exist_ok=True)
+                    image_ok.save(output_path_ok)
                     count += 1
 
                     # Generate "bad" variation
@@ -589,11 +598,14 @@ def _process_snap_piece_class(piece_class: str) -> int:
                     )
                     image_bad = square_img_bad.convert("RGB")
                     split_dir_bad = assign_split(_TRAIN_DIR, _VAL_DIR, _TEST_DIR)
-                    image_bad.save(
+                    output_path_bad = (
                         split_dir_bad
                         / "bad"
                         / f"{square_name}_{piece_class}_{piece_name}_var{variation}.png"
                     )
+                    # Ensure directory exists before saving
+                    output_path_bad.parent.mkdir(parents=True, exist_ok=True)
+                    image_bad.save(output_path_bad)
                     count += 1
 
     return count
