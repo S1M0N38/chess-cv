@@ -67,11 +67,11 @@ model-index:
           type: chess-cv-arrows-test
         metrics:
           - type: accuracy
-            value: 0.9997
+            value: 0.9999
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.9997
+            value: 0.9999
             name: F1 Score (Macro)
             verified: false
   - name: chess-cv-snap
@@ -193,7 +193,7 @@ The arrows model classifies chess square images into 49 classes representing dif
 
 | Dataset               | Accuracy | F1-Score (Macro) |
 | --------------------- | -------- | ---------------- |
-| Test Data (synthetic) | 99.97%   | 99.97%           |
+| Test Data (synthetic) | 99.99%   | 99.99%           |
 
 The arrows model is optimized for detecting directional annotations while maintaining spatial consistency across the board.
 

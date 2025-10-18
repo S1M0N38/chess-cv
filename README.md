@@ -121,7 +121,7 @@ Classifies chess square images into **49 classes** representing arrow overlay pa
 
 | Dataset               | Accuracy | F1-Score (Macro) |
 | --------------------- | :------: | :--------------: |
-| Test Data (synthetic) |  99.97%  |      99.97%      |
+| Test Data (synthetic) |  99.99%  |      99.99%      |
 
 **Limitation:** Single arrow component per square only
 

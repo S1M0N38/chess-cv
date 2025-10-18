@@ -266,8 +266,8 @@ Corner pieces for knight-move arrows (L-shaped patterns):
 
 With the default configuration:
 
-- **Test Accuracy**: ~99.97%
-- **F1 Score (Macro)**: ~99.97%
+- **Test Accuracy**: ~99.99%
+- **F1 Score (Macro)**: ~99.99%
 - **Training Time**: ~9 minutes for 20 epochs (varies by hardware)
 - **Inference Speed**: ~0.019 ms per image (batch size 512, varies by hardware)
 
@@ -277,20 +277,20 @@ The arrows model achieves near-perfect accuracy across all 49 classes on the syn
 
 **Summary Statistics:**
 
-- **Highest Accuracy**: 100.00% (19 classes)
-- **Lowest Accuracy**: 99.76% (tail-S)
+- **Highest Accuracy**: 100.00% (26 classes)
+- **Lowest Accuracy**: 99.27% (tail-S)
 - **Mean Accuracy**: 99.97%
-- **Classes > 99.9%**: 45 out of 49
+- **Classes > 99.9%**: 40 out of 49
 
 **Performance by Component Type:**
 
 | Component Type  | Classes | Avg Accuracy | Range         |
 | --------------- | ------- | ------------ | ------------- |
-| Arrow Heads     | 20      | 99.98%       | 99.94% - 100% |
-| Arrow Tails     | 16      | 99.95%       | 99.76% - 100% |
-| Middle Segments | 12      | 99.99%       | 99.85% - 100% |
-| Corners         | 4       | 99.95%       | 99.78% - 100% |
-| Empty Square    | 1       | 99.79%       | -             |
+| Arrow Heads     | 20      | 99.97%       | 99.56% - 100% |
+| Arrow Tails     | 12      | 99.89%       | 99.27% - 100% |
+| Middle Segments | 8       | 99.96%       | 99.78% - 100% |
+| Corners         | 4       | 99.98%       | 99.93% - 100% |
+| Empty Square    | 1       | 99.93%       | -             |
 
 !!! note "No External Dataset Evaluation"
 
