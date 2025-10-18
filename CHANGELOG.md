@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.7.0](https://github.com/S1M0N38/chess-cv/compare/v0.6.0...v0.7.0) (2025-10-18)
+
+
+### Features
+
+* add move overlay ([cc2966f](https://github.com/S1M0N38/chess-cv/commit/cc2966f20e2c26c538e4038ae05549c5b92d3c28))
+* **data:** add moves pgn overlays images ([bdb7834](https://github.com/S1M0N38/chess-cv/commit/bdb78344aeb4bdaf7126bdcce01285dbe94958e2))
+* **model:** add new version of the arrows model (eager-brook-29) ([8fc4f39](https://github.com/S1M0N38/chess-cv/commit/8fc4f390028187f45d6b3a7bc35f69dd4b259bec))
+* **model:** new version for the pieces model (electric-river-40) ([994c9e9](https://github.com/S1M0N38/chess-cv/commit/994c9e951e39b568b9dd9246a8a10f575540f524))
+* **model:** new version of the snap model (morning-donkey-14) ([4bb4abb](https://github.com/S1M0N38/chess-cv/commit/4bb4abb402cdd2c96b1c2536d690c820034f2729))
+
+
+### Bug Fixes
+
+* ensure output directories exist before saving (snap and arrows) ([5acd288](https://github.com/S1M0N38/chess-cv/commit/5acd288c41b4cd2f6775ab5072d5594102355396))
+* ensure output directory exists before saving ([18f9863](https://github.com/S1M0N38/chess-cv/commit/18f9863027aeb155f6b4c6651abc1563d081642a))
+* mouse overlay padding ([cfc5c54](https://github.com/S1M0N38/chess-cv/commit/cfc5c549392b98894c4a0d10ff9257f60644e53d))
+
+
+### Documentation
+
+* add move overlays to docs files ([6a6296c](https://github.com/S1M0N38/chess-cv/commit/6a6296c30636000dc3f165e22f1f7ad854e99867))
+* update metrics for new arrows model ([3f81445](https://github.com/S1M0N38/chess-cv/commit/3f81445da3581502a2e35aaf5204969ad9804b6c))
+* update metrics for pieces and snap models ([8f6810f](https://github.com/S1M0N38/chess-cv/commit/8f6810fa71168b4ccecd2160c18a2e25504325e3))
+* update sample images for data augmentation ([b742bf9](https://github.com/S1M0N38/chess-cv/commit/b742bf955c29676934aaf3ef54a8eacbbb4a4ca9))
+
 ## [0.6.0](https://github.com/S1M0N38/chess-cv/compare/v0.5.2...v0.6.0) (2025-10-17)
 
 
