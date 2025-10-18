@@ -1,0 +1,18 @@
+# Chess CV
+
+> CNN-based chess piece classifier
+
+Chess CV is a machine learning project that trains a lightweight CNN to classify chess pieces from 32×32px square images.
+The model uses MLX framework and achieves ~95-97% accuracy on synthetic training data.
+It combines 55 board styles with 64 piece sets to generate diverse training datasets.
+The project provides tools for data generation, model training, evaluation, and deployment to Hugging Face Hub.
+
+
+## Documentation
+
+- [Setup](https://s1m0n38.github.io/chess-cv/setup/index.md)
+- [Model Usage](https://s1m0n38.github.io/chess-cv/inference/index.md)
+- [Train and Evaluate](https://s1m0n38.github.io/chess-cv/train-and-eval/index.md)
+- [Architecture](https://s1m0n38.github.io/chess-cv/architecture/index.md)
+- [Data Augmentation](https://s1m0n38.github.io/chess-cv/data-augmentations/index.md)
+
