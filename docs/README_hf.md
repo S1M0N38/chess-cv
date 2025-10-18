@@ -20,11 +20,11 @@ model-index:
           type: chess-cv-test
         metrics:
           - type: accuracy
-            value: 0.9993
+            value: 0.9990
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.9993
+            value: 0.9990
             name: F1 Score (Macro)
             verified: false
       - task:
@@ -35,11 +35,11 @@ model-index:
           type: chess-cv-openboard
         metrics:
           - type: accuracy
-            value: 0.9953
+            value: 0.9930
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.9884
+            value: 0.9856
             name: F1 Score (Macro)
             verified: false
       - task:
@@ -50,11 +50,11 @@ model-index:
           type: chess-cv-chessvision
         metrics:
           - type: accuracy
-            value: 0.9557
+            value: 0.9313
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.9433
+            value: 0.9228
             name: F1 Score (Macro)
             verified: false
   - name: chess-cv-arrows
@@ -84,11 +84,11 @@ model-index:
           type: chess-cv-snap-test
         metrics:
           - type: accuracy
-            value: 0.9992
+            value: 0.9993
             name: Accuracy
             verified: false
           - type: f1
-            value: 0.9992
+            value: 0.9993
             name: F1 Score (Macro)
             verified: false
 pipeline_tag: image-classification
@@ -166,9 +166,9 @@ The pieces model classifies chess square images into 13 classes: 6 white pieces 
 
 | Dataset                                                                                         | Accuracy | F1-Score (Macro) |
 | ----------------------------------------------------------------------------------------------- | :------: | :--------------: |
-| Test Data                                                                                       |  99.93%  |      99.93%      |
-| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \*     |    -     |      98.84%      |
-| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) \* |    -     |      94.33%      |
+| Test Data                                                                                       |  99.90%  |      99.90%      |
+| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \*     |    -     |      98.56%      |
+| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) \* |    -     |      92.28%      |
 
 \* *Dataset with unbalanced class distribution (e.g. many more samples for empty square class), so accuracy is not representative.*
 
@@ -220,7 +220,7 @@ The snap model classifies chess square images into 2 classes: centered ("ok") an
 
 | Dataset               | Accuracy | F1-Score (Macro) |
 | --------------------- | :------: | :--------------: |
-| Test Data (synthetic) |  99.92%  |      99.92%      |
+| Test Data (synthetic) |  99.93%  |      99.93%      |
 
 The snap model is optimized for detecting piece centering issues while maintaining robustness to various board styles and visual conditions.
 

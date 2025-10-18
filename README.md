@@ -105,9 +105,9 @@ Classifies chess square images into **13 classes**: 6 white pieces (wP, wN, wB, 
 
 | Dataset                                                                                         | Accuracy | F1-Score (Macro) |
 | ----------------------------------------------------------------------------------------------- | :------: | :--------------: |
-| Test Data                                                                                       |  99.93%  |      99.93%      |
-| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \*     |    -     |      98.84%      |
-| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) \* |    -     |      94.33%      |
+| Test Data                                                                                       |  99.90%  |      99.90%      |
+| [S1M0N38/chess-cv-openboard](https://huggingface.co/datasets/S1M0N38/chess-cv-openboard) \*     |    -     |      98.56%      |
+| [S1M0N38/chess-cv-chessvision](https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision) \* |    -     |      92.28%      |
 
 \* *Dataset with unbalanced class distribution (e.g. many more samples for empty square class), so accuracy is not representative.*
 
@@ -135,7 +135,7 @@ Classifies chess square images into **2 classes**: centered ("ok") and off-cente
 
 | Dataset               | Accuracy | F1-Score (Macro) |
 | --------------------- | :------: | :--------------: |
-| Test Data (synthetic) |  99.92%  |      99.92%      |
+| Test Data (synthetic) |  99.93%  |      99.93%      |
 
 **Use Cases:** Automated board state validation, piece positioning quality control, and chess interface usability testing.
 

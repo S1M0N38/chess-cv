@@ -4,7 +4,7 @@ This file provides guidance to AI tools (e.g. Claude Code, Codex, Gemini CLI, ..
 
 ## Project Overview
 
-Chess-CV is a CNN-based chess piece classifier that uses MLX (Apple's ML framework) to train a lightweight 156k parameter model. The model classifies 32×32px square images into 13 classes (6 white pieces, 6 black pieces, 1 empty square) with ~99.93% accuracy.
+Chess-CV is a CNN-based chess piece classifier that uses MLX (Apple's ML framework) to train a lightweight 156k parameter model. The model classifies 32×32px square images into 13 classes (6 white pieces, 6 black pieces, 1 empty square) with ~99.90% accuracy.
 
 **Key Technologies:**
 
