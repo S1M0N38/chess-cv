@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/S1M0N38/chess-cv/compare/v0.7.0...v0.7.1) (2025-11-17)
+
+
+### Documentation
+
+* add discord server link ([41ba029](https://github.com/S1M0N38/chess-cv/commit/41ba0296a564e6e5e3be4db0ea13862ef52dc0e7))
+
 ## [0.7.0](https://github.com/S1M0N38/chess-cv/compare/v0.6.0...v0.7.0) (2025-10-18)
 
 
