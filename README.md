@@ -15,6 +15,9 @@
   <a href="https://huggingface.co/S1M0N38/chess-cv">
     <img alt="Hugging Face" src="https://img.shields.io/badge/Hugging%20Face-FFD21E?style=for-the-badge&label=model&logoColor=white&labelColor=grey"/>
   </a>
+  <a href="https://discord.gg/ewYzMCZDqS">
+    <img alt="Discord" src="https://img.shields.io/badge/discord-server?style=for-the-badge&logo=discord&logoColor=%23FFFFFF&color=%235865F2&labelColor=grey"/>
+  </a>
 </p>
 
 <img src="docs/assets/model.svg" alt="Model Architecture" width="600">
