@@ -20,7 +20,7 @@
   </a>
 </p>
 
-<img src="docs/assets/model.svg" alt="Model Architecture" width="600">
+<img src="docs/assets/logo.svg" alt="Chess CV logo: chess piece with corner detection overlay" width="256">
 
 *Lightweight CNNs for chess board analysis*
 
@@ -95,6 +95,10 @@ model.load_weights(list(weights.items()))
 - Hugging Face Hub deployment for model sharing
 
 ## 🎯 Models
+
+<div align="center">
+<img src="docs/assets/model.svg" alt="Model Architecture" width="600">
+</div>
 
 This project includes three specialized models for chess board analysis:
 

@@ -1,5 +1,5 @@
 <figure markdown="span">
-  ![Chess CV](assets/model.svg){ width="600" }
+  ![Chess CV](assets/logo.svg){ width="256" }
   <figcaption>Lightweight CNNs for chess board analysis</figcaption>
 </figure>
 
