@@ -7,6 +7,8 @@ site_url: https://s1m0n38.github.io/chess-cv/
 docs_dir: docs/
 theme:
   name: material
+  favicon: assets/logo.svg
+  logo: assets/logo.svg
   icon:
     repo: fontawesome/brands/github
   features:
