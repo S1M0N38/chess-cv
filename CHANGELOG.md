@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.2](https://github.com/S1M0N38/chess-cv/compare/v0.7.1...v0.7.2) (2025-11-18)
+
+
+### Documentation
+
+* add chess-cv logo ([9edb990](https://github.com/S1M0N38/chess-cv/commit/9edb990cbaf46d46e6952a9881b4c58a19e5bc7d))
+
 ## [0.7.1](https://github.com/S1M0N38/chess-cv/compare/v0.7.0...v0.7.1) (2025-11-17)
 
 
