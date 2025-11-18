@@ -1,0 +1,1354 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="CNN-based chess piece classifier">
+      
+      
+        <meta name="author" content="S1M0N38">
+      
+      
+        <link rel="canonical" href="https://s1m0n38.github.io/chess-cv/architecture/">
+      
+      
+        <link rel="prev" href="../train-and-eval/">
+      
+      
+        <link rel="next" href="../data-augmentations/">
+      
+      
+      <link rel="icon" href="../assets/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.21">
+    
+    
+      
+        <title>Architecture - Chess CV</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.2a3383ac.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="black">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#architecture" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Chess CV" class="md-header__button md-logo" aria-label="Chess CV" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Chess CV
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Architecture
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="black"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="white"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/S1M0N38/chess-cv" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    S1M0N38/chess-cv
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Chess CV" class="md-nav__button md-logo" aria-label="Chess CV" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    Chess CV
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/S1M0N38/chess-cv" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    S1M0N38/chess-cv
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Model Usage
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../train-and-eval/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Train and Evaluate
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pieces-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pieces Model
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pieces Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Architecture
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-characteristics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Characteristics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dataset-characteristics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dataset Characteristics
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arrows-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Arrows Model
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Arrows Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model-architecture_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Architecture
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-characteristics_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Characteristics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dataset-characteristics_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dataset Characteristics
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#snap-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Snap Model
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Snap Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model-architecture_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Architecture
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-characteristics_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Characteristics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dataset-characteristics_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dataset Characteristics
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-augmentations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data Augmentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pieces-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pieces Model
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pieces Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Architecture
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-characteristics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Characteristics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dataset-characteristics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dataset Characteristics
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arrows-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Arrows Model
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Arrows Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model-architecture_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Architecture
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-characteristics_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Characteristics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dataset-characteristics_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dataset Characteristics
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#snap-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Snap Model
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Snap Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model-architecture_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Architecture
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-characteristics_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Characteristics
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dataset-characteristics_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dataset Characteristics
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="architecture">Architecture</h1>
+<p>Detailed information about the Chess CV model architectures, training strategies, and performance characteristics for the pieces, arrows, and snap models.</p>
+<figure>
+<p><img alt="Model Architecture" src="../assets/model.svg" />
+  </p>
+<figcaption>CNN architecture for chess piece classification</figcaption>
+</figure>
+<h2 id="pieces-model">Pieces Model</h2>
+<h3 id="model-architecture">Model Architecture</h3>
+<p>Chess CV uses a lightweight Convolutional Neural Network (CNN) designed for efficient inference while maintaining high accuracy on 32×32 pixel chess square images.</p>
+<h4 id="network-design">Network Design</h4>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1">Input: 32×32×3 RGB image
+</span><span id="__span-0-2">
+</span><span id="__span-0-3">Conv Layer 1:
+</span><span id="__span-0-4">├── Conv2d(3 → 16 channels, 3×3 kernel)
+</span><span id="__span-0-5">├── ReLU activation
+</span><span id="__span-0-6">└── MaxPool2d(2×2) → 16×16×16
+</span><span id="__span-0-7">
+</span><span id="__span-0-8">Conv Layer 2:
+</span><span id="__span-0-9">├── Conv2d(16 → 32 channels, 3×3 kernel)
+</span><span id="__span-0-10">├── ReLU activation
+</span><span id="__span-0-11">└── MaxPool2d(2×2) → 8×8×32
+</span><span id="__span-0-12">
+</span><span id="__span-0-13">Conv Layer 3:
+</span><span id="__span-0-14">├── Conv2d(32 → 64 channels, 3×3 kernel)
+</span><span id="__span-0-15">├── ReLU activation
+</span><span id="__span-0-16">└── MaxPool2d(2×2) → 4×4×64
+</span><span id="__span-0-17">
+</span><span id="__span-0-18">Flatten → 1024 features
+</span><span id="__span-0-19">
+</span><span id="__span-0-20">Fully Connected 1:
+</span><span id="__span-0-21">├── Linear(1024 → 128)
+</span><span id="__span-0-22">├── ReLU activation
+</span><span id="__span-0-23">└── Dropout(0.5)
+</span><span id="__span-0-24">
+</span><span id="__span-0-25">Fully Connected 2:
+</span><span id="__span-0-26">└── Linear(128 → 13) → Output logits
+</span><span id="__span-0-27">
+</span><span id="__span-0-28">Softmax → 13-class probabilities
+</span></code></pre></div>
+<h4 id="model-statistics">Model Statistics</h4>
+<ul>
+<li><strong>Total Parameters</strong>: 156,077</li>
+<li><strong>Trainable Parameters</strong>: 156,077</li>
+<li><strong>Model Size</strong>: ~600 KB (safetensors format)</li>
+<li><strong>Input Size</strong>: 32×32×3 (RGB)</li>
+<li><strong>Output Classes</strong>: 13</li>
+</ul>
+<h4 id="class-labels">Class Labels</h4>
+<p>The model classifies chess squares into 13 categories:</p>
+<p><strong>Black Pieces (6):</strong></p>
+<ul>
+<li><code>bB</code> – Black Bishop</li>
+<li><code>bK</code> – Black King</li>
+<li><code>bN</code> – Black Knight</li>
+<li><code>bP</code> – Black Pawn</li>
+<li><code>bQ</code> – Black Queen</li>
+<li><code>bR</code> – Black Rook</li>
+</ul>
+<p><strong>White Pieces (6):</strong></p>
+<ul>
+<li><code>wB</code> – White Bishop</li>
+<li><code>wK</code> – White King</li>
+<li><code>wN</code> – White Knight</li>
+<li><code>wP</code> – White Pawn</li>
+<li><code>wQ</code> – White Queen</li>
+<li><code>wR</code> – White Rook</li>
+</ul>
+<p><strong>Empty (1):</strong></p>
+<ul>
+<li><code>xx</code> – Empty square</li>
+</ul>
+<h3 id="performance-characteristics">Performance Characteristics</h3>
+<h4 id="expected-results">Expected Results</h4>
+<p>With the default configuration:</p>
+<ul>
+<li><strong>Test Accuracy</strong>: ~99.90%</li>
+<li><strong>F1 Score (Macro)</strong>: ~99.90%</li>
+<li><strong>Training Time</strong>: ~90 minutes (varies by hardware)</li>
+<li><strong>Inference Speed</strong>: 0.05 ms per image (batch size 8192, varying by hardware)</li>
+</ul>
+<h4 id="per-class-performance">Per-Class Performance</h4>
+<p>Actual accuracy by piece type (Test Dataset):</p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Accuracy</th>
+<th>Class</th>
+<th>Accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bB</td>
+<td>99.90%</td>
+<td>wB</td>
+<td>99.90%</td>
+</tr>
+<tr>
+<td>bK</td>
+<td>100.00%</td>
+<td>wK</td>
+<td>99.90%</td>
+</tr>
+<tr>
+<td>bN</td>
+<td>100.00%</td>
+<td>wN</td>
+<td>99.90%</td>
+</tr>
+<tr>
+<td>bP</td>
+<td>99.81%</td>
+<td>wP</td>
+<td>99.81%</td>
+</tr>
+<tr>
+<td>bQ</td>
+<td>99.90%</td>
+<td>wQ</td>
+<td>99.81%</td>
+</tr>
+<tr>
+<td>bR</td>
+<td>100.00%</td>
+<td>wR</td>
+<td>99.81%</td>
+</tr>
+<tr>
+<td>xx</td>
+<td>100.00%</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h4 id="evaluation-on-external-datasets">Evaluation on External Datasets</h4>
+<p>The model has been evaluated on external datasets to assess generalization:</p>
+<h5 id="openboard">OpenBoard</h5>
+<ul>
+<li><strong>Dataset</strong>: <a href="https://huggingface.co/datasets/S1M0N38/chess-cv-openboard">S1M0N38/chess-cv-openboard</a></li>
+<li><strong>Number of samples</strong>: 6,016</li>
+<li><strong>Overall Accuracy</strong>: 99.30%</li>
+<li><strong>F1 Score (Macro)</strong>: 98.56%</li>
+</ul>
+<p>Per-class performance on OpenBoard:</p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Accuracy</th>
+<th>Class</th>
+<th>Accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bB</td>
+<td>99.11%</td>
+<td>wB</td>
+<td>100.00%</td>
+</tr>
+<tr>
+<td>bK</td>
+<td>100.00%</td>
+<td>wK</td>
+<td>100.00%</td>
+</tr>
+<tr>
+<td>bN</td>
+<td>100.00%</td>
+<td>wN</td>
+<td>98.97%</td>
+</tr>
+<tr>
+<td>bP</td>
+<td>99.81%</td>
+<td>wP</td>
+<td>99.61%</td>
+</tr>
+<tr>
+<td>bQ</td>
+<td>97.10%</td>
+<td>wQ</td>
+<td>98.48%</td>
+</tr>
+<tr>
+<td>bR</td>
+<td>99.32%</td>
+<td>wR</td>
+<td>98.03%</td>
+</tr>
+<tr>
+<td>xx</td>
+<td>99.24%</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h5 id="chessvision">ChessVision</h5>
+<ul>
+<li><strong>Dataset</strong>: <a href="https://huggingface.co/datasets/S1M0N38/chess-cv-chessvision">S1M0N38/chess-cv-chessvision</a></li>
+<li><strong>Number of samples</strong>: 3,186</li>
+<li><strong>Overall Accuracy</strong>: 93.13%</li>
+<li><strong>F1 Score (Macro)</strong>: 92.28%</li>
+</ul>
+<p>Per-class performance on ChessVision:</p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Accuracy</th>
+<th>Class</th>
+<th>Accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bB</td>
+<td>100.00%</td>
+<td>wB</td>
+<td>95.87%</td>
+</tr>
+<tr>
+<td>bK</td>
+<td>92.62%</td>
+<td>wK</td>
+<td>99.09%</td>
+</tr>
+<tr>
+<td>bN</td>
+<td>100.00%</td>
+<td>wN</td>
+<td>99.09%</td>
+</tr>
+<tr>
+<td>bP</td>
+<td>90.92%</td>
+<td>wP</td>
+<td>92.26%</td>
+</tr>
+<tr>
+<td>bQ</td>
+<td>98.92%</td>
+<td>wQ</td>
+<td>85.06%</td>
+</tr>
+<tr>
+<td>bR</td>
+<td>98.92%</td>
+<td>wR</td>
+<td>96.69%</td>
+</tr>
+<tr>
+<td>xx</td>
+<td>89.17%</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Multi-Split Dataset</p>
+<p>The ChessVision dataset contains multiple splits. All splits are concatenated during evaluation to produce a single comprehensive score.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Out of Sample Performance</p>
+<p>The lower performance on OpenBoard (99.30% accuracy, 98.56% F1) and ChessVision (93.13% accuracy, 92.28% F1) compared to the test set (99.90% accuracy, 99.90% F1) indicates some domain gap between the synthetic training data and these external datasets. ChessVision shows significantly lower performance, particularly on specific piece types like white queens (85.06%) and empty squares (89.17%).</p>
+</div>
+<h3 id="dataset-characteristics">Dataset Characteristics</h3>
+<h4 id="synthetic-data-generation">Synthetic Data Generation</h4>
+<p>The training data is synthetically generated:</p>
+<p><strong>Source Materials:</strong></p>
+<ul>
+<li>55 board styles (256×256px)</li>
+<li>64 piece sets (32×32px)</li>
+<li>Multiple visual styles from chess.com and lichess</li>
+</ul>
+<p><strong>Generation Process:</strong></p>
+<ol>
+<li>Render each piece onto each board style</li>
+<li>Extract 32×32 squares at piece locations</li>
+<li>Extract empty squares from light and dark squares</li>
+<li>Split combinations across train/val/test sets</li>
+</ol>
+<p><strong>Data Statistics:</strong></p>
+<ul>
+<li><strong>Total Combinations</strong>: ~3,520 (55 boards × 64 piece sets)</li>
+<li><strong>Images per Combination</strong>: 26 (12 pieces × 2 colors + 2 empty)</li>
+<li><strong>Total Images</strong>: ~91,500</li>
+<li><strong>Train Set</strong>: ~64,000 (70%)</li>
+<li><strong>Validation Set</strong>: ~13,500 (15%)</li>
+<li><strong>Test Set</strong>: ~13,500 (15%)</li>
+</ul>
+<h4 id="class-balance">Class Balance</h4>
+<p>The dataset is perfectly balanced:</p>
+<ul>
+<li>Each class has equal representation</li>
+<li>Each board-piece combination contributes equally</li>
+<li>Train/val/test splits maintain class balance</li>
+</ul>
+<hr />
+<h2 id="arrows-model">Arrows Model</h2>
+<h3 id="model-architecture_1">Model Architecture</h3>
+<h4 id="overview">Overview</h4>
+<p>The arrows model uses the same SimpleCNN architecture as the pieces model, but is trained to classify arrow overlay components instead of chess pieces. This enables detection and reconstruction of arrow annotations commonly used in chess analysis interfaces.</p>
+<h4 id="network-design_1">Network Design</h4>
+<p>The network architecture is identical to the pieces model (see <a href="#network-design">Pieces Model Architecture</a> above), with the only difference being the output layer dimension.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1">[Same architecture as pieces model]
+</span><span id="__span-1-2">
+</span><span id="__span-1-3">Fully Connected 2:
+</span><span id="__span-1-4">└── Linear(128 → 49) → Output logits
+</span><span id="__span-1-5">
+</span><span id="__span-1-6">Softmax → 49-class probabilities
+</span></code></pre></div>
+<h4 id="model-statistics_1">Model Statistics</h4>
+<ul>
+<li><strong>Total Parameters</strong>: 156,077 (same as pieces model)</li>
+<li><strong>Trainable Parameters</strong>: 156,077</li>
+<li><strong>Model Size</strong>: ~645 KB (safetensors format)</li>
+<li><strong>Input Size</strong>: 32×32×3 (RGB)</li>
+<li><strong>Output Classes</strong>: 49</li>
+</ul>
+<h4 id="class-labels_1">Class Labels</h4>
+<p>The model classifies chess squares into 49 categories representing arrow components:</p>
+<p><strong>Arrow Heads (20):</strong></p>
+<p>Directional arrow tips in 8 cardinal/ordinal directions plus intermediate angles:</p>
+<ul>
+<li><code>head-N</code>, <code>head-NNE</code>, <code>head-NE</code>, <code>head-ENE</code>, <code>head-E</code>, <code>head-ESE</code>, <code>head-SE</code>, <code>head-SSE</code></li>
+<li><code>head-S</code>, <code>head-SSW</code>, <code>head-SW</code>, <code>head-WSW</code>, <code>head-W</code>, <code>head-WNW</code>, <code>head-NW</code>, <code>head-NNW</code></li>
+</ul>
+<p><strong>Arrow Tails (12):</strong></p>
+<p>Directional arrow tails in 8 cardinal/ordinal directions plus intermediate angles:</p>
+<ul>
+<li><code>tail-N</code>, <code>tail-NNE</code>, <code>tail-NE</code>, <code>tail-ENE</code>, <code>tail-E</code>, <code>tail-ESE</code>, <code>tail-SE</code>, <code>tail-SSE</code></li>
+<li><code>tail-S</code>, <code>tail-SSW</code>, <code>tail-SW</code>, <code>tail-W</code></li>
+</ul>
+<p><strong>Middle Segments (8):</strong></p>
+<p>Arrow shaft segments for straight and diagonal lines:</p>
+<ul>
+<li><code>middle-N-S</code>, <code>middle-E-W</code>, <code>middle-NE-SW</code>, <code>middle-SE-NW</code></li>
+<li><code>middle-N-ENE</code>, <code>middle-E-SSE</code>, <code>middle-S-WSW</code>, <code>middle-W-NNW</code></li>
+<li><code>middle-N-WNW</code>, <code>middle-E-NNE</code>, <code>middle-S-ESE</code>, <code>middle-W-SSW</code></li>
+</ul>
+<p><strong>Corners (4):</strong></p>
+<p>Corner pieces for knight-move arrows (L-shaped patterns):</p>
+<ul>
+<li><code>corner-N-E</code>, <code>corner-E-S</code>, <code>corner-S-W</code>, <code>corner-W-N</code></li>
+</ul>
+<p><strong>Empty (1):</strong></p>
+<ul>
+<li><code>xx</code> – Empty square (no arrow)</li>
+</ul>
+<p><strong>Naming Convention:</strong> NSEW refers to compass directions (North/South/East/West), indicating arrow orientation on the board from white's perspective.</p>
+<h3 id="performance-characteristics_1">Performance Characteristics</h3>
+<h4 id="expected-results_1">Expected Results</h4>
+<p>With the default configuration:</p>
+<ul>
+<li><strong>Test Accuracy</strong>: ~99.99%</li>
+<li><strong>F1 Score (Macro)</strong>: ~99.99%</li>
+<li><strong>Training Time</strong>: ~9 minutes for 20 epochs (varies by hardware)</li>
+<li><strong>Inference Speed</strong>: ~0.019 ms per image (batch size 512, varies by hardware)</li>
+</ul>
+<h4 id="per-class-performance_1">Per-Class Performance</h4>
+<p>The arrows model achieves near-perfect accuracy across all 49 classes on the synthetic test dataset:</p>
+<p><strong>Summary Statistics:</strong></p>
+<ul>
+<li><strong>Highest Accuracy</strong>: 100.00% (26 classes)</li>
+<li><strong>Lowest Accuracy</strong>: 99.27% (tail-S)</li>
+<li><strong>Mean Accuracy</strong>: 99.97%</li>
+<li><strong>Classes &gt; 99.9%</strong>: 40 out of 49</li>
+</ul>
+<p><strong>Performance by Component Type:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Component Type</th>
+<th>Classes</th>
+<th>Avg Accuracy</th>
+<th>Range</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Arrow Heads</td>
+<td>20</td>
+<td>99.97%</td>
+<td>99.56% - 100%</td>
+</tr>
+<tr>
+<td>Arrow Tails</td>
+<td>12</td>
+<td>99.89%</td>
+<td>99.27% - 100%</td>
+</tr>
+<tr>
+<td>Middle Segments</td>
+<td>8</td>
+<td>99.96%</td>
+<td>99.78% - 100%</td>
+</tr>
+<tr>
+<td>Corners</td>
+<td>4</td>
+<td>99.98%</td>
+<td>99.93% - 100%</td>
+</tr>
+<tr>
+<td>Empty Square</td>
+<td>1</td>
+<td>99.93%</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">No External Dataset Evaluation</p>
+<p>Unlike the pieces model, the arrows model has only been evaluated on synthetic test data. No external datasets with annotated arrow components are currently available for out-of-distribution testing.</p>
+</div>
+<h4 id="training-configuration">Training Configuration</h4>
+<p>The arrows model uses different hyperparameters than the pieces model, optimized for the 49-class arrow classification task:</p>
+<ul>
+<li><strong>Epochs</strong>: 20 (vs 200 for pieces - converges much faster)</li>
+<li><strong>Batch Size</strong>: 128 (vs 64 for pieces - larger batches for more stable training)</li>
+<li><strong>Learning Rate</strong>: 0.0005 (vs 0.0003 for pieces)</li>
+<li><strong>Weight Decay</strong>: 0.00005 (vs 0.0003 for pieces - less regularization needed)</li>
+<li><strong>Optimizer</strong>: AdamW</li>
+<li><strong>Early Stopping</strong>: Disabled</li>
+</ul>
+<h3 id="dataset-characteristics_1">Dataset Characteristics</h3>
+<h4 id="synthetic-data-generation_1">Synthetic Data Generation</h4>
+<p>The arrows training data is synthetically generated using the same board styles as the pieces model:</p>
+<p><strong>Source Materials:</strong></p>
+<ul>
+<li>55 board styles (256×256px)</li>
+<li>Arrow overlay images organized by component type</li>
+<li>Multiple visual styles from chess.com and lichess</li>
+</ul>
+<p><strong>Generation Process:</strong></p>
+<ol>
+<li>Render arrow components onto board backgrounds</li>
+<li>Extract 32×32 squares at arrow locations</li>
+<li>Extract empty squares from light and dark squares</li>
+<li>Split combinations across train/val/test sets</li>
+</ol>
+<p><strong>Data Statistics:</strong></p>
+<ul>
+<li><strong>Total Images</strong>: ~4.5 million</li>
+<li><strong>Train Set</strong>: ~3,139,633 (70%)</li>
+<li><strong>Validation Set</strong>: ~672,253 (15%)</li>
+<li><strong>Test Set</strong>: ~672,594 (15%)</li>
+</ul>
+<p>The significantly larger dataset compared to pieces (~4.5M vs ~91K) is due to the combination of 55 boards × 49 arrow component types, with multiple arrow variants per component type.</p>
+<h4 id="class-balance_1">Class Balance</h4>
+<p>The dataset maintains balanced class distribution:</p>
+<ul>
+<li>Each arrow component class has equal representation</li>
+<li>Each board-arrow combination contributes equally</li>
+<li>Train/val/test splits maintain class balance</li>
+</ul>
+<h4 id="limitations">Limitations</h4>
+<div class="admonition warning">
+<p class="admonition-title">Single Arrow Component Per Square</p>
+<p>The model is trained on images containing <strong>at most one arrow component per square</strong>. Classification accuracy degrades significantly when multiple arrow parts overlap in a single square, which can occur with densely annotated boards or crossing arrows.</p>
+<p><strong>Example failure case</strong>: If a square contains both an arrow head and a perpendicular arrow shaft, the model may only detect one component or produce incorrect predictions.</p>
+</div>
+<hr />
+<h2 id="snap-model">Snap Model</h2>
+<h3 id="model-architecture_2">Model Architecture</h3>
+<h4 id="overview_1">Overview</h4>
+<p>The snap model uses the same SimpleCNN architecture as the pieces and arrows models, but is trained to classify piece centering quality instead of piece identity or arrow components. This enables automated detection of whether chess pieces are properly positioned within board squares, facilitating quality control for digital chess interfaces and automated analysis systems.</p>
+<h4 id="network-design_2">Network Design</h4>
+<p>The network architecture is identical to the pieces model (see <a href="#network-design">Pieces Model Architecture</a> above), with the only difference being the output layer dimension.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1">[Same architecture as pieces model]
+</span><span id="__span-2-2">
+</span><span id="__span-2-3">Fully Connected 2:
+</span><span id="__span-2-4">└── Linear(128 → 2) → Output logits
+</span><span id="__span-2-5">
+</span><span id="__span-2-6">Softmax → 2-class probabilities
+</span></code></pre></div>
+<h4 id="model-statistics_2">Model Statistics</h4>
+<ul>
+<li><strong>Total Parameters</strong>: 156,077 (same as pieces model)</li>
+<li><strong>Trainable Parameters</strong>: 156,077</li>
+<li><strong>Model Size</strong>: ~600 KB (safetensors format)</li>
+<li><strong>Input Size</strong>: 32×32×3 (RGB)</li>
+<li><strong>Output Classes</strong>: 2</li>
+</ul>
+<h4 id="class-labels_2">Class Labels</h4>
+<p>The model classifies chess squares into 2 categories representing piece centering quality:</p>
+<p><strong>Centered (1):</strong></p>
+<ul>
+<li><code>ok</code> – Pieces that are properly centered or slightly off-centered, plus empty squares</li>
+</ul>
+<p><strong>Off-Centered (1):</strong></p>
+<ul>
+<li><code>bad</code> – Pieces that are significantly misaligned or positioned poorly within the square</li>
+</ul>
+<p><strong>Rationale:</strong> The model treats both properly centered pieces and empty squares as "ok" since both represent valid board states. Only poorly positioned pieces trigger the "bad" classification, enabling automated quality assurance.</p>
+<h3 id="performance-characteristics_2">Performance Characteristics</h3>
+<h4 id="expected-results_2">Expected Results</h4>
+<p>With the default configuration:</p>
+<ul>
+<li><strong>Test Accuracy</strong>: ~99.93%</li>
+<li><strong>F1 Score (Macro)</strong>: ~99.93%</li>
+<li><strong>Training Time</strong>: TBD (training in progress, 200 epochs)</li>
+<li><strong>Inference Speed</strong>: ~0.05 ms per image (similar to pieces model, varying by hardware)</li>
+</ul>
+<h4 id="per-class-performance_2">Per-Class Performance</h4>
+<p>The snap model achieves excellent accuracy across both classes on the synthetic test dataset:</p>
+<p><strong>Summary Statistics:</strong></p>
+<ul>
+<li><strong>Highest Accuracy</strong>: 99.98% (ok)</li>
+<li><strong>Lowest Accuracy</strong>: 99.88% (bad)</li>
+<li><strong>Mean Accuracy</strong>: 99.93%</li>
+<li><strong>Classes &gt; 99.9%</strong>: 1 out of 2</li>
+</ul>
+<h4 id="evaluation-on-external-datasets_1">Evaluation on External Datasets</h4>
+<p><em>No external dataset evaluation has been conducted yet. The model has only been evaluated on synthetic test data.</em></p>
+<h4 id="training-configuration_1">Training Configuration</h4>
+<p>The snap model uses similar hyperparameters to the pieces model, optimized for the 2-class centering classification task:</p>
+<ul>
+<li><strong>Epochs</strong>: 200 (same as pieces model)</li>
+<li><strong>Batch Size</strong>: 64 (same as pieces model)</li>
+<li><strong>Learning Rate</strong>: 0.001 with warmup and cosine decay (same as pieces model)</li>
+<li><strong>Weight Decay</strong>: 0.001 (same as pieces model)</li>
+<li><strong>Optimizer</strong>: AdamW</li>
+<li><strong>Early Stopping</strong>: Disabled</li>
+</ul>
+<h3 id="dataset-characteristics_2">Dataset Characteristics</h3>
+<h4 id="synthetic-data-generation_2">Synthetic Data Generation</h4>
+<p>The snap training data is synthetically generated using the same board styles as the pieces model:</p>
+<p><strong>Source Materials:</strong></p>
+<ul>
+<li>55 board styles (256×256px)</li>
+<li>64 piece sets (32×32px)</li>
+<li>Multiple visual styles from chess.com and lichess</li>
+<li>Centered and off-centered piece positions</li>
+</ul>
+<p><strong>Generation Process:</strong></p>
+<ol>
+<li>Render pieces with intentional positioning variations</li>
+<li>Extract 32×32 squares at piece locations</li>
+<li>Extract empty squares from light and dark squares</li>
+<li>Split combinations across train/val/test sets</li>
+</ol>
+<p><strong>Data Statistics:</strong></p>
+<ul>
+<li><strong>Total Images</strong>: ~1.4M synthetic images</li>
+<li><strong>Train Set</strong>: ~980,000 (70%)</li>
+<li><strong>Validation Set</strong>: ~210,000 (15%)</li>
+<li><strong>Test Set</strong>: ~210,000 (15%)</li>
+</ul>
+<p>The dataset is generated with 8 positional variations per piece-board combination:</p>
+<ul>
+<li>Non-empty pieces: 4 "ok" (centered/slightly off-centered) + 4 "bad" (significantly off-centered) variations</li>
+<li>Empty squares: 4 "ok" variations only (empty squares are always considered valid)</li>
+<li>This comprehensive variation strategy ensures robust centering detection across different board styles, piece sets, and positioning variations</li>
+</ul>
+<h4 id="class-balance_2">Class Balance</h4>
+<p>The dataset maintains balanced class distribution:</p>
+<ul>
+<li>Each centering class has equal representation</li>
+<li>Empty squares are included in the "ok" class</li>
+<li>Train/val/test splits maintain class balance</li>
+</ul>
+<h4 id="limitations_1">Limitations</h4>
+<div class="admonition warning">
+<p class="admonition-title">Centering Semantics Preservation</p>
+<p>The model is trained with <strong>conservative augmentation</strong> to preserve centering semantics. No rotation or significant geometric transformations are applied that could alter the perceived centering of pieces within squares.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Synthetic Training Data</p>
+<p>The model is trained only on synthetically generated centering variations. Performance on real-world chess board images with natural positioning variations may vary from synthetic test results.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["content.code.copy", "content.tabs.link"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      
+    
+  </body>
+</html>

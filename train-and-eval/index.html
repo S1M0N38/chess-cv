@@ -1,0 +1,1245 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="CNN-based chess piece classifier">
+      
+      
+        <meta name="author" content="S1M0N38">
+      
+      
+        <link rel="canonical" href="https://s1m0n38.github.io/chess-cv/train-and-eval/">
+      
+      
+        <link rel="prev" href="../inference/">
+      
+      
+        <link rel="next" href="../architecture/">
+      
+      
+      <link rel="icon" href="../assets/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.21">
+    
+    
+      
+        <title>Train and Evaluate - Chess CV</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.2a3383ac.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="black">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#train-and-evaluate" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Chess CV" class="md-header__button md-logo" aria-label="Chess CV" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Chess CV
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Train and Evaluate
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="black"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="white"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/S1M0N38/chess-cv" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    S1M0N38/chess-cv
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Chess CV" class="md-nav__button md-logo" aria-label="Chess CV" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    Chess CV
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/S1M0N38/chess-cv" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    S1M0N38/chess-cv
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Model Usage
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Train and Evaluate
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Train and Evaluate
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#data-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Generation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Generation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Usage
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-output-directories" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Output Directories
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#understanding-data-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding Data Generation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Training
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model Training">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Training
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-training-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Training Configuration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#training-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Training Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#training-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Training Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#training-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Training Output
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#experiment-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      Experiment Tracking
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Experiment Tracking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#weights-biases-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Weights &amp; Biases Integration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hyperparameter-sweeps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Hyperparameter Sweeps
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Evaluation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model Evaluation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Evaluation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Evaluation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evaluating-on-external-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Evaluating on External Datasets
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evaluation-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Evaluation Output
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analyzing-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      Analyzing Results
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Deployment
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model Deployment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#upload-to-hugging-face-hub" class="md-nav__link">
+    <span class="md-ellipsis">
+      Upload to Hugging Face Hub
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next Steps
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-augmentations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data Augmentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#data-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Generation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Generation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Usage
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-output-directories" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Output Directories
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#understanding-data-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding Data Generation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Training
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model Training">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Training
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-training-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Training Configuration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#training-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Training Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#training-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Training Features
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#training-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Training Output
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#experiment-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      Experiment Tracking
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Experiment Tracking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#weights-biases-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Weights &amp; Biases Integration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hyperparameter-sweeps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Hyperparameter Sweeps
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Evaluation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model Evaluation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Evaluation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Evaluation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evaluating-on-external-datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Evaluating on External Datasets
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evaluation-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Evaluation Output
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analyzing-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      Analyzing Results
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Deployment
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model Deployment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#upload-to-hugging-face-hub" class="md-nav__link">
+    <span class="md-ellipsis">
+      Upload to Hugging Face Hub
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next Steps
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="train-and-evaluate">Train and Evaluate</h1>
+<p>Learn how to generate data, train models, and evaluate performance with Chess CV.</p>
+<h2 id="data-generation">Data Generation</h2>
+<h3 id="basic-usage">Basic Usage</h3>
+<p>Generate synthetic training data for a specific model:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><span class="c1"># Generate data for pieces model (default: 70% train, 15% val, 15% test)</span>
+</span><span id="__span-0-2">chess-cv<span class="w"> </span>preprocessing<span class="w"> </span>pieces
+</span><span id="__span-0-3">
+</span><span id="__span-0-4"><span class="c1"># Generate data for arrows model</span>
+</span><span id="__span-0-5">chess-cv<span class="w"> </span>preprocessing<span class="w"> </span>arrows
+</span><span id="__span-0-6">
+</span><span id="__span-0-7"><span class="c1"># Generate data for snap model</span>
+</span><span id="__span-0-8">chess-cv<span class="w"> </span>preprocessing<span class="w"> </span>snap
+</span></code></pre></div>
+<h3 id="custom-output-directories">Custom Output Directories</h3>
+<p>If you need to specify custom output directories:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1">chess-cv<span class="w"> </span>preprocessing<span class="w"> </span>pieces<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-2"><span class="w">  </span>--train-dir<span class="w"> </span>custom/pieces/train<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-3"><span class="w">  </span>--val-dir<span class="w"> </span>custom/pieces/validate<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-4"><span class="w">  </span>--test-dir<span class="w"> </span>custom/pieces/test
+</span></code></pre></div>
+<p>Note: The default 70/15/15 train/val/test split with seed 42 is used. These values are defined in <code>src/chess_cv/constants.py</code> and provide consistent, reproducible splits.</p>
+<h3 id="understanding-data-generation">Understanding Data Generation</h3>
+<p>The preprocessing script generates model-specific training data:</p>
+<p><strong>Pieces Model:</strong></p>
+<ol>
+<li>Reads board images from <code>data/boards/</code> and piece sets from <code>data/pieces/</code></li>
+<li>For each board-piece combination:<ul>
+<li>Renders pieces onto the board</li>
+<li>Extracts 32×32 pixel squares</li>
+<li>Saves images to train/validate/test directories</li>
+</ul>
+</li>
+<li>Generates ~93,000 images split into train (70%), val (15%), test (15%)</li>
+<li>Balanced across 13 classes (12 pieces + empty square)</li>
+</ol>
+<p><strong>Arrows Model:</strong></p>
+<ol>
+<li>Reads board images and arrow overlays from <code>data/arrows/</code></li>
+<li>For each board-arrow combination:<ul>
+<li>Renders arrow components onto boards</li>
+<li>Extracts 32×32 pixel squares</li>
+</ul>
+</li>
+<li>Generates ~4.5M images for 49 arrow component classes</li>
+</ol>
+<p><strong>Snap Model:</strong></p>
+<ol>
+<li>Reads board images and piece sets with positioning variations</li>
+<li>Generates centered and off-centered piece examples</li>
+<li>Generates ~1.4M synthetic images for 2 centering classes (ok/bad)</li>
+</ol>
+<p>All models use the 70/15/15 train/val/test split with seed 42 for reproducibility.</p>
+<h2 id="model-training">Model Training</h2>
+<h3 id="basic-training">Basic Training</h3>
+<p>Train a specific model with default settings:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><span class="c1"># Train pieces model</span>
+</span><span id="__span-2-2">chess-cv<span class="w"> </span>train<span class="w"> </span>pieces
+</span><span id="__span-2-3">
+</span><span id="__span-2-4"><span class="c1"># Train arrows model</span>
+</span><span id="__span-2-5">chess-cv<span class="w"> </span>train<span class="w"> </span>arrows
+</span><span id="__span-2-6">
+</span><span id="__span-2-7"><span class="c1"># Train snap model</span>
+</span><span id="__span-2-8">chess-cv<span class="w"> </span>train<span class="w"> </span>snap
+</span></code></pre></div>
+<h3 id="custom-training-configuration">Custom Training Configuration</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1">chess-cv<span class="w"> </span>train<span class="w"> </span>pieces<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-2"><span class="w">  </span>--train-dir<span class="w"> </span>data/splits/pieces/train<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-3"><span class="w">  </span>--val-dir<span class="w"> </span>data/splits/pieces/validate<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-4"><span class="w">  </span>--checkpoint-dir<span class="w"> </span>checkpoints/pieces<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-5"><span class="w">  </span>--batch-size<span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-6"><span class="w">  </span>--weight-decay<span class="w"> </span><span class="m">0</span>.001<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-7"><span class="w">  </span>--num-epochs<span class="w"> </span><span class="m">1000</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-8"><span class="w">  </span>--num-workers<span class="w"> </span><span class="m">8</span>
+</span></code></pre></div>
+<p><strong>Model-Specific Defaults:</strong></p>
+<p>Each model type uses optimized hyperparameters defined in <code>src/chess_cv/constants.py</code>. The arrows model, for example, uses larger batch sizes (128) and fewer epochs (20) as it converges faster.</p>
+<p>Note: Image size is fixed at 32×32 pixels (model architecture requirement).</p>
+<h3 id="training-parameters">Training Parameters</h3>
+<p><strong>Optimizer Settings:</strong></p>
+<ul>
+<li><code>--weight-decay</code>: Weight decay for regularization (default: 0.001)</li>
+</ul>
+<p><strong>Learning Rate Scheduler (enabled by default):</strong></p>
+<ul>
+<li>Base LR: 0.001 (peak after warmup)</li>
+<li>Min LR: 1e-5 (end of cosine decay)</li>
+<li>Warmup: 3% of total steps (~30 epochs for 1000-epoch training)</li>
+</ul>
+<p><strong>Training Control:</strong></p>
+<ul>
+<li><code>--num-epochs</code>: Maximum number of epochs (default: 200, recent models use 1000)</li>
+<li><code>--batch-size</code>: Batch size for training (default: 64)</li>
+</ul>
+<p><strong>Data Settings:</strong></p>
+<ul>
+<li><code>--num-workers</code>: Number of data loading workers (default: 8)</li>
+</ul>
+<p><strong>Directories:</strong></p>
+<ul>
+<li><code>--train-dir</code>: Training data directory (default: data/splits/pieces/train)</li>
+<li><code>--val-dir</code>: Validation data directory (default: data/splits/pieces/validate)</li>
+<li><code>--checkpoint-dir</code>: Where to save model checkpoints (default: checkpoints)</li>
+</ul>
+<h3 id="training-features">Training Features</h3>
+<p><strong>Learning Rate Schedule:</strong></p>
+<ul>
+<li>Warmup phase: linear increase from 0 to 0.001 over first 3% of steps</li>
+<li>Cosine decay: gradual decrease from 0.001 to 1e-5 over remaining steps</li>
+</ul>
+<p><strong>Data Augmentation:</strong></p>
+<ul>
+<li>Random resized crop (scale: 0.54-0.74)</li>
+<li>Random horizontal flip</li>
+<li>Color jitter (brightness: ±0.15, contrast/saturation/hue: ±0.2)</li>
+<li>Random rotation (±10°)</li>
+<li>Gaussian noise (std: 0.05)</li>
+<li>Arrow overlay (80% probability)</li>
+<li>Highlight overlay (25% probability)</li>
+</ul>
+<p><strong>Early Stopping:</strong></p>
+<p>Early stopping is disabled by default (patience set to 999999), allowing the full training schedule to run. This default is set in <code>src/chess_cv/constants.py</code> and ensures consistent training across runs.</p>
+<p><strong>Automatic Checkpointing:</strong></p>
+<ul>
+<li>Best model weights saved to <code>checkpoints/{model-id}/{model-id}.safetensors</code></li>
+<li>Optimizer state saved to <code>checkpoints/optimizer.safetensors</code></li>
+</ul>
+<h3 id="training-output">Training Output</h3>
+<p><strong>Files Generated:</strong></p>
+<ul>
+<li><code>checkpoints/{model-id}/{model-id}.safetensors</code> – Best model weights</li>
+<li><code>checkpoints/optimizer.safetensors</code> – Optimizer state</li>
+<li><code>outputs/training_curves.png</code> – Loss and accuracy plots</li>
+<li><code>outputs/augmentation_example.png</code> – Example of data augmentation</li>
+</ul>
+<h2 id="experiment-tracking">Experiment Tracking</h2>
+<h3 id="weights-biases-integration">Weights &amp; Biases Integration</h3>
+<p>Track experiments with the W&amp;B dashboard by adding the <code>--wandb</code> flag:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><span class="c1"># First time setup</span>
+</span><span id="__span-4-2">wandb<span class="w"> </span>login
+</span><span id="__span-4-3">
+</span><span id="__span-4-4"><span class="c1"># Train with wandb logging</span>
+</span><span id="__span-4-5">chess-cv<span class="w"> </span>train<span class="w"> </span>pieces<span class="w"> </span>--wandb
+</span></code></pre></div>
+<p><strong>Features</strong>: Real-time metric logging, hyperparameter tracking, model comparison, and experiment organization.</p>
+<h3 id="hyperparameter-sweeps">Hyperparameter Sweeps</h3>
+<p>Optimize hyperparameters with W&amp;B sweeps using the integrated <code>--sweep</code> flag:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><span class="c1"># First time setup</span>
+</span><span id="__span-5-2">wandb<span class="w"> </span>login
+</span><span id="__span-5-3">
+</span><span id="__span-5-4"><span class="c1"># Run hyperparameter sweep for a model (requires --wandb)</span>
+</span><span id="__span-5-5">chess-cv<span class="w"> </span>train<span class="w"> </span>pieces<span class="w"> </span>--sweep<span class="w"> </span>--wandb
+</span><span id="__span-5-6">
+</span><span id="__span-5-7"><span class="c1"># The sweep will use the configuration defined in src/chess_cv/sweep.py</span>
+</span></code></pre></div>
+<p><strong>Important</strong>: The <code>--sweep</code> flag requires <code>--wandb</code> to be enabled. The sweep configuration is defined in <code>src/chess_cv/sweep.py</code> and includes parameters like learning rate, batch size, and weight decay optimized for each model type.</p>
+<h2 id="model-evaluation">Model Evaluation</h2>
+<h3 id="basic-evaluation">Basic Evaluation</h3>
+<p>Evaluate a trained model on its test set:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><span class="c1"># Evaluate pieces model</span>
+</span><span id="__span-6-2">chess-cv<span class="w"> </span><span class="nb">test</span><span class="w"> </span>pieces
+</span><span id="__span-6-3">
+</span><span id="__span-6-4"><span class="c1"># Evaluate arrows model</span>
+</span><span id="__span-6-5">chess-cv<span class="w"> </span><span class="nb">test</span><span class="w"> </span>arrows
+</span><span id="__span-6-6">
+</span><span id="__span-6-7"><span class="c1"># Evaluate snap model</span>
+</span><span id="__span-6-8">chess-cv<span class="w"> </span><span class="nb">test</span><span class="w"> </span>snap
+</span></code></pre></div>
+<h3 id="custom-evaluation">Custom Evaluation</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1">chess-cv<span class="w"> </span><span class="nb">test</span><span class="w"> </span>pieces<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-2"><span class="w">  </span>--test-dir<span class="w"> </span>data/splits/pieces/test<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-3"><span class="w">  </span>--train-dir<span class="w"> </span>data/splits/pieces/train<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-4"><span class="w">  </span>--checkpoint<span class="w"> </span>checkpoints/pieces/pieces.safetensors<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-5"><span class="w">  </span>--batch-size<span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-6"><span class="w">  </span>--num-workers<span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-7"><span class="w">  </span>--output-dir<span class="w"> </span>outputs/pieces
+</span></code></pre></div>
+<h3 id="evaluating-on-external-datasets">Evaluating on External Datasets</h3>
+<p>Test model performance on HuggingFace datasets:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><span class="c1"># Evaluate on a specific dataset</span>
+</span><span id="__span-8-2">chess-cv<span class="w"> </span><span class="nb">test</span><span class="w"> </span>pieces<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-3"><span class="w">  </span>--hf-test-dir<span class="w"> </span>S1M0N38/chess-cv-openboard
+</span><span id="__span-8-4">
+</span><span id="__span-8-5"><span class="c1"># Concatenate all splits from the dataset</span>
+</span><span id="__span-8-6">chess-cv<span class="w"> </span><span class="nb">test</span><span class="w"> </span>pieces<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-7"><span class="w">  </span>--hf-test-dir<span class="w"> </span>S1M0N38/chess-cv-chessvision<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-8"><span class="w">  </span>--concat-splits
+</span></code></pre></div>
+<h3 id="evaluation-output">Evaluation Output</h3>
+<p><strong>Files Generated:</strong></p>
+<ul>
+<li><code>outputs/test_confusion_matrix.png</code> – Confusion matrix heatmap</li>
+<li><code>outputs/test_per_class_accuracy.png</code> – Per-class accuracy bar chart</li>
+<li><code>outputs/misclassified_images/</code> – Misclassified examples for analysis</li>
+</ul>
+<h3 id="analyzing-results">Analyzing Results</h3>
+<p><strong>Confusion Matrix:</strong></p>
+<p>Shows where the model makes mistakes. Look for:</p>
+<ul>
+<li>High off-diagonal values (common misclassifications)</li>
+<li>Patterns in similar piece types (e.g., knights vs bishops)</li>
+</ul>
+<p><strong>Misclassified Images:</strong></p>
+<p>Review examples in <code>outputs/misclassified_images/</code> to understand:</p>
+<ul>
+<li>Which board/piece combinations are challenging</li>
+<li>Whether augmentation needs adjustment</li>
+<li>If more training data would help</li>
+</ul>
+<h2 id="model-deployment">Model Deployment</h2>
+<h3 id="upload-to-hugging-face-hub">Upload to Hugging Face Hub</h3>
+<p>Share your trained models on Hugging Face Hub:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><span class="c1"># First time setup</span>
+</span><span id="__span-9-2">hf<span class="w"> </span>login
+</span><span id="__span-9-3">
+</span><span id="__span-9-4"><span class="c1"># Upload a specific model</span>
+</span><span id="__span-9-5">chess-cv<span class="w"> </span>upload<span class="w"> </span>pieces<span class="w"> </span>--repo-id<span class="w"> </span>username/chess-cv
+</span></code></pre></div>
+<p><strong>Examples:</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><span class="c1"># Upload pieces model with default settings</span>
+</span><span id="__span-10-2">chess-cv<span class="w"> </span>upload<span class="w"> </span>pieces<span class="w"> </span>--repo-id<span class="w"> </span>username/chess-cv
+</span><span id="__span-10-3">
+</span><span id="__span-10-4"><span class="c1"># Upload arrows model with custom message</span>
+</span><span id="__span-10-5">chess-cv<span class="w"> </span>upload<span class="w"> </span>arrows<span class="w"> </span>--repo-id<span class="w"> </span>username/chess-cv<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-10-6"><span class="w">  </span>--message<span class="w"> </span><span class="s2">&quot;feat: improved arrows model v2&quot;</span>
+</span><span id="__span-10-7">
+</span><span id="__span-10-8"><span class="c1"># Upload to private repository</span>
+</span><span id="__span-10-9">chess-cv<span class="w"> </span>upload<span class="w"> </span>snap<span class="w"> </span>--repo-id<span class="w"> </span>username/chess-cv<span class="w"> </span>--private
+</span><span id="__span-10-10">
+</span><span id="__span-10-11"><span class="c1"># Specify custom paths</span>
+</span><span id="__span-10-12">chess-cv<span class="w"> </span>upload<span class="w"> </span>pieces<span class="w"> </span>--repo-id<span class="w"> </span>username/chess-cv<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-10-13"><span class="w">  </span>--checkpoint-dir<span class="w"> </span>./my-checkpoints/pieces<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-10-14"><span class="w">  </span>--readme<span class="w"> </span>docs/custom_README.md
+</span></code></pre></div>
+<p><strong>What gets uploaded</strong>: Model weights (<code>{model-id}.safetensors</code>), model card with metadata, and model configuration.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<p><strong>Out of Memory During Training</strong>: Reduce batch size with <code>--batch-size 64</code> or reduce number of workers with <code>--num-workers 2</code>.</p>
+<p><strong>Poor Model Performance</strong>: Try adjusting hyperparameters with W&amp;B sweeps for optimization, or review misclassified images to verify data quality. To enable early stopping for faster experimentation, modify <code>DEFAULT_PATIENCE</code> in <code>src/chess_cv/constants.py</code>.</p>
+<p><strong>Training Too Slow</strong>: Increase batch size if memory allows (<code>--batch-size 128</code>). For faster experimentation, modify <code>DEFAULT_PATIENCE</code> in <code>src/chess_cv/constants.py</code> to enable early stopping.</p>
+<p><strong>Evaluation Issues</strong>: Ensure the checkpoint exists, verify the test data directory is populated, and run with appropriate batch size.</p>
+<h2 id="next-steps">Next Steps</h2>
+<ul>
+<li>Use your trained model for inference with <a href="../inference/">Model Usage</a></li>
+<li>Explore model internals with <a href="../architecture/">Architecture</a></li>
+<li>Share your model on Hugging Face Hub using the upload command above</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["content.code.copy", "content.tabs.link"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      
+    
+  </body>
+</html>

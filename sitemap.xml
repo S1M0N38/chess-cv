@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://s1m0n38.github.io/chess-cv/</loc>
+         <lastmod>2025-11-18</lastmod>
+    </url>
+    <url>
+         <loc>https://s1m0n38.github.io/chess-cv/README_hf/</loc>
+         <lastmod>2025-11-18</lastmod>
+    </url>
+    <url>
+         <loc>https://s1m0n38.github.io/chess-cv/architecture/</loc>
+         <lastmod>2025-11-18</lastmod>
+    </url>
+    <url>
+         <loc>https://s1m0n38.github.io/chess-cv/data-augmentations/</loc>
+         <lastmod>2025-11-18</lastmod>
+    </url>
+    <url>
+         <loc>https://s1m0n38.github.io/chess-cv/inference/</loc>
+         <lastmod>2025-11-18</lastmod>
+    </url>
+    <url>
+         <loc>https://s1m0n38.github.io/chess-cv/setup/</loc>
+         <lastmod>2025-11-18</lastmod>
+    </url>
+    <url>
+         <loc>https://s1m0n38.github.io/chess-cv/train-and-eval/</loc>
+         <lastmod>2025-11-18</lastmod>
+    </url>
+</urlset>
