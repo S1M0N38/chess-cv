@@ -5,10 +5,6 @@
 
 ---
 
-!!! info "Project Status"
-
-    This project is actively developed. The current version provides a complete pipeline for training lightweight CNNs to classify chess board elements from 32×32px square images.
-
 Chess CV is a machine learning project that trains lightweight CNNs (156k parameters each) from scratch to classify different aspects of chess board squares. The project includes three specialized models trained on synthetically generated data from 55 board styles combined with piece sets and overlays from chess.com and lichess:
 
 - **Pieces Model** (13 classes): Classifies chess pieces and empty squares for board state recognition and FEN generation
